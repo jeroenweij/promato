@@ -6,8 +6,17 @@ require 'includes/db.php';
 if (isset($_GET['project_id'])) {
     $projectId = $_GET['project_id'];
 
-    // Fetch the project details
-    $projectStmt = $pdo->prepare("SELECT * FROM Projects WHERE Id = ?");
+    // Fetch the project details along with the status and manager
+    $projectStmt = $pdo->prepare("
+        SELECT 
+            Projects.*, 
+            Status.Status AS Status, 
+            Personel.Shortname AS Manager
+        FROM Projects
+        LEFT JOIN Status ON Projects.Status = Status.Id
+        LEFT JOIN Personel ON Projects.Manager = Personel.Id
+        WHERE Projects.Id = ?
+    ");
     $projectStmt->execute([$projectId]);
     $project = $projectStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -23,157 +32,194 @@ if (isset($_GET['project_id'])) {
     $activityStmt->execute([$projectId]);
     $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fetch status options
-    $statusStmt = $pdo->query("SELECT * FROM Status");
-    $statuses = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
 }
-
-// Handle form submission to update the project status
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
-    $newStatus = $_POST['status'];
-
-    // Update the project status
-    $updateStatusStmt = $pdo->prepare("UPDATE Projects SET Status = ? WHERE Id = ?");
-    $updateStatusStmt->execute([$newStatus, $projectId]);
-
-    // Reload the page to reflect the changes
-    header("Location: project_details.php?project_id=" . $projectId);
-    exit;
-}
-
-// Handle form submission to update or add activities (same as previous)
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['edit_activity'])) {
-        $activityId = $_POST['activity_id'];
-        $name = $_POST['activity_name'];
-        $budgetHours = $_POST['budget_hours'];
-        $startDate = $_POST['start_date'];
-        $endDate = $_POST['end_date'];
-        $wbso = $_POST['wbso'];
-
-        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, BudgetHours = ?, StartDate = ?, EndDate = ?, WBSO = ?, Export=1 WHERE Id = ?");
-        $updateStmt->execute([$name, $budgetHours, $startDate, $endDate, $wbso, $activityId]);
-    }
-    // Add a new activity
-    elseif (isset($_POST['add_activity'])) {
-        $activityName = $_POST['new_activity_name'];
-        $budgetHours = $_POST['new_budget_hours'];
-        $startDate = $_POST['new_start_date'];
-        $endDate = $_POST['new_end_date'];
-        $wbso = $_POST['new_wbso'] ?? null;
-
-        // Find the next available Key for the project
-        $keyStmt = $pdo->prepare("SELECT MAX(`Key`) as MaxKey FROM Activities WHERE Project = ?");
-        $keyStmt->execute([$projectId]);
-        $maxKeyRow = $keyStmt->fetch(PDO::FETCH_ASSOC);
-        $nextKey = $maxKeyRow && $maxKeyRow['MaxKey'] !== null ? $maxKeyRow['MaxKey'] + 1 : 1;
-
-        // Insert new activity
-        $insertStmt = $pdo->prepare("
-            INSERT INTO Activities (Project, `Key`, Name, BudgetHours, StartDate, EndDate, WBSO, Export)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-        ");
-        $insertStmt->execute([
-            $projectId,
-            $nextKey,
-            $activityName,
-            $budgetHours,
-            $startDate,
-            $endDate,
-            $wbso !== '' ? $wbso : null
-        ]);
-    }
-
-    header("Location: project_details.php?project_id=" . $projectId);
-    exit;
-}
-
 ?>
 
 <section id="project-details">
     <div class="container">
 
         <!-- Project Information -->
-        <h1>Project Details: <?php echo htmlspecialchars($project['Name']); ?></h1>
+        <h1><?php echo htmlspecialchars($project['Name']); ?></h1>
 
-        <!-- Status Dropdown -->
-        <form method="POST" class="form-inline mb-3">
-            <label for="status">Status: </label>
-            <select name="status" id="status" class="form-control ml-2" onchange="this.form.submit()">
-                <?php foreach ($statuses as $status): ?>
-                    <option value="<?php echo $status['Id']; ?>" <?php echo $status['Id'] == $project['Status'] ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($status['Status']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <input type="hidden" name="update_status" value="1">
-        </form>
+        <div class="mb-3">
+            <strong>Status:</strong>
+            <?php
+            echo htmlspecialchars($project['Status']);
+            ?>
+        </div>
+
+        <div class="mb-3">
+            <strong>Project Manager:</strong>
+            <?php
+            echo htmlspecialchars($project['Manager']);
+            ?>
+        </div>
 
         <hr>
 
-        <!-- Edit Activities -->
-        <h2>Edit Activities</h2>
-        
+        <!-- Gantt Chart -->
+        <style>
+            #project-details {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+
+            #ganttChart {
+                position: relative;
+                width: 100%;
+                height: 400px;
+                border: 1px solid #ccc;
+                margin-top: 20px;
+            }
+
+            .activity-bar {
+                position: absolute;
+                height: 30px;
+                background-color: #4CAF50;
+                color: white;
+                text-align: center;
+                line-height: 30px;
+                border-radius: 5px;
+            }
+
+            .current-date-line {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+                background-color: red;
+                z-index: 10;
+            }
+
+            .date-labels {
+                display: flex;
+                justify-content: space-between;
+                position: absolute;
+                top: -20px;
+                width: 100%;
+                font-size: 12px;
+            }
+        </style>
+        <h3>Project Timeline</h3>
+        <div id="ganttChart"></div>
+
+        <?php
+        // Map each row to only the properties the Gantt needs:
+        $jsActivities = array_map(function($a) {
+            return [
+                'name'      => $a['Name'],
+                'startDate' => $a['StartDate'],
+                'endDate'   => $a['EndDate'],
+            ];
+        }, $activities);
+        ?>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const activities = <?php echo json_encode($jsActivities, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE); ?>;
+                const ganttChart = document.getElementById('ganttChart');
+                const currentDate = new Date();
+
+                // 1) Convert activity dates to Date objects
+                activities.forEach(a => {
+                    a.startDate = new Date(a.startDate);
+                    a.endDate   = new Date(a.endDate);
+                });
+
+                // 2) Compute earliest & latest
+                const earliestDate = new Date(Math.min(...activities.map(a => a.startDate)));
+                const latestDate   = new Date(Math.max(...activities.map(a => a.endDate)));
+                const totalDays    = Math.ceil((latestDate - earliestDate) / (1000*60*60*24));
+
+                // 3) Create at most 10 date-labels
+                const maxLabels = 10;
+                const step = Math.max(1, Math.floor(totalDays / (maxLabels - 1)));
+                const dateLabels = document.createElement('div');
+                dateLabels.classList.add('date-labels');
+                for (let i = 0; i <= totalDays; i += step) {
+                    const d = new Date(earliestDate);
+                    d.setDate(d.getDate() + i);
+                    const lbl = document.createElement('div');
+                    lbl.textContent = d.toISOString().slice(0,10);
+                    dateLabels.appendChild(lbl);
+                }
+                ganttChart.appendChild(dateLabels);
+
+                // 4) Assign each activity to the lowest free “track” (row) to avoid overlap
+                activities.sort((a, b) => a.startDate - b.startDate);
+                const tracks = []; // will hold the endDate of last activity in each track
+                activities.forEach(a => {
+                    let t = tracks.findIndex(endDate => a.startDate > endDate);
+                    if (t === -1) {
+                        t = tracks.length;
+                        tracks.push(a.endDate);
+                    } else {
+                        tracks[t] = a.endDate;
+                    }
+                    a.track = t;
+                });
+
+                // 5) Render bars
+                activities.forEach(a => {
+                    const bar = document.createElement('div');
+                    const leftPct   = (a.startDate - earliestDate) / (latestDate - earliestDate) * 100;
+                    const widthPct  = (a.endDate   - a.startDate)   / (latestDate - earliestDate) * 100;
+
+                    bar.classList.add('activity-bar');
+                    bar.style.left = `${leftPct}%`;
+                    bar.style.width = `${widthPct}%`;
+                    bar.style.top   = `${a.track * 40 + 30}px`; // 40px per track + 30px padding for labels
+                    bar.textContent = a.name;
+                    ganttChart.appendChild(bar);
+                });
+
+                // 6) Draw current-date line
+                const currentOffset = (currentDate - earliestDate) / (latestDate - earliestDate) * 100;
+                const line = document.createElement('div');
+                line.classList.add('current-date-line');
+                line.style.left = `${currentOffset}%`;
+                ganttChart.appendChild(line);
+
+                // 7) Finally, set container height to fit all tracks + label area
+                const barHeight   = 30;  // each activity row is 30 px tall
+                const rowSpacing  = 10;  // 10 px gap between rows
+                const labelOffset = 30;  // reserve 30 px at the top for the date labels
+                const totalHeight = labelOffset + tracks.length * (barHeight + rowSpacing) + rowSpacing;
+                ganttChart.style.height = `${totalHeight}px`;
+            });
+        </script>
+
+
+        <hr>
+
         <!-- Activities List -->
+        <h3>Activities</h3>
         <table class="table table-striped">
             <thead>
-                <tr>
-                    <th>TaskCode</th>
-                    <th>Activity Name</th>
-                    <th>WBSO Label</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Budget Hours</th>
-                    <th>Action</th>
-                </tr>
+            <tr>
+                <th>Task Code</th>
+                <th>Activity Name</th>
+                <th>WBSO Label</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Budget Hours</th>
+            </tr>
             </thead>
             <tbody>
-                <?php foreach ($activities as $activity): ?>
+            <?php foreach ($activities as $activity): ?>
                 <tr>
-                    <form method="POST">
-                        <input type="hidden" name="activity_id" value="<?php echo $activity['Id']; ?>">
-                        <td><?php echo $activity['Project'] . '-' . str_pad($activity['Key'], 3, '0', STR_PAD_LEFT); ?></td>
-                        <td><input type="text" name="activity_name" value="<?php echo htmlspecialchars($activity['Name']); ?>" class="form-control"></td>
-                        <td><input type="text" name="wbso" value="<?php echo htmlspecialchars($activity['WBSO']); ?>" class="form-control"></td>
-                        <td><input type="date" name="start_date" value="<?php echo $activity['StartDate']; ?>" class="form-control"></td>
-                        <td><input type="date" name="end_date" value="<?php echo $activity['EndDate']; ?>" class="form-control"></td>
-                        <td><input type="number" name="budget_hours" value="<?php echo $activity['BudgetHours']; ?>" class="form-control"></td>
-                        <td><button type="submit" name="edit_activity" class="btn btn-primary">Save</button></td>
-                    </form>
+                    <td><?php echo $activity['Project'] . '-' . str_pad($activity['Key'], 3, '0', STR_PAD_LEFT); ?></td>
+                    <td><?php echo htmlspecialchars($activity['Name']); ?></td>
+                    <td><?php echo htmlspecialchars($activity['WBSO'] ?? ''); ?></td>
+                    <td><?php echo $activity['StartDate']; ?></td>
+                    <td><?php echo $activity['EndDate']; ?></td>
+                    <td><?php echo $activity['BudgetHours']; ?></td>
                 </tr>
-                <?php endforeach; ?>
+            <?php endforeach; ?>
             </tbody>
         </table>
 
-        <hr>
-
-        <!-- Add New Activity -->
-        <h2>Add New Activity</h2>
-        <form method="POST">
-            <div class="form-group">
-                <label for="new_activity_name">Activity Name:</label>
-                <input type="text" name="new_activity_name" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="new_budget_hours">Budget Hours:</label>
-                <input type="number" name="new_budget_hours" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="new_start_date">Start Date:</label>
-                <input type="date" name="new_start_date" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="new_end_date">End Date:</label>
-                <input type="date" name="new_end_date" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="new_wbso">WBSO Label:</label>
-                <input type="text" name="new_wbso" class="form-control" required>
-            </div>
-            <button type="submit" name="add_activity" class="btn btn-success">Add Activity</button>
-        </form>
     </div>
 </section>
 
 <?php require 'includes/footer.php'; ?>
-
