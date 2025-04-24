@@ -27,6 +27,25 @@ if ($editing) {
     }
 }
 
+function calculateAvailableHours($startDate, $endDate, $fultimePercent) {
+    $year = date('Y');
+    $start = new DateTime(max($startDate, "$year-01-01"));
+    $end = new DateTime(min($endDate ?? "$year-12-31", "$year-12-31"));
+
+    if ($start > $end) return 0;
+
+    $workdays = 0;
+    while ($start <= $end) {
+        if (in_array($start->format('N'), [1, 2, 3, 4, 5])) {
+            $workdays++;
+        }
+        $start->modify('+1 day');
+    }
+
+    $hoursPerDay = 8;
+    return round($workdays * $hoursPerDay * ($fultimePercent / 100));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = [
         $_POST['Email'],
@@ -44,12 +63,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($editing) {
         $data[] = $_GET['id'];
         $sql = "UPDATE Personel SET Email=?, Name=?, Startdate=?, Enddate=?, WBSO=?, Fultime=?, Type=?, Ord=?, plan=?, Shortname=? WHERE Id=?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($data);
+        $personId = $_GET['id'];
     } else {
         $sql = "INSERT INTO Personel (Email, Name, Startdate, Enddate, WBSO, Fultime, Type, Ord, plan, Shortname) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($data);
+        $personId = $pdo->lastInsertId();
     }
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($data);
+    // Calculate and update available work hours
+    $availableHours = calculateAvailableHours($_POST['Startdate'], $_POST['Enddate'] ?: null, $_POST['Fultime']);
+    $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Hours)
+        VALUES (0, 0, :person, :hours)
+        ON DUPLICATE KEY UPDATE Hours = :hours");
+    $stmt->execute([
+        ':person' => $personId,
+        ':hours' => $availableHours * 100 // stored as hundredths
+    ]);
+
     header("Location: personel.php");
     exit;
 }

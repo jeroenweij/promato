@@ -15,8 +15,8 @@
         <div class="col-md-3">
           <h5>Admin Tools</h5>
           <ul>
-            <li><a href="/Personel.php">Personel</a></li>
-            <li><a href="#">Backlink Checker</a></li>
+            <li><a href="/personel.php">Personel</a></li>
+            <li><a href="/projects_edit.php">Edit projects</a></li>
             <li><a href="#">Keyword Generator</a></li>
             <li><a href="#">Serp Checker</a></li>
             <li><a href="#">Site Audit</a></li>

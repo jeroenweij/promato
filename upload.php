@@ -1,85 +1,86 @@
-<?php
-require 'includes/header.php';
-require 'includes/db.php';
-?>
+<?php require 'includes/header.php'; ?>
 <section id="pricing"><div class="container">
 
-  <h2>Upload Realised Hours (CSV)</h2>
+<h2>Upload Realised Hours (CSV)</h2>
 
-  <?php
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
-    $file = $_FILES['csv']['tmp_name'];
-    if (($handle = fopen($file, "r")) !== false) {
-      // Skip initial header rows
-      fgetcsv($handle); // empty line with commas
-      $header = fgetcsv($handle);
+<div class="mb-3">
+  <label for="csv" class="form-label">Select CSV File</label>
+  <input type="file" id="csv" class="form-control">
+</div>
+<button id="uploadBtn" class="btn btn-primary">Upload</button>
 
-      // Load Personel names
-      $stmt = $pdo->query("SELECT Id, Name FROM Personel");
-      $personMap = [];
-      while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $personMap[strtolower(trim($row['Name']))] = $row['Id'];
-      }
+<div id="logBox" class="mt-4" style="white-space: pre-wrap; font-family: monospace; background: #f8f9fa; padding: 1rem; border: 1px solid #ccc; max-height: 300px; overflow-y: scroll;"></div>
 
-      // Map CSV columns to Personel IDs
-      $colMap = [];
-      foreach ($header as $i => $name) {
-        $name = trim($name, "\" \t\n\r\0\x0B");
-        if (!$name) continue;
-        $key = strtolower($name);
-        if (isset($personMap[$key])) {
-          $colMap[$i] = $personMap[$key];
-        } else {
-          echo "<div class='alert alert-warning'>Name not found in database: <strong>{$name}</strong></div>";
-        }
-      }
-
-      $currentProject = null;
-      while (($row = fgetcsv($handle)) !== false) {
-        if (empty($row[0]) && empty($row[1]) && empty($row[2])) continue;
-        if (!empty($row[0])) {
-          $currentProject = (int)$row[0];
-        }
-
-        $activity = isset($row[2]) ? (int)$row[2] : null;
-        if (!$activity) continue;
-
-        foreach ($colMap as $colIndex => $personId) {
-          $val = trim(str_replace(',', '.', $row[$colIndex] ?? ''));
-          $hours = floatval($val);
-          if ($hours > 0) {
-            $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Hours)
-              VALUES (:project, :activity, :person, :hours)
-              ON DUPLICATE KEY UPDATE Hours = :hours");
-            $stmt->execute([
-              ':project' => $currentProject,
-              ':activity' => $activity,
-              ':person' => $personId,
-              ':hours' => round($hours * 100),
-            ]);
-          }
-        }
-      }
-
-      fclose($handle);
-      echo "<div class='alert alert-success mt-3'>CSV file imported successfully.</div>";
-    } else {
-      echo "<div class='alert alert-danger'>Failed to open uploaded file.</div>";
-    }
-  }
-  ?>
-
-  <form method="post" enctype="multipart/form-data" class="mt-4">
-    <div class="mb-3">
-      <label for="csv" class="form-label">Select CSV File</label>
-      <input type="file" name="csv" id="csv" class="form-control" required>
-    </div>
-    <button type="submit" class="btn btn-primary">Upload</button>
-  </form>
+<div id="uploadStatus" style="display:none;" class="mt-4">
+  <div class="progress mb-2" style="height: 25px;">
+    <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+         role="progressbar" style="width: 0%">0%</div>
+</div>
+<script>
+document.getElementById('uploadBtn').addEventListener('click', async () => {
+  const fileInput = document.getElementById('csv');
+  const logBox = document.getElementById('logBox');
+  logBox.textContent = 'Uploading...\n';
   
+  const statusBox = document.getElementById('uploadStatus');
+  const progressEl = document.getElementById('uploadProgressBar');
+
+  statusBox.style.display = 'block';
+  progressEl.style.width = '0%';
+  progressEl.textContent = '0%';
+  
+  const file = fileInput.files[0];
+  if (!file) {
+    logBox.textContent += 'No file selected.\n';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('csv', file);
+
+  const response = await fetch('upload_handler.php', {
+    method: 'POST',
+    body: formData
+  });
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      let lines = buffer.split('\n');
+      buffer = lines.pop(); // Last line might be incomplete, save for next round
+
+      for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+
+        const match = line.match(/Progress:\s*(\d+)%/i);
+        if (match) {
+          const percent = parseInt(match[1]);
+          progressEl.style.width = percent + '%';
+          progressEl.textContent = percent + '%';
+        } else {
+          logBox.textContent += line + '\n';
+          logBox.scrollTop = logBox.scrollHeight;
+        }
+      }
+    }
+
+    if (buffer.trim()) {
+      logBox.textContent += buffer.trim() + '\n';
+    }
+    progressEl.style.width = '100%';
+    progressEl.textContent = '100%';
+    logBox.textContent += '\nDone!';
+    progressEl.classList.remove('progress-bar-animated');
+});
+</script>
+
 </div></section>
-
-<?php
-require 'includes/footer.php';
-?>
-
+<?php require 'includes/footer.php'; ?>

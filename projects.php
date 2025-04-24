@@ -10,10 +10,10 @@ function zeroPad($num, $places) {
 // Get activities with project data
 $sql = "SELECT Activities.Id AS ActivityId, Activities.Project, Activities.Key, Activities.Name AS ActivityName,
                Activities.BudgetHours, Activities.WBSO, Activities.StartDate, Activities.EndDate,
-               Projects.Name AS ProjectName, Status.Status
+               Projects.Name AS ProjectName, Personel.Shortname as Manager
         FROM Activities
         LEFT JOIN Projects ON Activities.Project = Projects.Id
-        LEFT JOIN Status ON Projects.Status = Status.Id
+        LEFT JOIN Personel ON Projects.Manager = Personel.Id
         WHERE Projects.Status = 3
         ORDER BY Activities.Project, Activities.Key";
 
@@ -24,7 +24,7 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $projects = [];
 foreach ($rows as $row) {
     $projects[$row['Project']]['name'] = $row['ProjectName'];
-    $projects[$row['Project']]['status'] = $row['Status'];
+    $projects[$row['Project']]['manager'] = $row['Manager'];
     $projects[$row['Project']]['activities'][] = $row;
 }
 
@@ -34,7 +34,7 @@ echo '<section id="pricing"><div class="container">';
 foreach ($projects as $projectId => $project) {
     // Make the project name clickable
     echo '<div class="row">';
-    echo '<div class="col"><strong><a href="project_details.php?project_id=' . htmlspecialchars($projectId) . '">' . htmlspecialchars($projectId) . ' - ' . htmlspecialchars($project['name']) . '</a></strong> (' . htmlspecialchars($project['status']) . ')</div>';
+    echo '<div class="col"><strong><a href="project_details.php?project_id=' . htmlspecialchars($projectId) . '">' . htmlspecialchars($projectId) . ' - ' . htmlspecialchars($project['name']) . '</a></strong> (' . htmlspecialchars($project['manager']) . ')</div>';
     echo '</div>';
 
     // Activity header row

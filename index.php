@@ -3,33 +3,25 @@
 require 'includes/header.php';
 require 'includes/db.php';
 
-?>
-  <script>
-    var setElementHeight = function () {
-      var height = $(window).height() - 120;
-      $('.autoheight').css('min-height', (height));
-    };
+// Fetch personel with available hours in one efficient query
+$stmt = $pdo->query("SELECT p.Shortname AS Name, p.Id AS Number, p.Fultime, COALESCE(h.Hours, 0) AS AvailableHours 
+    FROM Personel p LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0
+    WHERE p.plan = 1
+    ORDER BY p.Ord, p.Name;
+");
 
-    $(window).on("resize", function () {
-      setElementHeight();
-    }).resize();
-
-    $(window).on("load", function () {
-      setElementHeight();
-    }).resize();
-  </script>
-<?php
-
-// Fetch personel
-$stmt = $pdo->query("SELECT Shortname as Name, Id as Number FROM Personel WHERE plan = 1 ORDER BY Ord, Name;");
 $personel = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Initialize person summary
 $personSummary = [];
 foreach ($personel as $p) {
     $id = $p['Number'];
+    $available = $p['AvailableHours'] > 0
+        ? round($p['AvailableHours'] / 100)  // Stored as hundredths in DB
+        : round(($p['Fultime'] ?? 100) * 2080 / 100); // Fallback to estimate
+
     $personSummary[$id] = [
-        'available' => round(($p['Fultime'] ?? 100) * 2080 / 100), // 2080 = full-time year
+        'available' => $available,
         'planned' => 0,
         'realised' => 0
     ];
@@ -175,6 +167,19 @@ echo '</table><br>&nbsp;<br>&nbsp;</div></div></div></section>';
 
 ?>
 <script>
+    var setElementHeight = function () {
+      var height = $(window).height() - 120;
+      $('.autoheight').css('min-height', (height));
+    };
+
+    $(window).on("resize", function () {
+      setElementHeight();
+    }).resize();
+
+    $(window).on("load", function () {
+      setElementHeight();
+    }).resize();
+    
 function UpdateValue(input) {
     const [project, activity, person] = input.name.split('#');
     const value = parseFloat(input.value) || 0;
