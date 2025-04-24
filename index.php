@@ -27,32 +27,35 @@ foreach ($personel as $p) {
     ];
 }
 
+// Collect hours across all activities
+$stmtHours = $pdo->prepare(
+    "SELECT 
+        SUM(CASE WHEN Project < 32750 THEN Plan ELSE 0 END) AS Plan,
+        SUM(CASE WHEN Project = 32750 THEN Hours ELSE 0 END) AS Hours,
+        Person FROM Hours GROUP BY Person"
+);
+$stmtHours->execute();
+$hourData = $stmtHours->fetchAll(PDO::FETCH_ASSOC);
+
+foreach ($hourData as $h) {
+    $pid = $h['Person'];
+    if (!isset($personSummary[$pid])) continue;
+
+    $personSummary[$pid]['planned'] = $h['Plan'] / 100;
+    $personSummary[$pid]['realised'] = $h['Hours'] / 100;
+}
+
 // Fetch activities and projects
 $sql = "SELECT Activities.Project, Activities.Key, Activities.Name, Activities.BudgetHours, 
                Projects.Name as ProjectName, Personel.Name as Manager 
         FROM Activities 
         LEFT JOIN Projects ON Activities.Project = Projects.Id 
         LEFT JOIN Personel ON Projects.Manager = Personel.Id 
-        WHERE Projects.Status = 3 AND Activities.Show = 1 
+        WHERE Projects.Status = 3 AND Activities.Visible = 1 
         ORDER BY Projects.Id, Activities.Key;";
 
 $stmt = $pdo->query($sql);
 $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Collect hours across all activities
-foreach ($activities as $activity) {
-    $stmtHours = $pdo->prepare("SELECT Hours, Plan, Person FROM Hours WHERE Project = ? AND Activity = ?");
-    $stmtHours->execute([$activity['Project'], $activity['Key']]);
-    $hourData = $stmtHours->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach ($hourData as $h) {
-        $pid = $h['Person'];
-        if (!isset($personSummary[$pid])) continue;
-
-        $personSummary[$pid]['planned'] += $h['Plan'] / 100;
-        $personSummary[$pid]['realised'] += $h['Hours'] / 100;
-    }
-}
 
 // Start output
 echo '<section><div class="container"><div class="autoheight"><div class="horizontalscrol">';

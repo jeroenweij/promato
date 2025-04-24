@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_manager'])) {
     exit;
 }
 
-// Handle form submission to update or add activities (same as previous)
+// Handle form submission to update or add activities
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['edit_activity'])) {
         $activityId = $_POST['activity_id'];
@@ -67,14 +67,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $startDate = $_POST['start_date'];
         $endDate = $_POST['end_date'];
         $wbso = $_POST['wbso'];
+        $visible = isset($_POST['visible']) ? 1 : 0;
 
         // Handle BudgetHours: default to 0 if not set or not numeric
         if (!is_numeric($budgetHours)) {
             $budgetHours = 0;
         }
 
-        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, BudgetHours = ?, StartDate = ?, EndDate = ?, WBSO = ?, Export=1 WHERE Id = ?");
-        $updateStmt->execute([$name, $budgetHours, $startDate, $endDate, $wbso, $activityId]);
+        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, BudgetHours = ?, StartDate = ?, EndDate = ?, WBSO = ?, Visible = ? WHERE Id = ?");
+        $updateStmt->execute([$name, $budgetHours, $startDate, $endDate, $wbso, $visible, $activityId]);
     }
     // Add a new activity
     elseif (isset($_POST['add_activity'])) {
@@ -83,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $startDate = $_POST['new_start_date'];
         $endDate = $_POST['new_end_date'];
         $wbso = $_POST['new_wbso'] ?? null;
+        $visible = isset($_POST['new_visible']) ? 1 : 0; 
 
         // Handle BudgetHours: default to 0 if not set or not numeric
         if (!is_numeric($budgetHours)) {
@@ -95,10 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $maxKeyRow = $keyStmt->fetch(PDO::FETCH_ASSOC);
         $nextKey = $maxKeyRow && $maxKeyRow['MaxKey'] !== null ? $maxKeyRow['MaxKey'] + 1 : 1;
 
-        // Insert new activity
         $insertStmt = $pdo->prepare("
-            INSERT INTO Activities (Project, `Key`, Name, BudgetHours, StartDate, EndDate, WBSO, Export)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+            INSERT INTO Activities (Project, `Key`, Name, BudgetHours, StartDate, EndDate, WBSO, Visible, Export)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
         ");
         $insertStmt->execute([
             $projectId,
@@ -107,7 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $budgetHours,
             $startDate,
             $endDate,
-            $wbso !== '' ? $wbso : null
+            $wbso !== '' ? $wbso : null,
+            $visible
         ]);
     }
 
@@ -164,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>Budget Hours</th>
-                <th>Action</th>
+                <th>Visible</th>
             </tr>
             </thead>
             <tbody>
@@ -178,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><input type="date" name="start_date" value="<?php echo $activity['StartDate']; ?>" class="form-control"></td>
                         <td><input type="date" name="end_date" value="<?php echo $activity['EndDate']; ?>" class="form-control"></td>
                         <td><input type="number" name="budget_hours" value="<?php echo $activity['BudgetHours']; ?>" class="form-control"></td>
+                        <td><input type="checkbox" name="visible" value="1" <?php echo $activity['Visible'] ? 'checked' : ''; ?>></td>
                         <td><button type="submit" name="edit_activity" class="btn btn-primary">Save</button></td>
                     </form>
                 </tr>

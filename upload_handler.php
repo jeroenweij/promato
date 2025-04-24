@@ -63,12 +63,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
           }
       }
       if (!empty($row[1])) $currentProjectName = $row[1];
-      if (!isset($row[2]) || empty(trim($row[2]))) continue;
+      if (!isset($row[2])) continue;
       $activity = (int)$row[2];
 
       foreach ($colMap as $colIndex => $personId) {
-        $val = trim(str_replace(',', '.', $row[$colIndex] ?? ''));
-        $hours = floatval($val);
+        $val = trim(str_replace('.', '', $row[$colIndex] ?? '')); // Remove thousands separator (dot)
+        $val = str_replace(',', '.', $val);  // Replace comma with dot for decimal point
+        $hours = floatval($val);  // Convert to float
+
         if ($hours > 0) {
           $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Hours)
             VALUES (:project, :activity, :person, :hours)
@@ -79,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
             ':person' => $personId,
             ':hours' => round($hours * 100),
           ]);
+          
           $count++;
         }
       }
