@@ -100,8 +100,61 @@ if (isset($_GET['project_id'])) {
                 font-size: 12px;
             }
         </style>
+        <style>
+            #progressChart {
+                margin-top: 30px;
+                font-family: Arial, sans-serif;
+            }
+
+            .progress-row {
+                display: flex;
+                align-items: center;
+                margin-bottom: 24px; /* more space between rows */
+             }
+
+            .progress-label {
+                width: 200px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            .progress-bar-container {
+                position: relative;
+                flex-grow: 1;
+                height: 25px;
+                background: #eee;
+                border-radius: 5px;
+                overflow: visible;
+                margin-left: 10px;
+            }
+
+            .progress-bar {
+                height: 100%;
+                background-color: #2196F3;
+                transition: width 0.3s ease-in-out;
+            }
+
+            .progress-markers {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                font-size: 10px;
+                display: flex;
+                justify-content: space-between;
+                padding-top: 4px;
+            }
+
+            .progress-markers span {
+                position: absolute;
+                transform: translateX(-50%);
+            }
+        </style>
         <h3>Project Timeline</h3>
         <div id="ganttChart"></div>
+
+        <h3>Hours Progress</h3>
+        <div id="progressChart"></div>
 
         <?php
         // Map each row to only the properties the Gantt needs:
@@ -189,6 +242,81 @@ if (isset($_GET['project_id'])) {
             });
         </script>
 
+        <?php
+        // Fetch hours spent per activity
+        $activityIds = array_column($activities, 'Id');
+        $spentMap = [];
+        if (count($activityIds) > 0) {
+            $hoursStmt = $pdo->prepare("
+                SELECT Activity, Hours as SpentHours 
+                FROM Hours 
+                WHERE Person=32750 AND Project = ?
+            ");
+            
+            $hoursStmt->execute([$projectId]);
+
+            $spentMap = [];
+            foreach ($hoursStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $spentMap[$row['Activity']] = $row['SpentHours'];
+            }
+        }
+
+        // Add spent hours to activities array
+        $totalBudget = 0;
+        $totalSpent = array_sum($spentMap);
+        foreach ($activities as &$a) {
+            $totalBudget += $a['BudgetHours'];
+        }
+        unset($a); // break reference
+
+        // Map each row to only the properties the hours bars needs:
+        $jsActivities = array_map(function($a) use ($spentMap) {
+            return [
+                'name'         => $a['Name'],
+                'SpentHours'   => ($spentMap[$a['Key']] ?? 0) / 100,
+                'BudgetHours'  => $a['BudgetHours'],
+            ];
+        }, $activities);
+        ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const activities = <?php echo json_encode($jsActivities, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE); ?>;
+                const totalBudget = <?php echo $totalBudget; ?>;
+                const totalSpent  = <?php echo $totalSpent/100; ?>;
+
+                const progressChart = document.getElementById('progressChart');
+
+                // Compute max ratio to scale bars (if overspent)
+                const maxRatio = Math.max(1, ...activities.map(a => a.SpentHours / a.BudgetHours || 0), totalSpent / totalBudget);
+
+                const createBar = (label, spent, budget) => {
+                    const ratio = budget > 0 ? spent / budget : 0;
+                    const scaled = ratio / maxRatio * 100;
+                    const row = document.createElement('div');
+                    row.classList.add('progress-row');
+
+                    row.innerHTML = `
+            <div class="progress-label">${label}</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width:${scaled}%"></div>
+                <div class="progress-markers">
+                    <span style="left: 0%;">0%</span>
+                    <span style="left: 25%;">25%</span>
+                    <span style="left: 50%;">50%</span>
+                    <span style="left: 75%;">75%</span>
+                    <span style="left: 100%;">100%</span>
+                </div>
+            </div>
+        `;
+                    progressChart.appendChild(row);
+                };
+
+                createBar("Total Project", totalSpent, totalBudget);
+                activities.forEach(a => {
+                    createBar(a.name, a.SpentHours, a.BudgetHours);
+                });
+            });
+        </script>
 
         <hr>
 
