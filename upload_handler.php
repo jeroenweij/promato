@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
       $personMap[strtolower(trim($row['Name']))] = $row['Id'];
     }
-    $personMap[strtolower('Totaal Som van Uren')] = 32750;
+    $personMap[strtolower('Totaal Som van Uren')] = 0;
 
     $colMap = [];
     $skipColumns = ['projectcode', 'project', 'activiteitscode', 'activiteit'];
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
       if (!empty($row[0])) {
           $currentProject = (int)$row[0];
           if (strtolower(trim($row[0])) === 'eindtotaal') {
-              $currentProject = 32750;
+              $currentProject = 0;
               $currentProjectName = 'Totals';
               $row[2]=0;
           }

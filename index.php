@@ -3,8 +3,8 @@
 require 'includes/header.php';
 require 'includes/db.php';
 
-// Fetch personel with available hours in one efficient query
-$stmt = $pdo->query("SELECT p.Shortname AS Name, p.Id AS Number, p.Fultime, COALESCE(h.Hours, 0) AS AvailableHours 
+// Fetch personel with available hours
+$stmt = $pdo->query("SELECT p.Shortname AS Name, p.Id AS Number, p.Fultime, COALESCE(h.Plan, 0) AS AvailableHours 
     FROM Personel p LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0
     WHERE p.plan = 1
     ORDER BY p.Ord, p.Name;
@@ -30,8 +30,8 @@ foreach ($personel as $p) {
 // Collect hours across all activities
 $stmtHours = $pdo->prepare(
     "SELECT 
-        SUM(CASE WHEN Project < 32750 THEN Plan ELSE 0 END) AS Plan,
-        SUM(CASE WHEN Project = 32750 THEN Hours ELSE 0 END) AS Hours,
+        SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END) AS Plan,
+        SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END) AS Hours,
         Person FROM Hours GROUP BY Person"
 );
 $stmtHours->execute();
@@ -99,7 +99,7 @@ foreach ($activities as $value) {
     if ($projectid != $value['Project']) {
         echo '<tr class="spacer"><td colspan="100%">&nbsp;</td></tr><tr>';
 
-        echo '<td colspan="100%"><b>' . $value['Project'] . ' ' . htmlspecialchars($value['ProjectName']) . '</b> (' . htmlspecialchars($value['Manager']) . ')</td>';
+        echo '<td colspan="100%"><a href="project_details.php?project_id=' . htmlspecialchars($value['Project']) . '"><h4><b>' . $value['Project'] . ' ' . htmlspecialchars($value['ProjectName']) . '</b> (' . htmlspecialchars($value['Manager']) . ')</h4></a></td>';
         echo '</tr>';
         echo '<tr>';
         echo '<th class="text">TaskCode</th>';
@@ -127,10 +127,10 @@ foreach ($activities as $value) {
     $stmtHours->execute([$value['Project'], $value['Key']]);
     $hourData = $stmtHours->fetchAll(PDO::FETCH_ASSOC);
 
-    // Planned hours (excluding Yoobi)
+    // Planned hours
     $planned = 0;
     foreach ($hourData as $h) {
-        if ($h['Person'] != 32750) {
+        if ($h['Person'] != 0) {
             $planned += $h['Plan'] / 100;
         }
     }
@@ -140,7 +140,7 @@ foreach ($activities as $value) {
     // Realised hours (Yoobi)
     $realised = 0;
     foreach ($hourData as $h) {
-        if ($h['Person'] == 32750) {
+        if ($h['Person'] == 0) {
             $realised = $h['Hours'] / 100;
             break;
         }

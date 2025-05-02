@@ -1,0 +1,39 @@
+#project-details {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+#ganttChart {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    margin-top: 5px;
+}
+
+.activity-bar {
+    position: absolute;
+    height: 30px;
+    background-color: #4CAF50;
+    color: white;
+    text-align: center;
+    line-height: 30px;
+    border-radius: 5px;
+}
+
+.current-date-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: red;
+    z-index: 10;
+}
+
+.date-labels {
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    top: -20px;
+    width: 100%;
+    font-size: 12px;
+}

@@ -21,7 +21,16 @@
 
   <link rel="icon" href="style/favicon.ico" type="image/x-icon" />
 
-  <title>MIS</title>
+  <?php
+    // Include any page-specific stylesheets
+    if (!empty($pageSpecificCSS) && is_array($pageSpecificCSS)) {
+        foreach ($pageSpecificCSS as $cssFile) {
+            echo '<link rel="stylesheet" href="style/' . htmlspecialchars($cssFile) . '">' . PHP_EOL;
+        }
+    }
+  ?>
+
+  <title><?= isset($pageTitle) ? htmlspecialchars($pageTitle) : 'MIS' ?></title>
 
   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
 
@@ -53,7 +62,7 @@
             <a class="nav-link" href="/personel.php">Personel <i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
           </li>
           <li class="nav-item nav-custom-link btn btn-demo-small">
-            <a class="nav-link" href="/board">Tasks <i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
+            <a class="nav-link" href="/">Board<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
           </li>
         </ul>
       </div>

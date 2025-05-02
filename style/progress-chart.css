@@ -1,0 +1,81 @@
+/**
+ * Progress Chart Styles
+ */
+ #progressChart {
+    margin-top: 50px; /* Increased top margin to accommodate the scale header */
+    font-family: Arial, sans-serif;
+    position: relative; /* For positioning the scale header */
+}
+
+/* New scale header styles */
+.scale-header {
+    display: flex;
+    position: absolute;
+    top: -25px;
+    left: 210px; /* Aligns with the start of progress bars (200px label + 10px margin) */
+    right: 0;
+    height: 20px;
+}
+
+.scale-marker {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #666;
+}
+
+.scale-line {
+    position: absolute;
+    height: 5px;
+    width: 1px;
+    background-color: #ccc;
+    bottom: -5px;
+}
+
+.progress-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px; /* space between rows */
+}
+
+.progress-label {
+    width: 200px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.progress-bar-container {
+    position: relative;
+    flex-grow: 1;
+    height: 25px;
+    background: #eee;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-left: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: #2196F3;
+    transition: width 0.3s ease-in-out;
+    border-radius: 5px;
+    position: absolute;
+    left: 0;
+}
+
+/* We'll hide the individual markers since we now have a scale header */
+.progress-markers {
+    display: none;
+}
+
+
+.spent-bar {
+    background-color: #2196F3;
+    z-index: 2;
+}
+
+.plan-bar {
+    background-color: #adadad;
+    z-index: 1;
+    opacity: 0.6;
+}

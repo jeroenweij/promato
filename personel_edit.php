@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute($data);
         $personId = $_GET['id'];
     } else {
-        $sql = "INSERT INTO Personel (Email, Name, Startdate, Enddate, WBSO, Fultime, Type, Ord, plan, Shortname) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO Personel (Email, Name, Startdate, Enddate, WBSO, Fultime, Type, Ord, Plan, Shortname) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($data);
         $personId = $pdo->lastInsertId();
@@ -75,9 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Calculate and update available work hours
     $availableHours = calculateAvailableHours($_POST['Startdate'], $_POST['Enddate'] ?: null, $_POST['Fultime']);
-    $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Hours)
+    $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Plan)
         VALUES (0, 0, :person, :hours)
-        ON DUPLICATE KEY UPDATE Hours = :hours");
+        ON DUPLICATE KEY UPDATE Plan = :hours");
     $stmt->execute([
         ':person' => $personId,
         ':hours' => $availableHours * 100 // stored as hundredths
