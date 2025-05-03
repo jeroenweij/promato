@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Find the maximum ratio of spent/budget across all activities and overall total
         let maxRatio = 0;
         
-        // Check the total project ratio
+        // Check the total ratio
         if (totalBudget > 0) {
             maxRatio = Math.max(maxRatio, totalSpent / totalBudget);
         }
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
             progressChart.appendChild(row);
         };
 
-        createBar("Total Project", totalPlan, totalSpent, totalBudget);
+        createBar("Total", totalPlan, totalSpent, totalBudget);
         activities.forEach(a => {
             createBar(a.name, a.PlanHours, a.SpentHours, a.BudgetHours);
         });

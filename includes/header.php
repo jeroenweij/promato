@@ -52,9 +52,12 @@
           <li class="nav-item nav-custom-link">
             <a class="nav-link" href="/">Home<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
           </li>
-          <li class="nav-item nav-custom-link">
-            <a class="nav-link" href="/projects.php">Projects<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
-          </li>
+            <li class="nav-item nav-custom-link">
+                <a class="nav-link" href="/projects.php">Projects<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
+            </li>
+            <li class="nav-item nav-custom-link">
+                <a class="nav-link" href="/capacity.php">Capacity<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
+            </li>
           <li class="nav-item nav-custom-link">
             <a class="nav-link" href="/upload.php">upload <i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
           </li>
