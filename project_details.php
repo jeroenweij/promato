@@ -1,6 +1,5 @@
 <?php
 $pageSpecificCSS = ['gantt-chart.css', 'progress-chart.css'];
-$pageTitle = 'Project Details';
 
 require 'includes/header.php';
 require 'includes/db.php';

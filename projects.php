@@ -34,7 +34,7 @@ echo '<section id="pricing"><div class="container">';
 foreach ($projects as $projectId => $project) {
     // Make the project name clickable
     echo '<div class="row">';
-    echo '<div class="col"><strong><a href="project_details.php?project_id=' . htmlspecialchars($projectId) . '">' . htmlspecialchars($projectId) . ' - ' . htmlspecialchars($project['name']) . '</a></strong> (' . htmlspecialchars($project['manager']) . ')</div>';
+    echo '<div class="col"><strong><a href="project_details.php?project_id=' . htmlspecialchars($projectId) . '">' . htmlspecialchars($projectId) . ' - ' . htmlspecialchars($project['name']) . '</a></strong> (' . htmlspecialchars($project['manager'] ?? '') . ')</div>';
     echo '</div>';
 
     // Activity header row

@@ -1,3 +1,7 @@
+<?php
+require_once 'auth.php';
+?>
+
 <!doctype html>
 <html lang="en-US">
 
@@ -30,7 +34,7 @@
     }
   ?>
 
-  <title><?= isset($pageTitle) ? htmlspecialchars($pageTitle) : 'MIS' ?></title>
+  <title><?= $pages[$currentPage]['title'] ?></title>
 
   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
 
@@ -49,24 +53,33 @@
       <div class="container">
         <img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Company Logo">
         <ul class="navbar-nav ml-auto nav-right" data-easing="easeInOutExpo" data-speed="1250" data-offset="65">
-          <li class="nav-item nav-custom-link">
-            <a class="nav-link" href="/">Home<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
-          </li>
-            <li class="nav-item nav-custom-link">
-                <a class="nav-link" href="/projects.php">Projects<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
-            </li>
-            <li class="nav-item nav-custom-link">
-                <a class="nav-link" href="/capacity.php">Capacity<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
-            </li>
-          <li class="nav-item nav-custom-link">
-            <a class="nav-link" href="/upload.php">upload <i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
-          </li>
-          <li class="nav-item nav-custom-link">
-            <a class="nav-link" href="/personel.php">Personel <i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
-          </li>
-          <li class="nav-item nav-custom-link btn btn-demo-small">
-            <a class="nav-link" href="/">Board<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
-          </li>
+
+            <?php
+            foreach ($pages as $filename => $page) {
+                // skip hidden menu items
+                if (empty($page['menu']) || $page['menu'] !== 'main') continue;
+                // check auth
+                if ($page['auth_level'] >= $userAuthLevel) continue;
+
+                // highlight active page
+                $activeClass = ($filename === $currentPage) ? ' active' : '';
+
+                echo '<li class="nav-item nav-custom-link' . $activeClass . '">';
+                echo '<a class="nav-link" href="/' . htmlspecialchars($filename) . '">' . htmlspecialchars($page['title']) . '<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>';
+                echo '</li>';
+            }
+            ?>
+
+            <?php if (isset($_SESSION['user_id'])): ?>
+                <li class="nav-item nav-custom-link btn btn-demo-small">
+                    <a class="nav-link" href="/"><?= htmlspecialchars($_SESSION['user_name']) ?><i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
+                </li>
+            <?php else: ?>
+                <li class="nav-item nav-custom-link btn btn-demo-small">
+                    <a class="nav-link" href="/login.php">Login<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
+                </li>
+            <?php endif; ?>
+
         </ul>
       </div>
     </div>

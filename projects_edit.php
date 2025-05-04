@@ -41,7 +41,7 @@ foreach ($rows as $project) {
     echo '<td><a href="project_edit.php?project_id=' . htmlspecialchars($project['ProjectId']) . '">' . htmlspecialchars($project['ProjectId']) . '</a></td>';
     echo '<td><a href="project_edit.php?project_id=' . htmlspecialchars($project['ProjectId']) . '">' . htmlspecialchars($project['ProjectName']) . '</a></td>';
     echo '<td>' . htmlspecialchars($project['Status']) . '</td>';
-    echo '<td>' . htmlspecialchars($project['ProjectManager']) . '</td>';
+    echo '<td>' . htmlspecialchars($project['ProjectManager'] ?? '') . '</td>';
     echo '</tr>';
 }
 

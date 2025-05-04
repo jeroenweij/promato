@@ -1,4 +1,6 @@
-<?php require 'includes/header.php'; ?>
+<?php
+require 'includes/header.php';
+?>
 <section id="pricing"><div class="container">
 
 <h2>Upload Realised Hours (CSV)</h2>
