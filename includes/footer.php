@@ -43,12 +43,12 @@
           </ul>
         </div>
         <div class="col-md-3">
-          <h5></h5>
+          <h5>Planning</h5>
           <ul>
               <?php
               foreach ($pages as $filename => $page) {
                   // skip hidden menu items
-                  if (empty($page['menu']) || $page['menu'] !== 'extra') continue;
+                  if (empty($page['menu']) || $page['menu'] !== 'plan') continue;
                   // check auth
                   if ($page['auth_level'] >= $userAuthLevel) continue;
 
