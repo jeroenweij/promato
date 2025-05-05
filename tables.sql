@@ -55,4 +55,18 @@ CREATE TABLE Hours (
         ON UPDATE CASCADE
 );
 
+CREATE TABLE HourStatus (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(50) NOT NULL UNIQUE
+);
 
+INSERT INTO HourStatus (Name) VALUES
+    ('Backlog'),
+    ('Todo'),
+    ('In Progress'),
+    ('Done');
+    
+ALTER TABLE Hours
+ADD COLUMN Prio INT NOT NULL DEFAULT 0,
+ADD COLUMN StatusId INT NULL DEFAULT 1,
+ADD CONSTRAINT fk_hours_status FOREIGN KEY (StatusId) REFERENCES HourStatus(Id);

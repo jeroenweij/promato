@@ -53,7 +53,7 @@ if (isset($_GET['project_id'])) {
         <div class="mb-3">
             <strong>Project Manager:</strong>
             <?php
-            echo htmlspecialchars($project['Manager']);
+            echo htmlspecialchars($project['Manager'] ?? '');
             ?>
         </div>
         <hr>
@@ -167,8 +167,8 @@ if (isset($_GET['project_id'])) {
                     <td><?php echo $activity['StartDate']; ?></td>
                     <td><?php echo $activity['EndDate']; ?></td>
                     <td><?php echo $activity['BudgetHours'] ?? 0; ?></td>
-                    <td><?php echo $planMap[$activity['Key']] ?? 0 /100; ?></td>
-                    <td><?php echo $spentMap[$activity['Key']]?? 0 /100; ?></td>
+                    <td><?php echo ($planMap[$activity['Key']] ?? 0 )/100; ?></td>
+                    <td><?php echo ($spentMap[$activity['Key']]?? 0) /100; ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

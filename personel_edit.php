@@ -98,8 +98,8 @@ $types = $pdo->query("SELECT Id, Name FROM Types ORDER BY Id")->fetchAll(PDO::FE
             <label>Email:<br><input type="email" name="Email" required value="<?= htmlspecialchars($person['Email']) ?>"></label><br><br>
             <label>Name:<br><input type="text" name="Name" value="<?= htmlspecialchars($person['Name']) ?>"></label><br><br>
             <label>Shortname:<br><input type="text" name="Shortname" required value="<?= htmlspecialchars($person['Shortname']) ?>"></label><br><br>
-            <label>Start Date:<br><input type="date" name="Startdate" value="<?= htmlspecialchars($person['Startdate']) ?>"></label><br><br>
-            <label>End Date:<br><input type="date" name="Enddate" value="<?= htmlspecialchars($person['Enddate']) ?>"></label><br><br>
+            <label>Start Date:<br><input type="date" name="Startdate" value="<?= htmlspecialchars($person['Startdate'] ?? '') ?>"></label><br><br>
+            <label>End Date:<br><input type="date" name="Enddate" value="<?= htmlspecialchars($person['Enddate'] ?? '') ?>"></label><br><br>
             <label>Fulltime %:<br><input type="number" name="Fultime" value="<?= htmlspecialchars($person['Fultime']) ?>" min="0" max="100"></label><br><br>
             <label>Order:<br><input type="number" name="Ord" value="<?= htmlspecialchars($person['Ord']) ?>"></label><br><br>
             <label>Type:<br>

@@ -55,9 +55,19 @@ $pages = [
         'auth_level' => 3,
         'menu' => 'main',
     ],
+    'priority_planning.php' => [
+        'title' => 'Priority Planning',
+        'auth_level' => 3,
+        'menu' => 'main',
+    ],
     'update_hours_plan.php' => [
         'title' => 'Update Hours Plan',
         'auth_level' => 2,
+        'menu' => null,
+    ],
+    'update_priority.php' => [
+        'title' => 'Update Priority',
+        'auth_level' => 3,
         'menu' => null,
     ],
     'upload.php' => [
@@ -70,9 +80,24 @@ $pages = [
         'auth_level' => 3,
         'menu' => null,
     ],
+    'update_status.php' => [
+        'title' => 'Status updater',
+        'auth_level' => 1,
+        'menu' => null,
+    ],
+    'kanban.php' => [
+        'title' => 'Kanban',
+        'auth_level' => 1,
+        'menu' => 'main',
+    ],
     'logout.php' => [
         'title' => 'Logout',
         'auth_level' => 1,
         'menu' => 'main',
+    ],
+    'test.php' => [
+        'title' => 'test',
+        'auth_level' => 0,
+        'menu' => null,
     ],
 ];
