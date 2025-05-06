@@ -58,7 +58,7 @@ $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Start output
 echo '<section><div class="container"><div class="autoheight"><div class="horizontalscrol">';
-echo '<table>' . PHP_EOL;
+echo '<table class="plantable">' . PHP_EOL;
 
 echo '<th colspan="5">&nbsp;</th>';
 foreach ($personel as $p) {
@@ -158,8 +158,12 @@ foreach ($activities as $value) {
             if ($hoursVal > 0) $hours = $hoursVal;
             if ($planVal > 0) $plan = $planVal;
         }
-        echo '<td class="editbudget"><input type="text" name="' . $value['Project'] . '#' . $value['Key'] . '#' . $p['Number'] . '" value="' . $plan . '" maxlength="4" size="3" class="hiddentext" onchange="UpdateValue(this)"></td>';
-        $overbudget = ($hours>0 && $hours > $plan) ? 'overbudget' : '';
+        if ($userAuthLevel >=3 ){
+            echo '<td class="editbudget"><input type="text" name="' . $value['Project'] . '#' . $value['Key'] . '#' . $p['Number'] . '" value="' . $plan . '" maxlength="4" size="3" class="hiddentext" onchange="UpdateValue(this)"></td>';
+        } else {
+            echo '<td class="editbudget">' . $plan . '</td>';
+        }
+    $overbudget = ($hours>0 && $hours > $plan) ? 'overbudget' : '';
         echo '<td class="budget ' . $overbudget . '">' . $hours . '</td>';
     }
     echo '</tr>' . PHP_EOL;

@@ -68,14 +68,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $endDate = $_POST['end_date'];
         $wbso = $_POST['wbso'];
         $visible = isset($_POST['visible']) ? 1 : 0;
+        $isTask = isset($_POST['is_task']) ? 1 : 0;
 
         // Handle BudgetHours: default to 0 if not set or not numeric
         if (!is_numeric($budgetHours)) {
             $budgetHours = 0;
         }
 
-        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, BudgetHours = ?, StartDate = ?, EndDate = ?, WBSO = ?, Visible = ? WHERE Id = ?");
-        $updateStmt->execute([$name, $budgetHours, $startDate, $endDate, $wbso, $visible, $activityId]);
+        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, BudgetHours = ?, StartDate = ?, EndDate = ?, WBSO = ?, Visible = ?, IsTask = ?, Export = 1 WHERE Id = ?");
+        $updateStmt->execute([$name, $budgetHours, $startDate, $endDate, $wbso, $visible, $isTask, $activityId]);
+
     }
     // Add a new activity
     elseif (isset($_POST['add_activity'])) {
@@ -84,7 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $startDate = $_POST['new_start_date'];
         $endDate = $_POST['new_end_date'];
         $wbso = $_POST['new_wbso'] ?? null;
-        $visible = isset($_POST['new_visible']) ? 1 : 0; 
+        $visible = isset($_POST['new_visible']) ? 1 : 0;
+        $newIsTask = isset($_POST['new_is_task']) ? 1 : 0;
 
         // Handle BudgetHours: default to 0 if not set or not numeric
         if (!is_numeric($budgetHours)) {
@@ -98,8 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nextKey = $maxKeyRow && $maxKeyRow['MaxKey'] !== null ? $maxKeyRow['MaxKey'] + 1 : 1;
 
         $insertStmt = $pdo->prepare("
-            INSERT INTO Activities (Project, `Key`, Name, BudgetHours, StartDate, EndDate, WBSO, Visible, Export)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+            INSERT INTO Activities (Project, `Key`, Name, BudgetHours, StartDate, EndDate, WBSO, Visible, IsTask, Export)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
         ");
         $insertStmt->execute([
             $projectId,
@@ -109,7 +112,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $startDate,
             $endDate,
             $wbso !== '' ? $wbso : null,
-            $visible
+            $visible,
+            $newIsTask
         ]);
     }
 
@@ -167,6 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <th>End Date</th>
                 <th>Budget Hours</th>
                 <th>Visible</th>
+                <th>Is Task</th>
             </tr>
             </thead>
             <tbody>
@@ -181,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><input type="date" name="end_date" value="<?php echo $activity['EndDate']; ?>" class="form-control"></td>
                         <td><input type="number" name="budget_hours" value="<?php echo $activity['BudgetHours']; ?>" class="form-control"></td>
                         <td><input type="checkbox" name="visible" value="1" <?php echo $activity['Visible'] ? 'checked' : ''; ?>></td>
+                        <td><input type="checkbox" name="is_task" value="1" <?php echo $activity['IsTask'] ? 'checked' : ''; ?>></td>
                         <td><button type="submit" name="edit_activity" class="btn btn-primary">Save</button></td>
                     </form>
                 </tr>
@@ -212,6 +218,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-group">
                 <label for="new_wbso">WBSO Label:</label>
                 <input type="text" name="new_wbso" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="new_visible">Visible:</label>
+                <input type="checkbox" name="new_visible" value="1" checked>
+            </div>
+            <div class="form-group">
+                <label for="new_is_task">Is Task:</label>
+                <input type="checkbox" name="new_is_task" value="1" checked>
             </div>
             <button type="submit" name="add_activity" class="btn btn-success">Add Activity</button>
         </form>

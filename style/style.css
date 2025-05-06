@@ -1,10 +1,11 @@
 .overbudget {
     background-color: rgba(255, 0, 0, 0.2) !important;
 }
-    
-table,
-th,
-td {
+
+.plantable,
+.plantable th,
+.plantable td,
+.plantable tr {
 	border: 1px solid black;
 	border-top: 1px solid black;
 	border-bottom: 1px solid black;
@@ -57,7 +58,7 @@ td {
 
 .autoheight {
     font-size:12px;
-	height: 400px;
+	height: 200px;
 }
 
 .horizontalscrol {

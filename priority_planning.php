@@ -28,7 +28,7 @@ SELECT
 FROM Hours h 
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
 JOIN Projects p ON a.Project = p.Id
-WHERE h.Project > 10
+WHERE h.Plan>0 AND a.IsTask=1
 ORDER BY h.Person, h.Prio DESC
 ");
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -66,6 +66,7 @@ foreach ($rows as $row) {
                                     <div class="card-body">
                                         <h6 class="card-title"><?= htmlspecialchars($item['ActivityName']) ?></h6>
                                         <p class="small text-muted"><?= htmlspecialchars($item['ProjectName']) ?> (Prio <?= $item['Priority'] ?>)</p>
+                                        <div class="text"><?= $logged ?> / <?= $planned ?></div>
                                         <div class="progress">
                                             <div class="progress-bar" role="progressbar"
                                                  style="width: <?= $percent ?>%;"

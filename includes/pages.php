@@ -73,8 +73,8 @@ $pages = [
         'auth_level' => 1,
         'menu' => 'main',
     ],
-    'logout.php' => [
-        'title' => 'Logout',
+    'capacity_planning.php' => [
+        'title' => 'Capacity Planning',
         'auth_level' => 1,
         'menu' => 'main',
     ],
@@ -106,11 +106,6 @@ $pages = [
     // PLAN Menu
     'capacity.php' => [
         'title' => 'Capacity Overview',
-        'auth_level' => 3,
-        'menu' => 'plan',
-    ],
-    'capacity_planning.php' => [
-        'title' => 'Capacity Planning',
         'auth_level' => 3,
         'menu' => 'plan',
     ],

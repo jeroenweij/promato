@@ -48,10 +48,10 @@ require_once 'auth.php';
       aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
       <span class="icon ion-md-menu"></span>
     </button>
-    <img src="images/logo.png" class="img-fluid nav-logo-mobile" alt="Company Logo">
-    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <img src="images/logo.png" class="img-fluid nav-logo-mobile" alt="Projectoid" style="height:20px;">
+      <div class="collapse navbar-collapse" id="navbarNavDropdown">
       <div class="container">
-        <img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Company Logo">
+        <img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Company Logo" style="height:40px;">
         <ul class="navbar-nav ml-auto nav-right" data-easing="easeInOutExpo" data-speed="1250" data-offset="65">
 
             <?php

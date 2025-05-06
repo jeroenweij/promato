@@ -22,7 +22,7 @@ FROM Hours h
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
 JOIN Projects p ON a.Project = p.Id
 LEFT JOIN HourStatus hs ON h.StatusId = hs.Id
-WHERE h.Person = ? AND p.Id > 10
+WHERE h.Person = ? AND h.Plan>0 AND a.IsTask=1
 ORDER BY hs.Name, h.Prio DESC
 ");
 $stmt->execute([$userId]);
@@ -37,7 +37,6 @@ foreach ($rows as $row) {
 
 <section id="kanban-board">
     <div class="container">
-        <h1>Kanban Board for <?= htmlspecialchars($_SESSION['user_name']) ?></h1>
         <div class="row">
             <?php
             $statusStmt = $pdo->query("SELECT Id, Name FROM HourStatus ORDER BY Id ASC");
@@ -63,8 +62,10 @@ foreach ($rows as $row) {
                                 <div class="card-body">
                                     <h6 class="card-title"><?= htmlspecialchars($item['ActivityName']) ?></h6>
                                     <p class="small text-muted"><?= htmlspecialchars($item['ProjectName']) ?></p>
+                                    <div class="text"><?= $logged ?> / <?= $planned ?></div>
                                     <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: <?= $percent ?>%;" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100">
+                                        <?php $overshoot = $realpercent>100 ? 'overshoot' : '' ?>
+                                        <div class="progress-bar <?= $overshoot ?>" role="progressbar" style="width: <?= $percent ?>%;" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100">
                                             <?= $realpercent ?>%
                                         </div>
                                     </div>
