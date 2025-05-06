@@ -38,6 +38,13 @@
     margin-bottom: 5px; /* space between rows */
 }
 
+.label-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px; /* space between rows */
+    height: 20px;
+}
+
 .progress-label {
     width: 200px;
     font-weight: bold;
@@ -48,7 +55,6 @@
     position: relative;
     flex-grow: 1;
     height: 25px;
-    background: #eee;
     border-radius: 5px;
     overflow: hidden;
     margin-left: 10px;
@@ -68,14 +74,43 @@
     display: none;
 }
 
-
 .spent-bar {
     background-color: #2196F3;
-    z-index: 2;
+    z-index: 3;
 }
 
 .plan-bar {
     background-color: #adadad;
+    z-index: 2;
+    opacity: 0.6;
+}
+
+.background-bar {
+    background-color: #eee;
     z-index: 1;
     opacity: 0.6;
+}
+
+.hour-header {
+    display: flex;
+    position: absolute;
+    top: 40px; 
+    left: 210px;
+    right: 0;
+    height: 20px;
+}
+
+.hour-marker {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #666;
+}
+
+.hour-line {
+    position: absolute;
+    height: 5px;
+    width: 1px;
+    background-color: #ccc;
+    bottom: -5px;
 }

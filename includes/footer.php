@@ -10,7 +10,7 @@
                   // skip hidden menu items
                   if (empty($page['menu']) || $page['menu'] !== 'main') continue;
                   // check auth
-                  if ($page['auth_level'] >= $userAuthLevel) continue;
+                  if ($page['auth_level'] > $userAuthLevel) continue;
 
                   // highlight active page
                   $activeClass = ($filename === $currentPage) ? ' active' : '';
@@ -30,7 +30,7 @@
                   // skip hidden menu items
                   if (empty($page['menu']) || $page['menu'] !== 'admin') continue;
                   // check auth
-                  if ($page['auth_level'] >= $userAuthLevel) continue;
+                  if ($page['auth_level'] > $userAuthLevel) continue;
 
                   // highlight active page
                   $activeClass = ($filename === $currentPage) ? ' active' : '';
@@ -50,7 +50,7 @@
                   // skip hidden menu items
                   if (empty($page['menu']) || $page['menu'] !== 'plan') continue;
                   // check auth
-                  if ($page['auth_level'] >= $userAuthLevel) continue;
+                  if ($page['auth_level'] > $userAuthLevel) continue;
 
                   // highlight active page
                   $activeClass = ($filename === $currentPage) ? ' active' : '';

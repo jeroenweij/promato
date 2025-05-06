@@ -59,7 +59,7 @@ require_once 'auth.php';
                 // skip hidden menu items
                 if (empty($page['menu']) || $page['menu'] !== 'main') continue;
                 // check auth
-                if ($page['auth_level'] >= $userAuthLevel) continue;
+                if ($page['auth_level'] > $userAuthLevel) continue;
 
                 // highlight active page
                 $activeClass = ($filename === $currentPage) ? ' active' : '';

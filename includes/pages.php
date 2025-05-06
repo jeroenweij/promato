@@ -50,6 +50,16 @@ $pages = [
         'auth_level' => 0,
         'menu' => null,
     ],
+    'tmp.php' => [
+        'title' => 'tmp',
+        'auth_level' => 0,
+        'menu' => null,
+    ],
+    'tmp_handler.php' => [
+        'title' => 'Upload Handler',
+        'auth_level' => 3,
+        'menu' => null,
+    ],
 
 
     // MAIN Menu
