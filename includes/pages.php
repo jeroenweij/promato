@@ -51,6 +51,11 @@ $pages = [
         'auth_level' => 1,
         'menu' => null,
     ],
+    'update_user_order.php' => [
+        'title' => 'User order updater',
+        'auth_level' => 5,
+        'menu' => null,
+    ],
     'test.php' => [
         'title' => 'test',
         'auth_level' => 0,
@@ -98,7 +103,12 @@ $pages = [
         'menu' => 'admin',
     ],
     'personel.php' => [
-        'title' => 'Personnel Overview',
+        'title' => 'Personnel',
+        'auth_level' => 5,
+        'menu' => 'admin',
+    ],
+    'personel_order.php' => [
+        'title' => 'Personel order',
         'auth_level' => 5,
         'menu' => 'admin',
     ],

@@ -55,19 +55,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         isset($_POST['WBSO']) ? 1 : 0,
         $_POST['Fultime'],
         $_POST['Type'],
-        $_POST['Ord'],
+        $_POST['Deparment'],
         isset($_POST['plan']) ? 1 : 0,
         $_POST['Shortname']
     ];
 
     if ($editing) {
         $data[] = $_GET['id'];
-        $sql = "UPDATE Personel SET Email=?, Name=?, StartDate=?, EndDate=?, WBSO=?, Fultime=?, Type=?, Ord=?, plan=?, Shortname=? WHERE Id=?";
+        $sql = "UPDATE Personel SET Email=?, Name=?, StartDate=?, EndDate=?, WBSO=?, Fultime=?, Type=?, Department=?, plan=?, Shortname=? WHERE Id=?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($data);
         $personId = $_GET['id'];
     } else {
-        $sql = "INSERT INTO Personel (Email, Name, StartDate, EndDate, WBSO, Fultime, Type, Ord, Plan, Shortname) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO Personel (Email, Name, StartDate, EndDate, WBSO, Fultime, Type, Department, Plan, Shortname) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($data);
         $personId = $pdo->lastInsertId();
@@ -89,6 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get types
 $types = $pdo->query("SELECT Id, Name FROM Types ORDER BY Id")->fetchAll(PDO::FETCH_ASSOC);
+// Get departments
+$departments = $pdo->query("SELECT Id, Name FROM Departments ORDER BY Ord")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <section>
@@ -101,7 +103,15 @@ $types = $pdo->query("SELECT Id, Name FROM Types ORDER BY Id")->fetchAll(PDO::FE
             <label>Start Date:<br><input type="date" name="Startdate" value="<?= htmlspecialchars($person['StartDate'] ?? '') ?>"></label><br><br>
             <label>End Date:<br><input type="date" name="Enddate" value="<?= htmlspecialchars($person['EndDate'] ?? '') ?>"></label><br><br>
             <label>Fulltime %:<br><input type="number" name="Fultime" value="<?= htmlspecialchars($person['Fultime']) ?>" min="0" max="100"></label><br><br>
-            <label>Order:<br><input type="number" name="Ord" value="<?= htmlspecialchars($person['Ord']) ?>"></label><br><br>
+            <label>Department:<br>
+                <select name="Deparment">
+                        <?php foreach ($departments as $department): ?>
+                            <option value="<?= $department['Id'] ?>" <?= ($department['Id'] == $person['Department']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($department['Name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </label><br><br>
             <label>Type:<br>
                 <select name="Type">
                     <?php foreach ($types as $type): ?>

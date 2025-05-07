@@ -70,3 +70,18 @@ ALTER TABLE Hours
 ADD COLUMN Prio INT NOT NULL DEFAULT 0,
 ADD COLUMN StatusId INT NULL DEFAULT 1,
 ADD CONSTRAINT fk_hours_status FOREIGN KEY (StatusId) REFERENCES HourStatus(Id);
+
+CREATE TABLE Departments (
+	Id TINYINT auto_increment NOT NULL,
+	Name varchar(16) NULL,
+	`Ord` TINYINT DEFAULT 1 NOT NULL,
+	CONSTRAINT Groups_PK PRIMARY KEY (Id)
+)
+INSERT INTO Departments
+(Name, Ord)
+VALUES('Software', 1),('Hardware', 2), ('Management', 3), ('Other', 4);
+
+ALTER TABLE Personel
+ADD COLUMN Department TINYINT NOT NULL DEFAULT 1,
+ADD CONSTRAINT fk_department
+    FOREIGN KEY (Department) REFERENCES Departments(Id);
