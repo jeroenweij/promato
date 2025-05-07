@@ -64,8 +64,8 @@ foreach ($rows as $row) {
                                      data-activity-id="<?= $item['ActivityId'] ?>"
                                      data-person-id="<?= $item['PersonId'] ?>">
                                     <div class="card-body">
-                                        <h6 class="card-title"><?= htmlspecialchars($item['ActivityName']) ?></h6>
-                                        <p class="small text-muted"><?= htmlspecialchars($item['ProjectName']) ?> (Prio <?= $item['Priority'] ?>)</p>
+                                        <h6 class="card-title"><?= htmlspecialchars($item['ProjectName']) ?></h6>
+                                        <p class="small text-muted"><?= htmlspecialchars($item['ActivityName']) ?></p>
                                         <div class="text"><?= $logged ?> / <?= $planned ?></div>
                                         <div class="progress">
                                             <div class="progress-bar" role="progressbar"

@@ -46,7 +46,7 @@ foreach ($hourData as $h) {
 
 // Fetch activities and projects
 $sql = "SELECT Activities.Project, Activities.Key, Activities.Name, Activities.BudgetHours, 
-               Projects.Name as ProjectName, Personel.Name as Manager 
+               Projects.Name as ProjectName, Personel.Name as Manager, Projects.Manager AS ManagerId
         FROM Activities 
         LEFT JOIN Projects ON Activities.Project = Projects.Id 
         LEFT JOIN Personel ON Projects.Manager = Personel.Id 
@@ -57,7 +57,7 @@ $stmt = $pdo->query($sql);
 $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Start output
-echo '<section><div class="container"><div class="autoheight"><div class="horizontalscrol">';
+echo '<section><div class="container"><div class="autoheight"><div class="horizontalscrol verticalscrol">';
 echo '<table class="plantable">' . PHP_EOL;
 
 echo '<th colspan="5">&nbsp;</th>';
@@ -158,7 +158,7 @@ foreach ($activities as $value) {
             if ($hoursVal > 0) $hours = $hoursVal;
             if ($planVal > 0) $plan = $planVal;
         }
-        if ($userAuthLevel >=3 ){
+        if ($userAuthLevel >= 4 || $_SESSION['user_id'] == $value['ManagerId']) {
             echo '<td class="editbudget"><input type="text" name="' . $value['Project'] . '#' . $value['Key'] . '#' . $p['Number'] . '" value="' . $plan . '" maxlength="4" size="3" class="hiddentext" onchange="UpdateValue(this)"></td>';
         } else {
             echo '<td class="editbudget">' . $plan . '</td>';
@@ -227,6 +227,30 @@ function UpdateValue(input) {
         });
         row.querySelectorAll('td')[3].innerText = totalPlanned;
 
+        const tds = row.querySelectorAll('td');
+        const budgetCell = tds[2];
+        const plannedCell = tds[3];
+        const loggedCell = tds[4];
+
+        // Update Planned Hours column
+        plannedCell.innerText = totalPlanned;
+
+        // Check Planned Hours > Budget Hours
+        const budget = parseFloat(budgetCell.innerText) || 0;
+        if (totalPlanned > budget) {
+            plannedCell.classList.add('overbudget');
+        } else {
+            plannedCell.classList.remove('overbudget');
+        }
+
+        // Check Logged Hours > Planned Hours
+        const logged = parseFloat(loggedCell.innerText) || 0;
+        if (logged > totalPlanned) {
+            loggedCell.classList.add('overbudget');
+        } else {
+            loggedCell.classList.remove('overbudget');
+        }
+
         // Update total planned for the specific person (summary header)
         let personPlanned = 0;
         document.querySelectorAll(`input[name$="#${person}"]`).forEach(inp => {
@@ -234,25 +258,25 @@ function UpdateValue(input) {
             if (!isNaN(v)) personPlanned += v;
         });
 
-        const plannedCell = document.querySelector(`.planned-total[data-person="${person}"]`);
-        if (plannedCell) {
-            plannedCell.innerText = personPlanned
+        const personPlannedCell = document.querySelector(`.planned-total[data-person="${person}"]`);
+        if (personPlannedCell) {
+            personPlannedCell.innerText = personPlanned
         }
         
         // Check against available
         const availableCell = document.querySelector(`.available-total[data-person="${person}"]`);
-        if (availableCell && plannedCell) {
+        if (availableCell && personPlannedCell) {
             const available = parseFloat(availableCell.innerText) || 0;
             if (personPlanned > available) {
-                plannedCell.classList.add('overbudget');
+                personPlannedCell.classList.add('overbudget');
             } else {
-                plannedCell.classList.remove('overbudget');
+                personPlannedCell.classList.remove('overbudget');
             }
         }
 
         // Check realised vs planned
         const realisedCell = document.querySelector(`.realised-total[data-person="${person}"]`);
-        if (realisedCell && plannedCell) {
+        if (realisedCell && personPlannedCell) {
             const realised = parseFloat(realisedCell.innerText) || 0;
             if (realised > personPlanned) {
                 realisedCell.classList.add('overbudget');

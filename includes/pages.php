@@ -1,8 +1,14 @@
 <?php
+
+// 2	User
+// 3	Project manager
+// 4	Elevated
+// 5	Administrator
+
 $pages = [
     'index.php' => [
         'title' => 'Dashboard',
-        'auth_level' => 1,
+        'auth_level' => 2,
         'menu' => null,
     ],
     'login.php' => [
@@ -12,7 +18,7 @@ $pages = [
     ],
     'project_edit.php' => [
         'title' => 'Edit Project',
-        'auth_level' => 2,
+        'auth_level' => 4,
         'menu' => null,
     ],
     'project_details.php' => [
@@ -22,12 +28,12 @@ $pages = [
     ],
     'personel_edit.php' => [
         'title' => 'Edit Personnel',
-        'auth_level' => 4,
+        'auth_level' => 5,
         'menu' => null,
     ],
     'update_hours_plan.php' => [
         'title' => 'Update Hours Plan',
-        'auth_level' => 2,
+        'auth_level' => 3,
         'menu' => null,
     ],
     'update_priority.php' => [
@@ -37,7 +43,7 @@ $pages = [
     ],
     'upload_handler.php' => [
         'title' => 'Upload Handler',
-        'auth_level' => 3,
+        'auth_level' => 4,
         'menu' => null,
     ],
     'update_status.php' => [
@@ -83,22 +89,22 @@ $pages = [
     // ADMIN Menu
     'project_add.php' => [
         'title' => 'Add Project',
-        'auth_level' => 3,
+        'auth_level' => 4,
         'menu' => 'admin',
     ],
     'projects_edit.php' => [
         'title' => 'Edit Projects',
-        'auth_level' => 2,
+        'auth_level' => 4,
         'menu' => 'admin',
     ],
     'personel.php' => [
         'title' => 'Personnel Overview',
-        'auth_level' => 4,
+        'auth_level' => 5,
         'menu' => 'admin',
     ],
     'upload.php' => [
         'title' => 'Upload File',
-        'auth_level' => 3,
+        'auth_level' => 4,
         'menu' => 'admin',
     ],
 

@@ -60,9 +60,9 @@ foreach ($rows as $row) {
                             ?>
                             <div class="card mb-3" data-project-id="<?= $item['ProjectId'] ?>" data-activity-id="<?= $item['ActivityId'] ?>" data-person-id="<?= $userId ?>">
                                 <div class="card-body">
-                                    <h6 class="card-title"><?= htmlspecialchars($item['ActivityName']) ?></h6>
-                                    <p class="small text-muted"><?= htmlspecialchars($item['ProjectName']) ?></p>
-                                    <div class="text"><?= $logged ?> / <?= $planned ?></div>
+                                    <h6 class="card-title"><?= htmlspecialchars($item['ProjectName']) ?></h6>
+                                    <p class="small text-muted"><?= htmlspecialchars($item['ActivityName']) ?></p>
+                                    <div class="text center"><?= $logged ?> / <?= $planned ?></div>
                                     <div class="progress">
                                         <?php $overshoot = $realpercent>100 ? 'overshoot' : '' ?>
                                         <div class="progress-bar <?= $overshoot ?>" role="progressbar" style="width: <?= $percent ?>%;" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100">

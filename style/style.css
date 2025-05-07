@@ -63,12 +63,21 @@
 
 .horizontalscrol {
 	overflow-x: scroll;
+	width: 100%;
+	height: 100%;
+	white-space: nowrap;
+}
+
+.verticalscrol {
 	overflow-y: scroll; 
 	width: 100%;
 	height: 100%;
 	white-space: nowrap;
 }
 
+.center {
+	text-align: center;
+}
 
 body {
 	font-family: 'Roboto', sans-serif;

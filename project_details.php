@@ -27,6 +27,7 @@ try {
         SELECT 
             p.*,
             s.Status AS StatusName,
+            p.Manager,
             m.Shortname AS ManagerName
         FROM Projects p
         LEFT JOIN Status s ON p.Status = s.Id
@@ -101,7 +102,7 @@ try {
         SELECT DISTINCT p.Id, p.Shortname AS Name, p.Fultime, p.Ord
         FROM Hours h 
         JOIN Personel p ON h.Person = p.Id
-        WHERE h.Project = :projectId AND h.Person > 0
+        WHERE h.Project = :projectId AND h.Person > 0 AND (h.Plan>0 OR h.Hours>0)
         ORDER BY p.Ord, p.Shortname
     ");
     $personelStmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
@@ -176,57 +177,60 @@ function isOverBudget($actual, $planned) {
             <!-- Activities List -->
             <h3>Activities</h3>
             <div class="container">
-                <div class="autoheight">
-                    <div class="horizontalscrol">
-                        <table class="plantable">
-                            <thead>
+                <div class="horizontalscrol">
+                    <table class="plantable">
+                        <thead>
+                        <tr>
+                            <th class="text">Task Code</th>
+                            <th class="text">Activity Name</th>
+                            <th class="text">WBSO Label</th>
+                            <th class="text">Start Date</th>
+                            <th class="text">End Date</th>
+                            <th class="text">Budget Hours</th>
+                            <th class="text">Planned Hours</th>
+                            <th class="text">Logged Hours</th>
+                            <?php foreach ($personnel as $person): ?>
+                                <th colspan="2" class="name"><?= htmlspecialchars($person['Name']) ?></th>
+                            <?php endforeach; ?>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($activities as $activity):
+                            $activityKey = $activity['Key'];
+                            $taskCode = $activity['Project'] . '-' . str_pad($activityKey, 3, '0', STR_PAD_LEFT);
+                            $plannedHours = ($planMap[$activityKey] ?? 0) / 100;
+                            $spentHours = ($spentMap[$activityKey] ?? 0) / 100;
+                            $overbudgetClass = isOverBudget($spentHours, $plannedHours);
+                            ?>
                             <tr>
-                                <th>Task Code</th>
-                                <th>Activity Name</th>
-                                <th>WBSO Label</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Budget Hours</th>
-                                <th>Planned Hours</th>
-                                <th>Logged Hours</th>
-                                <?php foreach ($personnel as $person): ?>
-                                    <th colspan="2" class="name"><?= htmlspecialchars($person['Name']) ?></th>
+                                <td class="text"><?= $taskCode ?></td>
+                                <td class="text"><?= htmlspecialchars($activity['Name']) ?></td>
+                                <td class="text"><?= htmlspecialchars($activity['WBSO'] ?? '') ?></td>
+                                <td class="text"><?= $activity['StartDate'] ?></td>
+                                <td class="text"><?= $activity['EndDate'] ?></td>
+                                <td class="totals"><?= $activity['BudgetHours'] ?? 0 ?></td>
+                                <td class="totals"><?= $plannedHours ?></td>
+                                <td class="totals <?= $overbudgetClass ?>"><?= $spentHours ?></td>
+
+                                <?php foreach ($personnel as $person):
+                                    $personId = $person['Id'];
+                                    $personPlanned = ($hoursData[$activityKey][$personId]['PlannedHours'] ?? 0) / 100;
+                                    $personLogged = ($hoursData[$activityKey][$personId]['LoggedHours'] ?? 0) / 100;
+                                    $personOverbudget = isOverBudget($personLogged, $personPlanned);
+                                    
+                                    if ($userAuthLevel >= 4 || $_SESSION['user_id'] == $project['Manager']) {
+                                        echo '<td class="editbudget"><input type="text" name="' . $activity['Project'] . '#' . $activity['Key'] . '#' . $personId . '" value="' . $personPlanned . '" maxlength="4" size="3" class="hiddentext" onchange="UpdateValue(this)"></td>';
+                                    } else {
+                                        echo '<td class="editbudget">' . $personPlanned . '</td>';
+                                    }
+                                    ?>
+                                    <td class="budget <?= $personOverbudget ?>"><?= $personLogged ?></td>
                                 <?php endforeach; ?>
                             </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach ($activities as $activity):
-                                $activityKey = $activity['Key'];
-                                $taskCode = $activity['Project'] . '-' . str_pad($activityKey, 3, '0', STR_PAD_LEFT);
-                                $plannedHours = ($planMap[$activityKey] ?? 0) / 100;
-                                $spentHours = ($spentMap[$activityKey] ?? 0) / 100;
-                                $overbudgetClass = isOverBudget($spentHours, $plannedHours);
-                                ?>
-                                <tr>
-                                    <td class="text"><?= $taskCode ?></td>
-                                    <td class="text"><?= htmlspecialchars($activity['Name']) ?></td>
-                                    <td class="text"><?= htmlspecialchars($activity['WBSO'] ?? '') ?></td>
-                                    <td class="text"><?= $activity['StartDate'] ?></td>
-                                    <td class="text"><?= $activity['EndDate'] ?></td>
-                                    <td class="totals"><?= $activity['BudgetHours'] ?? 0 ?></td>
-                                    <td class="totals"><?= $plannedHours ?></td>
-                                    <td class="totals <?= $overbudgetClass ?>"><?= $spentHours ?></td>
-
-                                    <?php foreach ($personnel as $person):
-                                        $personId = $person['Id'];
-                                        $personPlanned = ($hoursData[$activityKey][$personId]['PlannedHours'] ?? 0) / 100;
-                                        $personLogged = ($hoursData[$activityKey][$personId]['LoggedHours'] ?? 0) / 100;
-                                        $personOverbudget = isOverBudget($personLogged, $personPlanned);
-                                        ?>
-                                        <td class="editbudget"><?= $personPlanned ?></td>
-                                        <td class="budget <?= $personOverbudget ?>"><?= $personLogged ?></td>
-                                    <?php endforeach; ?>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        <br>&nbsp;
-                    </div>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <br>&nbsp;
                 </div>
             </div>
         </div>
@@ -250,4 +254,74 @@ function isOverBudget($actual, $planned) {
     <script src="js/gantt-chart.js"></script>
     <script src="js/progress-chart.js"></script>
 
+    <script>
+   
+   function UpdateValue(input) {
+    const [project, activity, person] = input.name.split('#');
+    const value = parseFloat(input.value) || 0;
+
+    fetch('update_hours_plan.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `project=${project}&activity=${activity}&person=${person}&plan=${value}`
+    }).then(res => {
+        if (!res.ok) {
+            alert(`Failed to save. project=${project}&activity=${activity}&person=${person}&plan=${value}`);
+            return;
+        }
+
+        const row = input.closest('tr');
+        const inputs = row.querySelectorAll('input');
+
+        // Recheck per-person overbudget
+        inputs.forEach(inp => {
+            const [p, a, personId] = inp.name.split('#');
+            const planVal = parseFloat(inp.value) || 0;
+            const tdInput = inp.closest('td');
+            const tdLogged = tdInput.nextElementSibling;
+
+            if (tdLogged && tdLogged.classList.contains('budget')) {
+                const loggedVal = parseFloat(tdLogged.innerText) || 0;
+                if (loggedVal > 0 && loggedVal > planVal) {
+                    tdLogged.classList.add('overbudget');
+                } else {
+                    tdLogged.classList.remove('overbudget');
+                }
+            }
+        });
+
+        // Update total planned for this activity (row)
+        let totalPlanned = 0;
+        inputs.forEach(inp => {
+            const v = parseFloat(inp.value);
+            if (!isNaN(v)) totalPlanned += v;
+        });
+
+        const tds = row.querySelectorAll('td');
+        const budgetCell = tds[5];
+        const plannedCell = tds[6];
+        const loggedCell = tds[7];
+
+        // Update Planned Hours column
+        plannedCell.innerText = totalPlanned;
+
+        // Check Planned Hours > Budget Hours
+        const budget = parseFloat(budgetCell.innerText) || 0;
+        if (totalPlanned > budget) {
+            plannedCell.classList.add('overbudget');
+        } else {
+            plannedCell.classList.remove('overbudget');
+        }
+
+        // Check Logged Hours > Planned Hours
+        const logged = parseFloat(loggedCell.innerText) || 0;
+        if (logged > totalPlanned) {
+            loggedCell.classList.add('overbudget');
+        } else {
+            loggedCell.classList.remove('overbudget');
+        }
+    });
+}
+
+    </script>
 <?php require 'includes/footer.php'; ?>
