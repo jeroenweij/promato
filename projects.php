@@ -9,11 +9,12 @@ function zeroPad($num, $places) {
 
 // Get activities with project data
 $sql = "SELECT Activities.Id AS ActivityId, Activities.Project, Activities.Key, Activities.Name AS ActivityName,
-               Activities.BudgetHours, Activities.WBSO, Activities.StartDate, Activities.EndDate,
+               Budgets.Hours AS BudgetHours, Activities.WBSO, Activities.StartDate, Activities.EndDate,
                Projects.Name AS ProjectName, Personel.Shortname as Manager
         FROM Activities
         LEFT JOIN Projects ON Activities.Project = Projects.Id
         LEFT JOIN Personel ON Projects.Manager = Personel.Id
+        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity
         WHERE Projects.Status = 3
         ORDER BY Activities.Project, Activities.Key";
 

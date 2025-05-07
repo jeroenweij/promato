@@ -47,11 +47,12 @@ foreach ($hourData as $h) {
 }
 
 // Fetch activities and projects
-$sql = "SELECT Activities.Project, Activities.Key, Activities.Name, Activities.BudgetHours, 
+$sql = "SELECT Activities.Project, Activities.Key, Activities.Name, Budgets.Hours AS BudgetHours, 
                Projects.Name as ProjectName, Personel.Name as Manager, Projects.Manager AS ManagerId
         FROM Activities 
         LEFT JOIN Projects ON Activities.Project = Projects.Id 
         LEFT JOIN Personel ON Projects.Manager = Personel.Id 
+        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity
         WHERE Projects.Status = 3 AND Activities.Visible = 1 
         ORDER BY Projects.Id, Activities.Key;";
 

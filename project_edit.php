@@ -18,8 +18,13 @@ if (isset($_GET['project_id'])) {
         exit;
     }
 
-    // Fetch the activities for the project
-    $activityStmt = $pdo->prepare("SELECT * FROM Activities WHERE Project = ?");
+    // Fetch the activities for the project with budget information
+    $activityStmt = $pdo->prepare("
+        SELECT Activities.*, Budgets.Hours AS BudgetHours, Budgets.Budget, Budgets.OopSpend, Budgets.Rate 
+        FROM Activities 
+        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity 
+        WHERE Project = ?
+    ");
     $activityStmt->execute([$projectId]);
     $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -28,7 +33,7 @@ if (isset($_GET['project_id'])) {
     $statuses = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Fetch project managers (assuming they are in a Users or similar table)
-    $managerStmt = $pdo->query("SELECT Id, Shortname AS Name FROM Personel WHERE Type>1");
+    $managerStmt = $pdo->query("SELECT Id, Shortname AS Name FROM Personel WHERE Type>2");
     $managers = $managerStmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -63,36 +68,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['edit_activity'])) {
         $activityId = $_POST['activity_id'];
         $name = $_POST['activity_name'];
-        $budgetHours = $_POST['budget_hours'];
         $startDate = $_POST['start_date'];
         $endDate = $_POST['end_date'];
         $wbso = $_POST['wbso'];
         $visible = isset($_POST['visible']) ? 1 : 0;
         $isTask = isset($_POST['is_task']) ? 1 : 0;
 
-        // Handle BudgetHours: default to 0 if not set or not numeric
-        if (!is_numeric($budgetHours)) {
-            $budgetHours = 0;
+        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, StartDate = ?, EndDate = ?, WBSO = ?, Visible = ?, IsTask = ?, Export = 1 WHERE Id = ?");
+        $updateStmt->execute([$name, $startDate, $endDate, $wbso, $visible, $isTask, $activityId]);
+
+    }
+    // Update budget
+    elseif (isset($_POST['update_budget'])) {
+        $activityId = $_POST['activity_id'];
+        $newYear = $_POST['year'];
+        $budget = isset($_POST['budget']) && is_numeric($_POST['budget']) && $_POST['budget'] !== '' ? (int)$_POST['budget'] : 0;
+        $oopSpend = isset($_POST['oop_spend']) && is_numeric($_POST['oop_spend']) && $_POST['oop_spend'] !== '' ? (int)$_POST['oop_spend'] : 0;
+        $rate = isset($_POST['rate']) && is_numeric($_POST['rate']) && $_POST['rate'] !== '' ? (int)$_POST['rate'] : 0;
+        $hours = isset($_POST['hours']) && is_numeric($_POST['hours']) && $_POST['hours'] !== '' ? (int)$_POST['hours'] : 0;
+
+        // Check if a budget record exists for this activity
+        $checkBudgetStmt = $pdo->prepare("SELECT Id FROM Budgets WHERE Activity = ? AND `Year` = ?");
+        $checkBudgetStmt->execute([$activityId, $newYear]);
+        $existingBudget = $checkBudgetStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($existingBudget) {
+            // Update existing budget
+            $updateBudgetStmt = $pdo->prepare("
+                UPDATE Budgets SET Budget = ?, OopSpend = ?, Hours = ?, Rate = ?
+                WHERE Activity = ?
+            ");
+            $updateBudgetStmt->execute([$budget, $oopSpend, $hours, $rate, $activityId]);
+        } else {
+            // Insert new budget
+            $insertBudgetStmt = $pdo->prepare("
+                INSERT INTO Budgets (Activity, Budget, OopSpend, Hours, Rate, `Year`)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $insertBudgetStmt->execute([$activityId, $budget, $oopSpend, $hours, $rate, $newYear]);
         }
-
-        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, BudgetHours = ?, StartDate = ?, EndDate = ?, WBSO = ?, Visible = ?, IsTask = ?, Export = 1 WHERE Id = ?");
-        $updateStmt->execute([$name, $budgetHours, $startDate, $endDate, $wbso, $visible, $isTask, $activityId]);
-
+                
     }
     // Add a new activity
     elseif (isset($_POST['add_activity'])) {
         $activityName = $_POST['new_activity_name'];
-        $budgetHours = $_POST['new_budget_hours'];
         $startDate = $_POST['new_start_date'];
         $endDate = $_POST['new_end_date'];
         $wbso = $_POST['new_wbso'] ?? null;
         $visible = isset($_POST['new_visible']) ? 1 : 0;
         $newIsTask = isset($_POST['new_is_task']) ? 1 : 0;
-
-        // Handle BudgetHours: default to 0 if not set or not numeric
-        if (!is_numeric($budgetHours)) {
-            $budgetHours = 0;
-        }
+        $addBudget = isset($_POST['add_budget']) ? 1 : 0;
 
         // Find the next available Key for the project
         $keyStmt = $pdo->prepare("SELECT MAX(`Key`) as MaxKey FROM Activities WHERE Project = ?");
@@ -101,20 +126,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nextKey = $maxKeyRow && $maxKeyRow['MaxKey'] !== null ? $maxKeyRow['MaxKey'] + 1 : 1;
 
         $insertStmt = $pdo->prepare("
-            INSERT INTO Activities (Project, `Key`, Name, BudgetHours, StartDate, EndDate, WBSO, Visible, IsTask, Export)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            INSERT INTO Activities (Project, `Key`, Name, StartDate, EndDate, WBSO, Visible, IsTask, Export)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
         ");
         $insertStmt->execute([
             $projectId,
             $nextKey,
             $activityName,
-            $budgetHours,
             $startDate,
             $endDate,
             $wbso !== '' ? $wbso : null,
             $visible,
             $newIsTask
         ]);
+        
+        // Get the newly inserted activity ID
+        $newActivityId = $pdo->lastInsertId();
+        
+        // Add budget if checkbox is checked
+        if ($addBudget) {
+            $budget = $_POST['budget'] ?? 0;
+            $oopSpend = $_POST['oop_spend'] ?? 0;
+            $rate = $_POST['rate'] ?? 0;
+            $hours = $_POST['hours'] ?? 0;
+            
+            // Insert into Budgets table
+            $insertBudgetStmt = $pdo->prepare("
+                INSERT INTO Budgets (Activity, Budget, OopSpend, Hours, Rate, Year)
+                VALUES (?, ?, ?, ?, ?, 2025)
+            ");
+            $insertBudgetStmt->execute([
+                $newActivityId,
+                $budget,
+                $oopSpend,
+                $hours,
+                $rate
+            ]);
+        }
     }
 
     header("Location: project_edit.php?project_id=" . $projectId);
@@ -129,31 +177,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Project Information -->
         <h1>Project Details: <?php echo htmlspecialchars($project['Name']); ?></h1>
 
-        <!-- Status Dropdown (Auto-save) -->
-        <form method="POST" class="form-inline mb-3">
-            <label for="status">Status: </label>
-            <select name="status" id="status" class="form-control ml-2" onchange="this.form.submit()">
-                <?php foreach ($statuses as $status): ?>
-                    <option value="<?php echo $status['Id']; ?>" <?php echo $status['Id'] == $project['Status'] ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($status['Status']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <input type="hidden" name="update_status" value="1">
-        </form>
-
-        <!-- Project Manager Dropdown (Auto-save) -->
-        <form method="POST" class="form-inline mb-3">
-            <label for="manager">Project Manager: </label>
-            <select name="manager" id="manager" class="form-control ml-2" onchange="this.form.submit()">
-                <?php foreach ($managers as $manager): ?>
-                    <option value="<?php echo $manager['Id']; ?>" <?php echo $manager['Id'] == $project['Manager'] ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($manager['Name']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <input type="hidden" name="update_manager" value="1">
-        </form>
+        <!-- Status and Project Manager Dropdowns (side by side) -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <form method="POST" class="form-inline">
+                    <label for="status">Status: </label>
+                    <select name="status" id="status" class="form-control ml-2" onchange="this.form.submit()">
+                        <?php foreach ($statuses as $status): ?>
+                            <option value="<?php echo $status['Id']; ?>" <?php echo $status['Id'] == $project['Status'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($status['Status']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="hidden" name="update_status" value="1">
+                </form>
+            </div>
+            <div class="col-md-6">
+                <form method="POST" class="form-inline">
+                    <label for="manager">Project Manager: </label>
+                    <select name="manager" id="manager" class="form-control ml-2" onchange="this.form.submit()">
+                        <?php foreach ($managers as $manager): ?>
+                            <option value="<?php echo $manager['Id']; ?>" <?php echo $manager['Id'] == $project['Manager'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($manager['Name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="hidden" name="update_manager" value="1">
+                </form>
+            </div>
+        </div>
 
         <hr>
 
@@ -184,7 +236,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><input type="text" name="wbso" value="<?php echo htmlspecialchars($activity['WBSO'] ?? ''); ?>" class="form-control"></td>
                         <td><input type="date" name="start_date" value="<?php echo $activity['StartDate']; ?>" class="form-control"></td>
                         <td><input type="date" name="end_date" value="<?php echo $activity['EndDate']; ?>" class="form-control"></td>
-                        <td><input type="number" name="budget_hours" value="<?php echo $activity['BudgetHours']; ?>" class="form-control"></td>
+                        <td>
+                                <a href="#" class="budget-link" data-activity-id="<?php echo $activity['Id']; ?>" 
+                                   data-year="2025" 
+                                   data-budget="<?php echo $activity['Budget'] ?? 0; ?>" 
+                                   data-oopspend="<?php echo $activity['OopSpend'] ?? 0; ?>" 
+                                   data-rate="<?php echo $activity['Rate'] ?? 0; ?>" 
+                                   data-hours="<?php echo $activity['BudgetHours'] ?? 0; ?>"
+                                   onclick="showBudgetModal(this)">
+                                   <?php echo $activity['BudgetHours'] ?? 'Add budget'; ?>
+                                </a>
+                        </td>
                         <td><input type="checkbox" name="visible" value="1" <?php echo $activity['Visible'] ? 'checked' : ''; ?>></td>
                         <td><input type="checkbox" name="is_task" value="1" <?php echo $activity['IsTask'] ? 'checked' : ''; ?>></td>
                         <td><button type="submit" name="edit_activity" class="btn btn-primary">Save</button></td>
@@ -202,10 +264,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-group">
                 <label for="new_activity_name">Activity Name:</label>
                 <input type="text" name="new_activity_name" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="new_budget_hours">Budget Hours:</label>
-                <input type="number" name="new_budget_hours" class="form-control" required>
             </div>
             <div class="form-group">
                 <label for="new_start_date">Start Date:</label>
@@ -227,9 +285,189 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="new_is_task">Is Task:</label>
                 <input type="checkbox" name="new_is_task" value="1" checked>
             </div>
-            <button type="submit" name="add_activity" class="btn btn-success">Add Activity</button>
+            
+            <!-- New Budget section -->
+            <div class="form-group">
+                <label for="add_budget">Add Budget:</label>
+                <input type="checkbox" id="add_budget" name="add_budget" value="1" onchange="toggleBudgetSection()">
+            </div>
+            
+            <div id="budget_section" style="display: none;">
+                <h4>Budget Details</h4>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="budget">Budget (€):</label>
+                            <input type="number" id="budget" name="budget" class="form-control budget-field" oninput="calculateBudget('budget')">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="oop_spend">Operational Spending (€):</label>
+                            <input type="number" id="oop_spend" name="oop_spend" class="form-control budget-field" oninput="calculateBudget('oop')">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="rate">Hour Rate (€):</label>
+                            <input type="number" id="rate" name="rate" class="form-control budget-field" oninput="calculateBudget('rate')">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="hours">Budget Hours:</label>
+                            <input type="number" id="hours" name="hours" class="form-control budget-field" oninput="calculateBudget('hours')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" name="add_activity" class="btn btn-success mt-3">Add Activity</button>
         </form>
     </div>
 </section>
+
+<script>
+function toggleBudgetSection() {
+    const addBudgetChecked = document.getElementById('add_budget').checked;
+    const budgetSection = document.getElementById('budget_section');
+    
+    if (addBudgetChecked) {
+        budgetSection.style.display = 'block';
+    } else {
+        budgetSection.style.display = 'none';
+    }
+}
+
+// Budget modal handling
+function showBudgetModal(element) {
+    event.preventDefault();
+    
+    // Get data from the clicked element
+    const activityId = element.getAttribute('data-activity-id');
+    const budget = element.getAttribute('data-budget');
+    const oopSpend = element.getAttribute('data-oopspend');
+    const rate = element.getAttribute('data-rate');
+    const hours = element.getAttribute('data-hours');
+    const year = element.getAttribute('data-year');
+    
+    // Fill the modal form with these values
+    document.getElementById('modal_activity_id').value = activityId;
+    document.getElementById('modal_year').value = year;
+    document.getElementById('modal_budget').value = budget;
+    document.getElementById('modal_oop_spend').value = oopSpend;
+    document.getElementById('modal_rate').value = rate;
+    document.getElementById('modal_hours').value = hours;
+    
+    // Show the modal
+    $('#budgetModal').modal('show');
+}
+
+function updateBudget() {
+    // Get values from form
+    const activityId = document.getElementById('modal_activity_id').value;
+    const budget = document.getElementById('modal_budget').value;
+    const oopSpend = document.getElementById('modal_oop_spend').value;
+    const rate = document.getElementById('modal_rate').value;
+    const hours = document.getElementById('modal_hours').value;
+}
+
+function calculateBudget(changedField, prefix='') {
+    const budget = document.getElementById(prefix+'budget');
+    const oopSpend = document.getElementById(prefix+'oop_spend');
+    const rate = document.getElementById(prefix+'rate');
+    const hours = document.getElementById(prefix+'hours');
+    
+    // Ensure values are numbers and default to 0 if not
+    const budgetValue = parseFloat(budget.value) || 0;
+    const oopValue = parseFloat(oopSpend.value) || 0;
+    const rateValue = parseFloat(rate.value) || 0;
+    const hoursValue = parseFloat(hours.value) || 0;
+    
+    switch(changedField) {
+        case 'budget':
+            if (rateValue > 0) {
+                hours.value = Math.round((budgetValue - oopValue) / rateValue);
+            }
+            break;
+        case 'oop':
+            if (rateValue > 0) {
+                hours.value = Math.round((budgetValue - oopValue) / rateValue);
+            }
+            break;
+        case 'rate':
+            if (rateValue > 0) {
+                hours.value = Math.round((budgetValue - oopValue) / rateValue);
+            }
+            break;
+        case 'hours':
+            if (budgetValue > 0) {
+                rate.value = Math.round((budgetValue - oopValue) / hoursValue);
+            }
+            break;
+    }
+}
+</script>
+
+<!-- Budget Edit Modal -->
+<div class="modal fade" id="budgetModal" tabindex="-1" role="dialog" aria-labelledby="budgetModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="budgetForm" method="POST" action="">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="budgetModalLabel">Edit Budget</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <input type="hidden" name="update_budget">
+                    <input type="hidden" id="modal_year" name="year">
+                    <input type="hidden" id="modal_activity_id" name="activity_id">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="modal_budget">Budget (€):</label>
+                                <input type="number" id="modal_budget" name="budget" class="form-control" 
+                                       oninput="calculateBudget('budget', 'modal_')">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="modal_oop_spend">Operational Spending (€):</label>
+                                <input type="number" id="modal_oop_spend" name="oop_spend" class="form-control" 
+                                       oninput="calculateBudget('oop', 'modal_')">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="modal_rate">Hour Rate (€):</label>
+                                <input type="number" id="modal_rate" name="rate" class="form-control" 
+                                       oninput="calculateBudget('rate', 'modal_')">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="modal_hours">Budget Hours:</label>
+                                <input type="number" id="modal_hours" name="hours" class="form-control" 
+                                       oninput="calculateBudget('hours', 'modal_')">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 <?php require 'includes/footer.php'; ?>

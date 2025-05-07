@@ -7,7 +7,7 @@ require 'includes/db.php';
 // Fetch personel 
 $stmt = $pdo->query("SELECT Id, Shortname AS Name, Ord, Department 
     FROM Personel
-    WHERE `Type` > 1
+    WHERE `Type` > 1 AND plan=1
     ORDER BY Department, Ord, Shortname;
 ");
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -6,7 +6,7 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 // 1️⃣ Fetch project total budget
-$budgetStmt = $pdo->prepare("SELECT COALESCE(SUM(BudgetHours),0) AS Budget FROM Activities WHERE Project > 0");
+$budgetStmt = $pdo->prepare("SELECT COALESCE(SUM(Budgets.Hours),0) AS Budget FROM Activities LEFT JOIN Budgets ON Activities.Id = Budgets.Activity WHERE Project > 0");
 $budgetStmt->execute();
 $projectBudget = $budgetStmt->fetchColumn();
 
@@ -64,7 +64,7 @@ $personHoursStmt = $pdo->prepare("
     SELECT 
         SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END)/100 AS PlannedHours,
         SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END)/100 AS RealisedHours,
-        Person FROM Hours GROUP BY Person
+        Person FROM Hours WHERE Person > 0 GROUP BY Person
 ");
 
 $personHoursStmt->execute();

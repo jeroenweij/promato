@@ -151,7 +151,7 @@ section {
 ===============================================*/
 
 .custom-navbar {
-	background-color: #ffffff !important;
+	background-color: #292c31 !important;
 	box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .09);
 	height: 70px;
 	max-height: 70px;
@@ -172,7 +172,7 @@ section {
 }
 
 .navbar-collapse {
-	background-color: #ffffff;
+	background-color: #292c31;
 }
 
 .nav-custom-link {
@@ -183,7 +183,7 @@ section {
 }
 
 .navbar a {
-	color: #53627C !important;
+	color: #aeb3bd !important;
 }
 
 .nav-right {

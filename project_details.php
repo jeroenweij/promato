@@ -47,8 +47,9 @@ try {
 
     // Fetch all activities for the project
     $activityStmt = $pdo->prepare("
-        SELECT * FROM Activities 
-        WHERE Project = :projectId 
+        SELECT Activities.*, Budgets.Hours AS BudgetHours FROM Activities
+        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity 
+        WHERE Project = :projectId
         ORDER BY `Key` ASC
     ");
     $activityStmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
