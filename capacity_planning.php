@@ -4,9 +4,11 @@ require 'includes/db.php';
 
 // Fetch personel with available hours
 $stmt = $pdo->query("SELECT p.Shortname AS Name, p.Id AS Number, p.Fultime, COALESCE(h.Plan, 0) AS AvailableHours 
-    FROM Personel p LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0
+    FROM Personel p 
+    LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0
+    LEFT JOIN Departments d ON p.Department = d.Id
     WHERE p.plan = 1
-    ORDER BY p.Ord, p.Name;
+    ORDER BY d.Ord, p.Ord, p.Name;
 ");
 
 $personel = $stmt->fetchAll(PDO::FETCH_ASSOC);

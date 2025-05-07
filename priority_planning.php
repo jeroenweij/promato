@@ -66,7 +66,7 @@ foreach ($rows as $row) {
                                     <div class="card-body">
                                         <h6 class="card-title"><?= htmlspecialchars($item['ProjectName']) ?></h6>
                                         <p class="small text-muted"><?= htmlspecialchars($item['ActivityName']) ?></p>
-                                        <div class="text"><?= $logged ?> / <?= $planned ?></div>
+                                        <div class="text center"><?= $logged ?> / <?= $planned ?></div>
                                         <div class="progress">
                                             <div class="progress-bar" role="progressbar"
                                                  style="width: <?= $percent ?>%;"

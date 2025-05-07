@@ -57,7 +57,7 @@ require_once 'auth.php';
             <?php
             foreach ($pages as $filename => $page) {
                 // skip hidden menu items
-                if (empty($page['menu']) || $page['menu'] !== 'main') continue;
+                if (empty($page['inhead']) || !$page['inhead']) continue;
                 // check auth
                 if ($page['auth_level'] > $userAuthLevel) continue;
 

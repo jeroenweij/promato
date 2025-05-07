@@ -3,13 +3,18 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 // Fetch all personel
-$stmt = $pdo->query("SELECT Personel.*, Types.Name AS TypeName FROM Personel LEFT JOIN Types ON Personel.Type = Types.Id ORDER BY Ord, Name");
+$stmt = $pdo->query("SELECT Personel.*, Types.Name AS TypeName, Departments.name AS DepName 
+  FROM Personel 
+  LEFT JOIN Types ON Personel.Type = Types.Id 
+  LEFT JOIN Departments ON Personel.Department = Departments.Id 
+  ORDER BY Departments.Ord, Ord, Name");
 $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Render table
 ?>
 <section><div class="container"><h2>Personel Overview</h2>
 <a href="personel_edit.php" class="btn btn-primary mb-3">+ Add Person</a>
+<a href="personel_order.php" class="btn btn-primary mb-3">Change order</a>
 <table class="table table-striped">
   <thead>
     <tr>
@@ -20,6 +25,7 @@ $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <th>End Date</th>
       <th>WBSO</th>
       <th>Fulltime %</th>
+      <th>Department</th>
       <th>Type</th>
       <th>Plan</th>
       <th>Actions</th>
@@ -35,6 +41,7 @@ $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <td><?= htmlspecialchars($p['EndDate'] ?? '') ?></td>
       <td><?= $p['WBSO'] ? 'Yes' : 'No' ?></td>
       <td><?= htmlspecialchars($p['Fultime']) ?></td>
+      <td><?= htmlspecialchars($p['DepName'] ?? '') ?></td>
       <td><?= htmlspecialchars($p['TypeName'] ?? '') ?></td>
       <td><?= $p['plan'] ? 'Yes' : 'No' ?></td>
       <td><a href="personel_edit.php?id=<?= $p['Id'] ?>" class="btn btn-sm btn-secondary">Edit</a></td>

@@ -62,19 +62,17 @@ $pieParts = [
 // 👥 Fetch per-person planned/realised
 $personHoursStmt = $pdo->prepare("
     SELECT 
-        Person, 
-        SUM(CASE WHEN Person > 0 THEN Plan ELSE 0 END)/100 AS PlannedHours,
-        SUM(CASE WHEN Person = 0 THEN Hours ELSE 0 END)/100 AS RealisedHours
-    FROM Hours
-    WHERE Project > 0
-    GROUP BY Person
+        SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END)/100 AS PlannedHours,
+        SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END)/100 AS RealisedHours,
+        Person FROM Hours GROUP BY Person
 ");
+
 $personHoursStmt->execute();
 $personHoursMap = [];
 foreach ($personHoursStmt as $ph) {
     $personHoursMap[$ph['Person']] = [
-        'PlannedHours' => $ph['PlannedHours'],
-        'RealisedHours' => $ph['RealisedHours']
+        'PlannedHours' => round($ph['PlannedHours']),
+        'RealisedHours' => round($ph['RealisedHours'])
     ];
 }
 
@@ -83,7 +81,7 @@ $jsPersons = [];
 foreach ($persons as $p) {
     $planned = $personHoursMap[$p['Id']]['PlannedHours'] ?? 0;
     $realised = $personHoursMap[$p['Id']]['RealisedHours'] ?? 0;
-    $available = max(0, $p['Capacity'] - max($planned, $realised));
+    $available = $p['Capacity'];
 
     $jsPersons[] = [
         'name' => $p['Name'],
