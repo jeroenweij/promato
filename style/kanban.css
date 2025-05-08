@@ -1,41 +1,28 @@
 /* Kanban progress container */
-.kanban-progress .progress {
+.kanban-progress {
     position: relative;
     height: 16px;
-    background: #eee;
-    border-radius: 8px;
+    background: #adadad !important;
+    border-radius: 4px;
     overflow: hidden;
+    font-size: .75rem;
+    font-family: 'Roboto', sans-serif;
 }
 
 /* Ensure progress bars stay inside container */
-.kanban-progress .progress-bar,
-.kanban-progress .plan-bar {
+.kanban-progress .progress-bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
+    color: #fff;
+    background-color: #007bff;
     height: 100%;
-    border-radius: 8px;
+    border-radius: 4px;
     display: block;
 }
 
-/* Planned bar goes behind */
-.kanban-progress .plan-bar {
-    background-color: #adadad;
-    opacity: 0.6;
-    width: 0; /* dynamically set in style attr */
-    z-index: 1;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-/* Spent bar overlays planned */
-.kanban-progress .spent-bar {
-    background-color: #2196F3;
-    width: 0; /* dynamically set in style attr */
-    z-index: 2;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-.overshoot {
+.kanban-progress .overshoot {
     background-color: #ad0000;
 }

@@ -32,7 +32,6 @@ echo '<th>Project ID</th>';
 echo '<th>Project Name</th>';
 echo '<th>Status</th>';
 echo '<th>Project Manager</th>';
-echo '<th>Project Manager</th>';
 echo '</tr>';
 echo '</thead>';
 echo '<tbody>';

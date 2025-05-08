@@ -67,11 +67,9 @@ foreach ($rows as $row) {
                                         <h6 class="card-title"><?= htmlspecialchars($item['ProjectName']) ?></h6>
                                         <p class="small text-muted"><?= htmlspecialchars($item['ActivityName']) ?></p>
                                         <div class="text center"><?= $logged ?> / <?= $planned ?></div>
-                                        <div class="progress">
-                                            <div class="progress-bar" role="progressbar"
-                                                 style="width: <?= $percent ?>%;"
-                                                 aria-valuenow="<?= $percent ?>"
-                                                 aria-valuemin="0" aria-valuemax="100">
+                                        <div class="kanban-progress">
+                                            <?php $overshoot = $realpercent>100 ? 'overshoot' : '' ?>
+                                            <div class="progress-bar <?= $overshoot ?>" role="progressbar" style="width: <?= $percent ?>%;" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100">
                                                 <?= $realpercent ?>%
                                             </div>
                                         </div>

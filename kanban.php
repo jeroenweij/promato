@@ -59,11 +59,13 @@ foreach ($rows as $row) {
                             $percent = min(100, $realpercent);
                             ?>
                             <div class="card mb-3" data-project-id="<?= $item['ProjectId'] ?>" data-activity-id="<?= $item['ActivityId'] ?>" data-person-id="<?= $userId ?>">
-                                <div class="card-body">
-                                    <h6 class="card-title"><?= htmlspecialchars($item['ProjectName']) ?></h6>
-                                    <p class="small text-muted"><?= htmlspecialchars($item['ActivityName']) ?></p>
+                                <div class="card-header bg-primary text-white text-center">
+                                    <?= htmlspecialchars($item['ProjectName']) ?>
+                                </div>     
+                                    <div class="card-body">
+                                    <p class="card-title"><?= htmlspecialchars($item['ActivityName']) ?></p>
                                     <div class="text center"><?= $logged ?> / <?= $planned ?></div>
-                                    <div class="progress">
+                                    <div class="kanban-progress">
                                         <?php $overshoot = $realpercent>100 ? 'overshoot' : '' ?>
                                         <div class="progress-bar <?= $overshoot ?>" role="progressbar" style="width: <?= $percent ?>%;" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100">
                                             <?= $realpercent ?>%
