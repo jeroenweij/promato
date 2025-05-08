@@ -104,11 +104,11 @@ foreach ($activities as $value) {
         echo '<td colspan="100%"><a href="project_details.php?project_id=' . htmlspecialchars($value['Project']) . '"><h4><b>' . $value['Project'] . ' ' . htmlspecialchars($value['ProjectName']) . '</b> (' . htmlspecialchars($value['Manager'] ?? '') . ')</h4></a></td>';
         echo '</tr>';
         echo '<tr>';
-        echo '<th class="text">TaskCode</th>';
-        echo '<th class="text">Activity Name</th>';
-        echo '<th class="text">Available</th>';
-        echo '<th class="text">Planned</th>';
-        echo '<th class="text">Realised</th>';
+        echo '<th class="text sticky">TaskCode</th>';
+        echo '<th class="text sticky">Activity Name</th>';
+        echo '<th class="text sticky">Available</th>';
+        echo '<th class="text sticky">Planned</th>';
+        echo '<th class="text sticky">Realised</th>';
 
         foreach ($personel as $p) {
             echo '<th colspan="2" class="name">' . htmlspecialchars($p['Name']) . '</th>';
@@ -120,9 +120,9 @@ foreach ($activities as $value) {
 
     $taskCode = $value['Project'] . '-' . str_pad($value['Key'], 3, '0', STR_PAD_LEFT);
     echo '<tr>';
-    echo '<td class="text">' . $taskCode . '</td>';
-    echo '<td class="text">' . htmlspecialchars($value['Name']) . '</td>';
-    echo '<td class="totals">' . $value['BudgetHours'] . '</td>';
+    echo '<td class="text sticky">' . $taskCode . '</td>';
+    echo '<td class="text sticky">' . htmlspecialchars($value['Name']) . '</td>';
+    echo '<td class="totals sticky">' . $value['BudgetHours'] . '</td>';
 
     // Get Hours data
     $stmtHours = $pdo->prepare("SELECT Hours, Plan, Person FROM Hours WHERE Project = ? AND Activity = ?");
@@ -137,7 +137,7 @@ foreach ($activities as $value) {
         }
     }
     $plannedClass = $planned > $value['BudgetHours'] ? 'overbudget' : '';
-    echo '<td class="totals ' . $plannedClass . '">' . $planned . '</td>';
+    echo '<td class="totals ' . $plannedClass . ' sticky">' . $planned . '</td>';
 
     // Realised hours (Yoobi)
     $realised = 0;
@@ -148,7 +148,7 @@ foreach ($activities as $value) {
         }
     }
     $realisedClass = $realised > $planned ? 'overbudget' : '';
-    echo '<td class="totals ' . $realisedClass . '">' . $realised . '</td>';
+    echo '<td class="totals ' . $realisedClass . ' sticky">' . $realised . '</td>';
 
     foreach ($personel as $p) {
         $found = array_filter($hourData, fn($x) => $x['Person'] == $p['Number']);

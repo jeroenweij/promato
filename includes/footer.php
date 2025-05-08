@@ -63,8 +63,8 @@
           </ul>
         </div>
           <div class="col-md-3">
-              <h5>Projectoid</h5>
-              <p>Say hello to Projectoid! your ultimate sidekick! From project dashboards to personal Kanban boards, it keeps tabs on tasks, tracks capacity, and makes sure nothing slips through the cracks. Work smarter, not harder—and have a little fun while you're at it!</p>
+              <h5>Promato</h5>
+              <p>Say hello to Promato! your ultimate sidekick! From project dashboards to personal Kanban board, it keeps tabs on tasks, tracks capacity, and makes sure nothing slips through the cracks. Work smarter, not harder—and have a little fun while you're at it!</p>
           </div>
       </div>
   </footer>

@@ -1,3 +1,10 @@
+.sticky {
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	border-collapse: separate
+  }
+
 .overbudget {
     background-color: rgba(255, 0, 0, 0.2) !important;
 }

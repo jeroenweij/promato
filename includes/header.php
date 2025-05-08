@@ -23,7 +23,7 @@ require_once 'auth.php';
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900" rel="stylesheet">
 
-  <link rel="icon" href="style/favicon.ico" type="image/x-icon" />
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
 
   <?php
     // Include any page-specific stylesheets
@@ -35,7 +35,6 @@ require_once 'auth.php';
   ?>
 
   <title><?= $pages[$currentPage]['title'] ?></title>
-
   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
 
 </head>
@@ -48,10 +47,10 @@ require_once 'auth.php';
       aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
       <span class="icon ion-md-menu"></span>
     </button>
-      <img src="images/logo.png" class="img-fluid nav-logo-mobile" alt="Projectoid" style="height:20px;">
+      <img src="images/logo.png" class="img-fluid nav-logo-mobile" alt="Promato" style="height:20px;">
       <div class="collapse navbar-collapse" id="navbarNavDropdown">
       <div class="container">
-        <img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Company Logo" style="height:40px;">
+        <img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Promato" style="height:40px;">
         <ul class="navbar-nav ml-auto nav-right" data-easing="easeInOutExpo" data-speed="1250" data-offset="65">
 
             <?php
