@@ -7,7 +7,7 @@
  */
 
 // Set page-specific CSS files
-$pageSpecificCSS = ['gantt-chart.css', 'progress-chart.css'];
+$pageSpecificCSS = ['gantt-chart.css', 'progress-chart.css', 'plantable.css'];
 
 // Validate project ID and redirect if not provided
 if (!isset($_GET['project_id']) || !is_numeric($_GET['project_id'])) {
@@ -178,7 +178,7 @@ function isOverBudget($actual, $planned) {
             <!-- Activities List -->
             <h3>Activities</h3>
             <div class="container">
-                <div class="horizontalscrol">
+                <div class="horizontalscrol scrollable-columns">
                     <table class="plantable">
                         <thead>
                         <tr>
@@ -220,9 +220,9 @@ function isOverBudget($actual, $planned) {
                                     $personOverbudget = isOverBudget($personLogged, $personPlanned);
                                     
                                     if ($userAuthLevel >= 4 || $_SESSION['user_id'] == $project['Manager']) {
-                                        echo '<td class="editbudget"><input type="text" name="' . $activity['Project'] . '#' . $activity['Key'] . '#' . $personId . '" value="' . $personPlanned . '" maxlength="4" size="3" class="hiddentext" onchange="UpdateValue(this)"></td>';
+                                        echo '<td class="editbudget"><input type="text" name="' . $activity['Project'] . '#' . $activity['Key'] . '#' . $personId . '" value="' . $personPlanned . '" maxlength="4" size="3" class="hiddentext editbudget" onchange="UpdateValue(this)"></td>';
                                     } else {
-                                        echo '<td class="editbudget">' . $personPlanned . '</td>';
+                                        echo '<td class="budget">' . $personPlanned . '</td>';
                                     }
                                     ?>
                                     <td class="budget <?= $personOverbudget ?>"><?= $personLogged ?></td>
@@ -232,7 +232,7 @@ function isOverBudget($actual, $planned) {
                         </tbody>
                     </table>
                     <br>&nbsp;
-                </div>
+                    </div>
             </div>
         </div>
     </section>

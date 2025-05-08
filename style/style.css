@@ -9,15 +9,6 @@
     background-color: rgba(255, 0, 0, 0.2) !important;
 }
 
-.plantable,
-.plantable th,
-.plantable td,
-.plantable tr {
-	border: 1px solid black;
-	border-top: 1px solid black;
-	border-bottom: 1px solid black;
-}
-
 .container {
     max-width: 1800px;
 }
@@ -28,13 +19,6 @@
 }
 
 .budget {
-    min-width: 40px;
-	text-align: right;
-	padding-right: 4px;
-}
-
-.editbudget {
-	background-color: #ebf2ff;
     min-width: 40px;
 	text-align: right;
 	padding-right: 4px;
