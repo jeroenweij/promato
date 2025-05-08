@@ -1,4 +1,5 @@
 <?php
+$pageSpecificCSS = ['plantable.css'];
 require 'includes/header.php';
 require 'includes/db.php';
 
@@ -48,7 +49,7 @@ foreach ($hourData as $h) {
 
 // Fetch activities and projects
 $sql = "SELECT Activities.Project, Activities.Key, Activities.Name, Budgets.Hours AS BudgetHours, 
-               Projects.Name as ProjectName, Personel.Name as Manager, Projects.Manager AS ManagerId
+               Projects.Name as ProjectName, Personel.ShortName as Manager, Projects.Manager AS ManagerId
         FROM Activities 
         LEFT JOIN Projects ON Activities.Project = Projects.Id 
         LEFT JOIN Personel ON Projects.Manager = Personel.Id 
@@ -60,59 +61,32 @@ $stmt = $pdo->query($sql);
 $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Start output
-echo '<section><div class="container"><div class="autoheight"><div class="horizontalscrol verticalscrol">';
-echo '<table class="plantable">' . PHP_EOL;
-
-echo '<th colspan="5">&nbsp;</th>';
-foreach ($personel as $p) {
-    echo '<th colspan="2" class="name">' . htmlspecialchars($p['Name']) . '</th>';
-}
-echo '</tr>';
-
-// Row: Available
-echo '<tr><td colspan="5"><b>Available (hrs)</b></td>';
-foreach ($personel as $p) {
-    $available = $personSummary[$p['Number']]['available'];
-    echo "<td colspan='2' class='totals available-total' data-person='{$p['Number']}'>$available</td>";
-}
-echo '</tr>';
-
-// Row: Planned / realised
-echo '<tr><td colspan="5"><b>Planned / realised</b></td>';
-foreach ($personel as $p) {
-    $available = $personSummary[$p['Number']]['available'];
-    $planned = $personSummary[$p['Number']]['planned'];
-    $realised = $personSummary[$p['Number']]['realised'];
-
-    $plannedClass = $planned > $available ? 'overbudget' : '';
-    $realisedClass = $realised > $planned ? 'overbudget' : '';
-
-    // Planned
-    echo "<td class='totals planned-total $plannedClass' data-person='{$p['Number']}'>" . round($planned, 2) . "</td>";
-    
-    // Realised
-    echo "<td class='totals realised-total $realisedClass' data-person='{$p['Number']}'>" . round($realised, 2) . "</td>";
-}
-echo '</tr>';
+?>
+<section>
+    <div class="container"> <!-- 1 -->
+        <div class="autoheight"><!-- 2 -->
+            <div class="budget-table-wrapper verticalscrol" style="display: flex;"><!-- 3 -->
+                <div class="fixed-columns"><!-- 4 -->
+                    <table class="plantable">
+                        <tr>
+                            <th colspan="5" class="text fixedheigth">&nbsp;</th>
+                        </tr>
+                        <tr><td colspan="5" class="text fixedheigth"><b>Available (hrs)</b></td></tr>
+                        <tr><td colspan="5" class="text fixedheigth"><b>Planned / realised</b></td></tr>
+<?php
 
 $projectid = -1;
 
 foreach ($activities as $value) {
     if ($projectid != $value['Project']) {
-        echo '<tr class="spacer"><td colspan="100%">&nbsp;</td></tr><tr>';
-
-        echo '<td colspan="100%"><a href="project_details.php?project_id=' . htmlspecialchars($value['Project']) . '"><h4><b>' . $value['Project'] . ' ' . htmlspecialchars($value['ProjectName']) . '</b> (' . htmlspecialchars($value['Manager'] ?? '') . ')</h4></a></td>';
+        echo '<td colspan="100%" class="headerspacer"><a href="project_details.php?project_id=' . htmlspecialchars($value['Project']) . '"><h4><b>' . $value['Project'] . ' ' . htmlspecialchars($value['ProjectName']) . '</b> (' . htmlspecialchars($value['Manager'] ?? '') . ')</h4></a></td>';
         echo '</tr>';
         echo '<tr>';
-        echo '<th class="text sticky">TaskCode</th>';
-        echo '<th class="text sticky">Activity Name</th>';
-        echo '<th class="text sticky">Available</th>';
-        echo '<th class="text sticky">Planned</th>';
-        echo '<th class="text sticky">Realised</th>';
-
-        foreach ($personel as $p) {
-            echo '<th colspan="2" class="name">' . htmlspecialchars($p['Name']) . '</th>';
-        }
+        echo '<th class="text fixedheigth">TaskCode</th>';
+        echo '<th class="text fixedheigth">Activity Name</th>';
+        echo '<th class="text fixedheigth">Available</th>';
+        echo '<th class="text fixedheigth">Planned</th>';
+        echo '<th class="text fixedheigth">Realised</th>';
         echo '</tr>' . PHP_EOL;
 
         $projectid = $value['Project'];
@@ -120,9 +94,9 @@ foreach ($activities as $value) {
 
     $taskCode = $value['Project'] . '-' . str_pad($value['Key'], 3, '0', STR_PAD_LEFT);
     echo '<tr>';
-    echo '<td class="text sticky">' . $taskCode . '</td>';
-    echo '<td class="text sticky">' . htmlspecialchars($value['Name']) . '</td>';
-    echo '<td class="totals sticky">' . $value['BudgetHours'] . '</td>';
+    echo '<td class="text fixedheigth">' . $taskCode . '</td>';
+    echo '<td class="text fixedheigth">' . htmlspecialchars($value['Name']) . '</td>';
+    echo '<td class="totals fixedheigth">' . $value['BudgetHours'] . '</td>';
 
     // Get Hours data
     $stmtHours = $pdo->prepare("SELECT Hours, Plan, Person FROM Hours WHERE Project = ? AND Activity = ?");
@@ -137,7 +111,7 @@ foreach ($activities as $value) {
         }
     }
     $plannedClass = $planned > $value['BudgetHours'] ? 'overbudget' : '';
-    echo '<td class="totals ' . $plannedClass . ' sticky">' . $planned . '</td>';
+    echo '<td class="totals ' . $plannedClass . ' fixedheigth">' . $planned . '</td>';
 
     // Realised hours (Yoobi)
     $realised = 0;
@@ -148,33 +122,104 @@ foreach ($activities as $value) {
         }
     }
     $realisedClass = $realised > $planned ? 'overbudget' : '';
-    echo '<td class="totals ' . $realisedClass . ' sticky">' . $realised . '</td>';
-
-    foreach ($personel as $p) {
-        $found = array_filter($hourData, fn($x) => $x['Person'] == $p['Number']);
-        $hours = '&nbsp;';
-        $plan = '';
-        if (!empty($found)) {
-            $entry = array_values($found)[0];
-            $hoursVal = $entry['Hours'] / 100;
-            $planVal = $entry['Plan'] / 100;
-            if ($hoursVal > 0) $hours = $hoursVal;
-            if ($planVal > 0) $plan = $planVal;
-        }
-        if ($userAuthLevel >= 4 || $_SESSION['user_id'] == $value['ManagerId']) {
-            echo '<td class="editbudget"><input type="text" name="' . $value['Project'] . '#' . $value['Key'] . '#' . $p['Number'] . '" value="' . $plan . '" maxlength="4" size="3" class="hiddentext" onchange="UpdateValue(this)"></td>';
-        } else {
-            echo '<td class="editbudget">' . $plan . '</td>';
-        }
-    $overbudget = ($hours>0 && $hours > $plan) ? 'overbudget' : '';
-        echo '<td class="budget ' . $overbudget . '">' . $hours . '</td>';
-    }
+    echo '<td class="totals ' . $realisedClass . '">' . $realised . '</td>';
     echo '</tr>' . PHP_EOL;
 }
 
-echo '</table><br>&nbsp;<br>&nbsp;</div></div></div></section>';
-
 ?>
+            </table>
+            <br>&nbsp;<br>&nbsp;
+                </div><!-- 4 -->
+                <div class="scrollable-columns horizontalscrol"> <!-- 4-2 -->
+                <table>
+                    <tr>
+                        <?php
+                        foreach ($personel as $p) {
+                            echo '<th colspan="2" class="name fixedheigth">' . htmlspecialchars($p['Name']) . '</th>';
+                        }
+                        ?>
+                    </tr>
+                    <tr>
+                        <?php
+                        foreach ($personel as $p) {
+                            $available = $personSummary[$p['Number']]['available'];
+                            echo "<td colspan='2' class='totals available-total fixedheigth' data-person='{$p['Number']}'>$available</td>";
+                        }
+                        ?>
+                    </tr>
+                    <tr>
+                        <?php
+                        // Row: Planned / realised
+                        foreach ($personel as $p) {
+                            $available = $personSummary[$p['Number']]['available'];
+                            $planned = $personSummary[$p['Number']]['planned'];
+                            $realised = $personSummary[$p['Number']]['realised'];
+
+                            $plannedClass = $planned > $available ? 'overbudget' : '';
+                            $realisedClass = $realised > $planned ? 'overbudget' : '';
+
+                            // Planned
+                            echo "<td class='totals fixedheigth planned-total $plannedClass' data-person='{$p['Number']}'>" . round($planned, 2) . "</td>";
+                            
+                            // Realised
+                            echo "<td class='totals fixedheigth realised-total $realisedClass' data-person='{$p['Number']}'>" . round($realised, 2) . "</td>";
+                        }
+                        ?>
+                    </tr>
+                    <?php 
+                        $projectid = -1;
+                        foreach ($activities as $value) {
+                            if ($projectid != $value['Project']) {                        
+                                echo '<td colspan="100%" class="headerspacer">&nbsp;</td>';
+                                echo '</tr>';
+                                echo '<tr>';
+                        
+                                foreach ($personel as $p) {
+                                    echo '<th colspan="2" class="name fixedheigth">' . htmlspecialchars($p['Name']) . '</th>';
+                                }
+                                echo '</tr>' . PHP_EOL;
+                        
+                                $projectid = $value['Project'];
+                            }
+                        
+                            $taskCode = $value['Project'] . '-' . str_pad($value['Key'], 3, '0', STR_PAD_LEFT);
+                            echo '<tr>';
+
+                            // Get Hours data
+                            $stmtHours = $pdo->prepare("SELECT Hours, Plan, Person FROM Hours WHERE Project = ? AND Activity = ?");
+                            $stmtHours->execute([$value['Project'], $value['Key']]);
+                            $hourData = $stmtHours->fetchAll(PDO::FETCH_ASSOC);
+
+                            foreach ($personel as $p) {
+                                $found = array_filter($hourData, fn($x) => $x['Person'] == $p['Number']);
+                                $hours = '&nbsp;';
+                                $plan = '';
+                                if (!empty($found)) {
+                                    $entry = array_values($found)[0];
+                                    $hoursVal = $entry['Hours'] / 100;
+                                    $planVal = $entry['Plan'] / 100;
+                                    if ($hoursVal > 0) $hours = $hoursVal;
+                                    if ($planVal > 0) $plan = $planVal;
+                                }
+                                if ($userAuthLevel >= 4 || $_SESSION['user_id'] == $value['ManagerId']) {
+                                    echo '<td class="editbudget fixedheigth"><input type="text" name="' . $value['Project'] . '#' . $value['Key'] . '#' . $p['Number'] . '" value="' . $plan . '" maxlength="4" size="3" class="hiddentext" onchange="UpdateValue(this)"></td>';
+                                } else {
+                                    echo '<td class="editbudget fixedheigth">' . $plan . '</td>';
+                                }
+                            $overbudget = ($hours>0 && $hours > $plan) ? 'overbudget' : '';
+                                echo '<td class="budget ' . $overbudget . ' fixedheigth">' . $hours . '</td>';
+                            }
+                            echo '</tr>' . PHP_EOL;
+                        }
+                    ?>
+                </table>
+                <br>&nbsp;<br>&nbsp;
+                </div><!-- 4-2 -->
+            </div><!-- 3 -->
+        </div><!-- 2 -->
+    </div><!-- 1 -->
+</section>
+
 <script>
     var setElementHeight = function () {
       var height = $(window).height() - 120;

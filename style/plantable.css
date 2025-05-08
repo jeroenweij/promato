@@ -1,0 +1,70 @@
+.fixedheigth {
+    height: 23px;
+}
+
+.headerspacer{
+    vertical-align: bottom;
+    height: 50px;
+    margin-bottom: .1rem;
+}
+
+.table-container {
+    display: flex;
+    width: 100%;
+    overflow: hidden;
+}
+
+.fixed-columns {
+    flex: 0 0 auto; /* Fixed width, no shrinking */
+    border-right: 1px solid #ccc;
+    background-color: #f9f9f9;
+    z-index: 2;
+}
+
+.scrollable-columns {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.fixed-columns table,
+.scrollable-columns table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.fixed-columns th,
+.fixed-columns td,
+.scrollable-columns th,
+.scrollable-columns td {
+    border: 1px solid #ccc;
+    white-space: nowrap;
+}
+
+/* Optional: Keep headers in view */
+.fixed-columns th,
+.scrollable-columns th {
+    /*position: sticky;*/
+    top: 0;
+    background: #fff;
+    z-index: 3;
+}
+
+.autoheight {
+    font-size:12px;
+	height: 200px;
+}
+
+.horizontalscrol {
+	/*overflow-x: scroll;
+	width: 100%;
+	height: 100%;
+	white-space: nowrap;*/
+}
+
+.verticalscrol {
+	overflow-y: scroll; 
+	width: 100%;
+	height: 100%;
+	white-space: nowrap;
+}
