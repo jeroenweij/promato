@@ -1,5 +1,5 @@
 <?php
-$pageSpecificCSS = ['kanban.css'];
+$pageSpecificCSS = ['kanban.css', 'priority.css'];
 
 require 'includes/header.php';
 require 'includes/db.php';
@@ -151,13 +151,19 @@ foreach ($rows as $row) {
                 const projectId = card.dataset.projectId;
                 const activityId = card.dataset.activityId;
                 const personId = card.dataset.personId;
-                
-                // Get current position/index of the card
-                const container = evt.to;
-                const cards = container.querySelectorAll('.task-card');
-                const cardIndex = Array.from(cards).indexOf(card);
-                const priority = cardIndex;
-                
+                                
+                // Collect activity IDs in new order
+                const cards = evt.to.querySelectorAll('.task-card');
+                const activityIds = [];
+                cards.forEach((cardx, index) => {
+                    activityIds.push({
+                        activityId: cardx.dataset.activityId,
+                        projectId: cardx.dataset.projectId,
+                        personId: cardx.dataset.personId,
+                        priority: index
+                    });
+                });
+
                 // First update status in database
                 updateTaskStatus({
                     projectId: projectId,
@@ -169,13 +175,18 @@ foreach ($rows as $row) {
                     return fetch('update_priority.php', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify([{
-                            activityId: activityId,
-                            projectId: projectId,
-                            personId: personId,
-                            priority: priority
-                        }])
+                        body: JSON.stringify(activityIds)
                     });
+                }).then(res => res.json()).then(data => {
+                    console.log('Priorities updated', data);
+                });
+
+                // update status in database
+                updateTaskStatus({
+                    projectId: projectId,
+                    activityId: activityId,
+                    personId: personId,
+                    status: 2 // Set to todo
                 }).then(() => {
                     // Reload page to refresh card UI
                     window.location.reload();
@@ -264,39 +275,5 @@ foreach ($rows as $row) {
         doneContainer.addEventListener('dragend', showEmptyPlaceholdersIfEmpty);
     });
 </script>
-
-<style>
-    .done-header {
-        background-color: #aaa;
-        padding: 0px;
-        margin: 0px;
-    }
-    .done-tasks .card {
-        opacity: 0.8;
-        background-color: #f8f9fa;
-    }
-    
-    .done-card {
-        padding: 0rem;
-        margin-bottom: 0rem !important;
-    }
-    
-    .done-card .card-body {
-        padding: 0rem;
-    }
-    
-    .kanban-cards {
-        min-height: 50px;
-    }
-    
-    /* Make done cards cursor draggable */
-    .done-card {
-        cursor: grab;
-    }
-    
-    .done-card:active {
-        cursor: grabbing;
-    }
-</style>
 
 <?php require 'includes/footer.php'; ?>

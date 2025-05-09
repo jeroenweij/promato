@@ -1,0 +1,31 @@
+.done-header {
+    background-color: #aaa;
+    padding: 0px;
+    margin: 0px;
+}
+.done-tasks .card {
+    opacity: 0.8;
+    background-color: #f8f9fa;
+}
+
+.done-card {
+    padding: 0rem;
+    margin-bottom: 0rem !important;
+}
+
+.done-card .card-body {
+    padding: 0rem;
+}
+
+.kanban-cards {
+    min-height: 50px;
+}
+
+/* Make done cards cursor draggable */
+.done-card {
+    cursor: grab;
+}
+
+.done-card:active {
+    cursor: grabbing;
+}

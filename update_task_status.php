@@ -25,12 +25,13 @@ $projectId = $data['projectId'];
 $activityId = $data['activityId'];
 $personId = $data['personId'];
 $status = $data['status'];
+$changePrio = $status == 4 ? ', Prio=250' : '';
 
 try {
     // Update the status in Hours table
     $stmt = $pdo->prepare("
         UPDATE Hours 
-        SET Status = :status
+        SET Status = :status $changePrio
         WHERE Person = :personId 
         AND Project = :projectId 
         AND Activity = :activityId
