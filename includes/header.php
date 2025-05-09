@@ -50,7 +50,7 @@ require_once 'auth.php';
       <img src="images/logo.png" class="img-fluid nav-logo-mobile" alt="Promato" style="height:20px;">
       <div class="collapse navbar-collapse" id="navbarNavDropdown">
       <div class="container">
-        <img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Promato" style="height:40px;">
+        <a href="/index.php"><img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Promato" style="height:40px;"></a>
         <ul class="navbar-nav ml-auto nav-right" data-easing="easeInOutExpo" data-speed="1250" data-offset="65">
 
             <?php

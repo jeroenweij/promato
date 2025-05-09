@@ -66,6 +66,12 @@ $pages = [
         'menu' => null,
         'inhead' => false
     ],
+    'update_task_status.php' => [
+        'title' => 'User task status',
+        'auth_level' => 3,
+        'menu' => null,
+        'inhead' => false
+    ],
     'test.php' => [
         'title' => 'test',
         'auth_level' => 0,
@@ -95,19 +101,19 @@ $pages = [
     // MAIN Menu
     'projects.php' => [
         'title' => 'Projects',
-        'auth_level' => 1,
+        'auth_level' => 2,
         'menu' => 'main',
         'inhead' => true
     ],
     'kanban.php' => [
         'title' => 'Kanban',
-        'auth_level' => 1,
+        'auth_level' => 2,
         'menu' => 'main',
         'inhead' => true
     ],
     'capacity_planning.php' => [
         'title' => 'Capacity Planning',
-        'auth_level' => 1,
+        'auth_level' => 2,
         'menu' => 'main',
         'inhead' => true
     ],
