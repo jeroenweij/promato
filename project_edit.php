@@ -1,6 +1,18 @@
 <?php
+// Start output buffering to prevent "headers already sent" errors
+ob_start();
+
 require 'includes/header.php';
 require 'includes/db.php';
+
+// Initialize variables
+$projectId = null;
+$project = null;
+$activities = [];
+$statuses = [];
+$managers = [];
+$redirectNeeded = false;
+$redirectUrl = '';
 
 // Check if the project ID is provided in the URL
 if (isset($_GET['project_id'])) {
@@ -15,6 +27,7 @@ if (isset($_GET['project_id'])) {
     if (!$project) {
         echo 'Project not found.';
         require 'includes/footer.php';
+        ob_end_flush(); // Flush the buffer and end it
         exit;
     }
 
@@ -32,7 +45,7 @@ if (isset($_GET['project_id'])) {
     $statusStmt = $pdo->query("SELECT * FROM Status");
     $statuses = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fetch project managers (assuming they are in a Users or similar table)
+    // Fetch project managers
     $managerStmt = $pdo->query("SELECT Id, Shortname AS Name FROM Personel WHERE Type>2");
     $managers = $managerStmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -45,9 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     $updateStatusStmt = $pdo->prepare("UPDATE Projects SET Status = ? WHERE Id = ?");
     $updateStatusStmt->execute([$newStatus, $projectId]);
 
-    // Reload the page to reflect the changes
-    header("Location: project_edit.php?project_id=" . $projectId);
-    exit;
+    // Set redirect flag instead of immediate redirect
+    $redirectNeeded = true;
+    $redirectUrl = "project_edit.php?project_id=" . $projectId;
 }
 
 // Handle form submission to update the project manager
@@ -58,9 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_manager'])) {
     $updateManagerStmt = $pdo->prepare("UPDATE Projects SET Manager = ? WHERE Id = ?");
     $updateManagerStmt->execute([$newManager, $projectId]);
 
-    // Reload the page to reflect the changes
-    header("Location: project_edit.php?project_id=" . $projectId);
-    exit;
+    // Set redirect flag instead of immediate redirect
+    $redirectNeeded = true;
+    $redirectUrl = "project_edit.php?project_id=" . $projectId;
 }
 
 // Handle form submission to update or add activities
@@ -77,6 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, StartDate = ?, EndDate = ?, WBSO = ?, Visible = ?, IsTask = ?, Export = 1 WHERE Id = ?");
         $updateStmt->execute([$name, $startDate, $endDate, $wbso, $visible, $isTask, $activityId]);
 
+        // Set redirect flag instead of immediate redirect
+        $redirectNeeded = true;
+        $redirectUrl = "project_edit.php?project_id=" . $projectId;
     }
     // Update budget
     elseif (isset($_POST['update_budget'])) {
@@ -107,7 +123,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $insertBudgetStmt->execute([$activityId, $budget, $oopSpend, $hours, $rate, $newYear]);
         }
-                
+        
+        // Set redirect flag instead of immediate redirect
+        $redirectNeeded = true;
+        $redirectUrl = "project_edit.php?project_id=" . $projectId;
     }
     // Add a new activity
     elseif (isset($_POST['add_activity'])) {
@@ -163,16 +182,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $rate
             ]);
         }
+        
+        // Set redirect flag instead of immediate redirect
+        $redirectNeeded = true;
+        $redirectUrl = "project_edit.php?project_id=" . $projectId;
     }
+}
 
-    header("Location: project_edit.php?project_id=" . $projectId);
+// Perform redirect if needed and it's before any output
+if ($redirectNeeded && ob_get_length() === 0) {
+    header("Location: " . $redirectUrl);
     exit;
 }
 
+// If we couldn't redirect with header (output already sent), we'll use JavaScript later
 ?>
 
 <section id="project-details">
     <div class="container">
+        <?php if ($redirectNeeded): ?>
+        <script>
+            // JavaScript redirect as fallback if PHP header redirect fails
+            window.location.href = "<?php echo htmlspecialchars($redirectUrl); ?>";
+        </script>
+        <?php endif; ?>
 
         <!-- Project Information -->
         <h1>Project Details: <?php echo htmlspecialchars($project['Name']); ?></h1>
@@ -363,15 +396,6 @@ function showBudgetModal(element) {
     $('#budgetModal').modal('show');
 }
 
-function updateBudget() {
-    // Get values from form
-    const activityId = document.getElementById('modal_activity_id').value;
-    const budget = document.getElementById('modal_budget').value;
-    const oopSpend = document.getElementById('modal_oop_spend').value;
-    const rate = document.getElementById('modal_rate').value;
-    const hours = document.getElementById('modal_hours').value;
-}
-
 function calculateBudget(changedField, prefix='') {
     const budget = document.getElementById(prefix+'budget');
     const oopSpend = document.getElementById(prefix+'oop_spend');
@@ -462,12 +486,15 @@ function calculateBudget(changedField, prefix='') {
                 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save </button>
+                    <button type="submit" class="btn btn-primary">Save</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-
-<?php require 'includes/footer.php'; ?>
+<?php 
+// End output buffering and flush
+ob_end_flush();
+require 'includes/footer.php'; 
+?>
