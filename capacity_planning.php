@@ -136,7 +136,9 @@ foreach ($activities as $activity) {
 <section>
     <div class="container">
         <div class="autoheight">
-            <div class="budget-table-wrapper verticalscrol" style="display: flex;">
+            <div class="budget-table-wrapper">
+                <!-- Scrollable area with fixed and scrollable columns -->
+                <div class="scrollable-area verticalscrol">
                 <!-- Fixed left columns -->
                 <div class="fixed-columns">
                     <table class="plantable">
@@ -282,19 +284,60 @@ foreach ($activities as $activity) {
                     </table>
                     <br>&nbsp;<br>&nbsp;
                 </div><!-- scrollable-columns -->
+                </div><!-- Scrollable area with fixed and scrollable columns -->
             </div><!-- budget-table-wrapper -->
         </div><!-- autoheight -->
+            <!-- Fixed horizontal scrollbar at bottom -->
+            <div class="horizontal-scroll-container" id="horizontal-scrollbar">
+                <div class="horizontal-scroll-content" id="scrollbar-content"></div>
+            </div>
     </div><!-- container -->
 </section>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scrollableContent = document.querySelector('.scrollable-columns');
+    const horizontalScrollbar = document.getElementById('horizontal-scrollbar');
+    const scrollbarContent = document.getElementById('scrollbar-content');
+
+    // Sync scrollbar width with content width
+    function updateScrollbarWidth() {
+        const tableWidth = scrollableContent.querySelector('table').offsetWidth;
+        scrollbarContent.style.width = tableWidth + 'px';
+    }
+    
+    // Initial setup and on resize
+    updateScrollbarWidth();
+    window.addEventListener('resize', updateScrollbarWidth);
+
+    // Flag to prevent infinite loop of scroll events
+    let isScrolling = false;
+    
+    // Sync scrolling between content and scrollbar  
+    horizontalScrollbar.addEventListener('scroll', function() {
+        if (isScrolling) return;
+        isScrolling = true;
+        
+        // Calculate the scroll position as a ratio
+        const maxScroll = horizontalScrollbar.scrollWidth - horizontalScrollbar.clientWidth;
+        const currentRatio = horizontalScrollbar.scrollLeft / maxScroll;
+        
+        // Apply the same ratio to the content
+        const contentMaxScroll = scrollableContent.scrollWidth - scrollableContent.clientWidth;
+        scrollableContent.scrollLeft = currentRatio * contentMaxScroll;
+        
+        isScrolling = false;
+    });
+});
+
 // More efficient JavaScript with debouncing
 (function() {
     // Set initial height
     function setElementHeight() {
-        var height = window.innerHeight - 120;
+        var height = window.innerHeight - 130;
         document.querySelectorAll('.autoheight').forEach(el => {
             el.style.minHeight = height + 'px';
+            el.style.maxHeight = height + 'px';
         });
     }
 
