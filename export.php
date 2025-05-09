@@ -19,8 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
     }
 }
 
-// Get list of .xlsx files in the export directory
-$files = glob($exportDir . '/*.xlsx');
+// Get list of .xls files in the export directory
+$files = glob($exportDir . '/*.xls');
 
 // Check if any rows are marked for export
 $stmt = $pdo->query("SELECT COUNT(*) FROM Activities WHERE Export = 1");

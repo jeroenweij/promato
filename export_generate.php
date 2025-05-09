@@ -1,10 +1,13 @@
 <?php
+// Start output buffering to prevent "headers already sent" errors
+ob_start();
+
 require 'includes/auth.php';
 require 'PhpSpreadsheet/autoload.php';
 require 'includes/db.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Writer\Xls;
 
 function formatDate($value) {
     // Match a MySQL-style DATE (YYYY-MM-DD)
@@ -75,15 +78,28 @@ try {
         $rowNumber++;
     }
   
-    $filename = __DIR__  . '/exports/export_' . date('Ymd_His') . '.xlsx';
-    $writer = new Xlsx($spreadsheet);
+    $filename = __DIR__  . '/exports/export_' . date('Ymd_His') . '.xls';
+    $writer = new Xls($spreadsheet);
     $writer->save($filename);
 
     $pdo->exec("UPDATE Activities SET Export = 0");
     header("Location: export.php");
+    if (ob_get_length() === 0) {
+        header("Location: export.php");
+        exit;
+    }
 
 } catch (PDOException $e) {
     echo "Database error: " . $e->getMessage();
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
 }
+?>
+<html><head>
+    <script>
+        // JavaScript redirect as fallback if PHP header redirect fails
+        window.location.href = "export.php";
+    </script>
+</head></html>
+<?php
+ob_end_flush();
