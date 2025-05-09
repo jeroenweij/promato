@@ -20,7 +20,7 @@ SELECT
     h.Hours AS LoggedHours,
     h.Prio AS Priority,
     h.Person AS PersonId,
-    h.StatusId AS Status,
+    h.Status AS Status,
     a.Name AS ActivityName, 
     a.Key AS ActivityId, 
     p.Id AS ProjectId, 
@@ -29,8 +29,7 @@ FROM Hours h
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
 JOIN Projects p ON a.Project = p.Id
 WHERE h.Plan>0 AND a.IsTask=1
-ORDER BY h.Person, h.Prio DESC
-");
+ORDER BY h.Person, h.Prio");
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Group by person and status
@@ -157,7 +156,7 @@ foreach ($rows as $row) {
                 const container = evt.to;
                 const cards = container.querySelectorAll('.task-card');
                 const cardIndex = Array.from(cards).indexOf(card);
-                const priority = cards.length - cardIndex; // Highest priority at top
+                const priority = cardIndex;
                 
                 // First update status in database
                 updateTaskStatus({
@@ -195,7 +194,7 @@ foreach ($rows as $row) {
                             activityId: card.dataset.activityId,
                             projectId: card.dataset.projectId,
                             personId: card.dataset.personId,
-                            priority: cards.length - index // highest priority at top
+                            priority: index
                         });
                     });
 

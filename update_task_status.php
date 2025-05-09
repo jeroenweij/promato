@@ -30,7 +30,7 @@ try {
     // Update the status in Hours table
     $stmt = $pdo->prepare("
         UPDATE Hours 
-        SET StatusId = :status
+        SET Status = :status
         WHERE Person = :personId 
         AND Project = :projectId 
         AND Activity = :activityId

@@ -12,7 +12,7 @@ SELECT
     h.Plan AS PlannedHours, 
     h.Hours AS LoggedHours,
     hs.Name AS Status,
-    hs.Id AS StatusId,
+    h.Status AS StatusId,
     h.Prio AS Priority,
     a.Name AS ActivityName, 
     a.Key AS ActivityId, 
@@ -21,7 +21,7 @@ SELECT
 FROM Hours h 
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
 JOIN Projects p ON a.Project = p.Id
-LEFT JOIN HourStatus hs ON h.StatusId = hs.Id
+LEFT JOIN HourStatus hs ON h.Status = hs.Id
 WHERE h.Person = ? AND h.Plan>0 AND a.IsTask=1
 ORDER BY hs.Name, h.Prio DESC
 ");
