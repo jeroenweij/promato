@@ -20,20 +20,24 @@
 }
 
 .table-container {
-    display: flex;
     width: 100%;
     overflow: hidden;
 }
 
+.fixed-columns, .scrollable-columns {
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    flex-basis: auto !important;
+    align-self: flex-start !important;
+}
+
 .fixed-columns {
-    flex: 0 0 auto; /* Fixed width, no shrinking */
     border-right: 1px solid #ccc;
     background-color: #f9f9f9;
     z-index: 2;
 }
 
 .scrollable-columns {
-    flex: 1;
     overflow-x: auto;
     overflow-y: hidden;
 }
@@ -81,7 +85,7 @@
 }
 
 .editbudget {
-	background-color: #aedbe9;
+	background-color: #ebf2fe;
     min-width: 40px;
 	text-align: right;
 	padding-right: 4px;

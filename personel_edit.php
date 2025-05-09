@@ -84,6 +84,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 
     header("Location: personel.php");
+    ?>
+    <meta http-equiv="refresh" content="0;url=personel.php">
+    <script>
+        // JavaScript fallback
+        window.location.href = "personel.php";
+    </script>
+    <section>
+    <div class="container">
+    <h3>Changes saved</h3>
+    <a href="personel.php">Return</a>
+    </div>
+    </section>
+    <?php 
+    require 'includes/footer.php';
     exit;
 }
 

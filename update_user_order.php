@@ -1,4 +1,5 @@
 <?php
+require 'includes/auth.php';
 require 'includes/db.php';
 
 // Get JSON data from POST request
