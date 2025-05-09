@@ -10,7 +10,7 @@ $userStmt = $pdo->query("
     FROM Personel u 
     JOIN Hours h ON h.Person = u.Id
     WHERE h.Project > 10 AND u.Plan=1
-    ORDER BY u.Name
+    ORDER BY u.Department, u.Ord
 ");
 $users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
 
