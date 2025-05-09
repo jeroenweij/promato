@@ -1,7 +1,4 @@
 <?php
-// composer require google/apiclient:^2.0
-//require_once 'vendor/autoload.php'; // Google API Client
-
 session_start();
 
 require 'includes/header.php';

@@ -84,6 +84,12 @@ $pages = [
         'menu' => null,
         'inhead' => false
     ],
+    'export_generate.php' => [
+        'title' => 'Export generator',
+        'auth_level' => 5,
+        'menu' => null,
+        'inhead' => false
+    ],
 
 
     // MAIN Menu
@@ -137,6 +143,12 @@ $pages = [
         'auth_level' => 4,
         'menu' => 'admin',
         'inhead' => true
+    ],
+    'export.php' => [
+        'title' => 'Export data',
+        'auth_level' => 5,
+        'menu' => 'admin',
+        'inhead' => false
     ],
 
 
