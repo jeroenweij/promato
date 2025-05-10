@@ -1,6 +1,6 @@
 <?php
 require_once 'vendor/autoload.php';
-require 'includes/db.php'; // Assuming you have $pdo here
+require 'includes/db.php';
 
 session_start();
 
@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['credential'])) {
             $_SESSION['user_name'] = $user['Shortname'];
             $_SESSION['auth_level'] = $user['Type'];
 
+            $pdo->exec('UPDATE Personel SET LastLogin = CURRENT_TIMESTAMP WHERE Id = ' . $user['Id']);
             header('Location: index.php');
             exit();
         } else {

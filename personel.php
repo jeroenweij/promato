@@ -21,6 +21,7 @@ $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <th>Name</th>
       <th>Email</th>
       <th>Shortname</th>
+      <th>LastLogin</th>
       <th>Start Date</th>
       <th>End Date</th>
       <th>WBSO</th>
@@ -37,8 +38,25 @@ $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <td><?= htmlspecialchars($p['Name']) ?></td>
       <td><?= htmlspecialchars($p['Email']) ?></td>
       <td><?= htmlspecialchars($p['Shortname']) ?></td>
-      <td><?= htmlspecialchars($p['StartDate']) ?></td>
-      <td><?= htmlspecialchars($p['EndDate'] ?? '') ?></td>
+      <?php
+      $LastLogin = 'N/A';
+      if (!empty($p['LastLogin'])) {
+          $loginTime = new DateTime($p['LastLogin']);
+          $now = new DateTime();
+          $diff = $now->diff($loginTime);
+          
+          if ($diff->days == 0) {
+              $LastLogin = 'Today ' . $loginTime->format('H:i');
+          } elseif ($diff->days == 1) {
+              $LastLogin = 'Yesterday ' . $loginTime->format('H:i');
+          } else {
+              $LastLogin = $loginTime->format('d/m/Y H:i');
+          }
+      }
+      ?>
+      <td><?= $LastLogin ?></td>
+      <td><?= !empty($p['StartDate']) ? (new DateTime($p['StartDate']))->format('d/m/Y') : '' ?></td>
+      <td><?= !empty($p['EndDate']) ? (new DateTime($p['EndDate']))->format('d/m/Y') : '' ?></td>
       <td><?= $p['WBSO'] ? 'Yes' : 'No' ?></td>
       <td><?= htmlspecialchars($p['Fultime']) ?></td>
       <td><?= htmlspecialchars($p['DepName'] ?? '') ?></td>
