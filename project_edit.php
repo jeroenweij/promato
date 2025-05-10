@@ -11,6 +11,7 @@ $project = null;
 $activities = [];
 $statuses = [];
 $managers = [];
+$wbsoOptions = [];
 $redirectNeeded = false;
 $redirectUrl = '';
 
@@ -33,9 +34,11 @@ if (isset($_GET['project_id'])) {
 
     // Fetch the activities for the project with budget information
     $activityStmt = $pdo->prepare("
-        SELECT Activities.*, Budgets.Hours AS BudgetHours, Budgets.Budget, Budgets.OopSpend, Budgets.Rate 
+        SELECT Activities.*, Budgets.Hours AS BudgetHours, Budgets.Budget, Budgets.OopSpend, Budgets.Rate,
+               Wbso.Name AS WbsoName
         FROM Activities 
         LEFT JOIN Budgets ON Activities.Id = Budgets.Activity 
+        LEFT JOIN Wbso ON Activities.Wbso = Wbso.Id
         WHERE Project = ?
     ");
     $activityStmt->execute([$projectId]);
@@ -48,6 +51,10 @@ if (isset($_GET['project_id'])) {
     // Fetch project managers
     $managerStmt = $pdo->query("SELECT Id, Shortname AS Name FROM Personel WHERE Type>2");
     $managers = $managerStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Fetch WBSO options
+    $wbsoStmt = $pdo->query("SELECT Id, Name, Description FROM Wbso");
+    $wbsoOptions = $wbsoStmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // Handle form submission to update the project status
@@ -83,11 +90,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = $_POST['activity_name'];
         $startDate = $_POST['start_date'];
         $endDate = $_POST['end_date'];
-        $wbso = $_POST['wbso'];
+        $wbso = $_POST['wbso'] !== '' ? $_POST['wbso'] : null;
         $visible = isset($_POST['visible']) ? 1 : 0;
         $isTask = isset($_POST['is_task']) ? 1 : 0;
 
-        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, StartDate = ?, EndDate = ?, WBSO = ?, Visible = ?, IsTask = ?, Export = 1 WHERE Id = ?");
+        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, StartDate = ?, EndDate = ?, Wbso = ?, Visible = ?, IsTask = ?, Export = 1 WHERE Id = ?");
         $updateStmt->execute([$name, $startDate, $endDate, $wbso, $visible, $isTask, $activityId]);
 
         // Set redirect flag instead of immediate redirect
@@ -133,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $activityName = $_POST['new_activity_name'];
         $startDate = $_POST['new_start_date'];
         $endDate = $_POST['new_end_date'];
-        $wbso = $_POST['new_wbso'] ?? null;
+        $wbso = $_POST['new_wbso'] !== '' ? $_POST['new_wbso'] : null;
         $visible = isset($_POST['new_visible']) ? 1 : 0;
         $newIsTask = isset($_POST['new_is_task']) ? 1 : 0;
         $addBudget = isset($_POST['add_budget']) ? 1 : 0;
@@ -145,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nextKey = $maxKeyRow && $maxKeyRow['MaxKey'] !== null ? $maxKeyRow['MaxKey'] + 1 : 1;
 
         $insertStmt = $pdo->prepare("
-            INSERT INTO Activities (Project, `Key`, Name, StartDate, EndDate, WBSO, Visible, IsTask, Export)
+            INSERT INTO Activities (Project, `Key`, Name, StartDate, EndDate, Wbso, Visible, IsTask, Export)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
         ");
         $insertStmt->execute([
@@ -154,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $activityName,
             $startDate,
             $endDate,
-            $wbso !== '' ? $wbso : null,
+            $wbso,
             $visible,
             $newIsTask
         ]);
@@ -251,7 +258,7 @@ if ($redirectNeeded && ob_get_length() === 0) {
             <tr>
                 <th>TaskCode</th>
                 <th>Activity Name</th>
-                <th>WBSO Label</th>
+                <th>WBSO</th>
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>Budget Hours</th>
@@ -266,7 +273,18 @@ if ($redirectNeeded && ob_get_length() === 0) {
                         <input type="hidden" name="activity_id" value="<?php echo $activity['Id']; ?>">
                         <td><?php echo $activity['Project'] . '-' . str_pad($activity['Key'], 3, '0', STR_PAD_LEFT); ?></td>
                         <td><input type="text" name="activity_name" value="<?php echo htmlspecialchars($activity['Name']); ?>" class="form-control"></td>
-                        <td><input type="text" name="wbso" value="<?php echo htmlspecialchars($activity['WBSO'] ?? ''); ?>" class="form-control"></td>
+                        <td>
+                            <select name="wbso" class="form-control">
+                                <option value="">-- None --</option>
+                                <?php foreach ($wbsoOptions as $wbsoOption): ?>
+                                    <option value="<?php echo $wbsoOption['Id']; ?>" 
+                                            <?php echo $activity['Wbso'] == $wbsoOption['Id'] ? 'selected' : ''; ?>
+                                            title="<?php echo htmlspecialchars($wbsoOption['Description'] ?? ''); ?>">
+                                        <?php echo htmlspecialchars($wbsoOption['Name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
                         <td><input type="date" name="start_date" value="<?php echo $activity['StartDate']; ?>" class="form-control"></td>
                         <td><input type="date" name="end_date" value="<?php echo $activity['EndDate']; ?>" class="form-control"></td>
                         <td>
@@ -307,8 +325,16 @@ if ($redirectNeeded && ob_get_length() === 0) {
                 <input type="date" name="new_end_date" class="form-control" required>
             </div>
             <div class="form-group">
-                <label for="new_wbso">WBSO Label:</label>
-                <input type="text" name="new_wbso" class="form-control">
+                <label for="new_wbso">WBSO:</label>
+                <select name="new_wbso" class="form-control">
+                    <option value="">-- None --</option>
+                    <?php foreach ($wbsoOptions as $wbsoOption): ?>
+                        <option value="<?php echo $wbsoOption['Id']; ?>" 
+                                title="<?php echo htmlspecialchars($wbsoOption['Description'] ?? ''); ?>">
+                            <?php echo htmlspecialchars($wbsoOption['Name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div class="form-group">
                 <label for="new_visible">Visible:</label>

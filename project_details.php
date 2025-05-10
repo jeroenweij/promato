@@ -47,8 +47,9 @@ try {
 
     // Fetch all activities for the project
     $activityStmt = $pdo->prepare("
-        SELECT Activities.*, Budgets.Hours AS BudgetHours FROM Activities
-        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity 
+        SELECT Activities.*, Wbso.Name AS WBSO, Budgets.Hours AS BudgetHours FROM Activities
+        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity
+        LEFT JOIN Wbso ON Activities.Wbso = Wbso.Id 
         WHERE Project = :projectId
         ORDER BY `Key` ASC
     ");
@@ -184,7 +185,7 @@ function isOverBudget($actual, $planned) {
                         <tr>
                             <th class="text">Task Code</th>
                             <th class="text">Activity Name</th>
-                            <th class="text">WBSO Label</th>
+                            <th class="text">WBSO</th>
                             <th class="text">Start Date</th>
                             <th class="text">End Date</th>
                             <th class="text">Budget Hours</th>

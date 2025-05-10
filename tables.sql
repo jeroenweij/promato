@@ -191,3 +191,36 @@ ALTER TABLE `Projects`
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- 1. Add new nullable Wbso field to Activities
+ALTER TABLE `Activities` CHANGE `WBSO` `WBSOO` VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL;
+ALTER TABLE Activities ADD COLUMN Wbso SMALLINT DEFAULT NULL;
+
+-- 2. Create Wbso table
+CREATE TABLE Wbso (
+    Id SMALLINT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(16) NOT NULL,
+    Description VARCHAR(64) DEFAULT NULL,
+    Hours SMALLINT NULL, 
+    `Date` DATE NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- 3. Insert all distinct non-null, non-empty WBSO values from Activities into Wbso
+INSERT INTO Wbso (Name)
+SELECT DISTINCT WBSOO
+FROM Activities
+WHERE WBSOO IS NOT NULL AND WBSOO <> '';
+
+-- 4. Update Activities.Wbso to match new Wbso.Id where WBSO value is set
+UPDATE Activities a
+JOIN Wbso w ON a.WBSOO = w.Name
+SET a.Wbso = w.Id
+WHERE a.WBSOO IS NOT NULL AND a.WBSOO <> '';
+
+-- 5. Drop the old string-based WBSO column
+ALTER TABLE Activities DROP COLUMN WBSOO;
+
+-- 6. Add optional foreign key constraint (allows NULLs)
+ALTER TABLE Activities
+ADD CONSTRAINT fk_activities_wbso FOREIGN KEY (Wbso) REFERENCES Wbso(Id);
+

@@ -138,12 +138,6 @@ $pages = [
         'menu' => 'admin',
         'inhead' => false
     ],
-    'personel_order.php' => [
-        'title' => 'Personel order',
-        'auth_level' => 5,
-        'menu' => 'admin',
-        'inhead' => false
-    ],
     'upload.php' => [
         'title' => 'Upload File',
         'auth_level' => 4,
@@ -171,4 +165,16 @@ $pages = [
         'menu' => 'plan',
         'inhead' => true
     ],
+    'personel_order.php' => [
+        'title' => 'Personel order',
+        'auth_level' => 5,
+        'menu' => 'plan',
+        'inhead' => false
+    ],
+    'wbso.php' => [
+        'title' => 'Wbso labels',
+        'auth_level' => 4,
+        'menu' => 'plan',
+        'inhead' => false
+    ]
 ];
