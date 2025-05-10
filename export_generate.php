@@ -28,11 +28,12 @@ try {
         p.Status AS PS, 
         a.Key AS AK, 
         a.StartDate AS ASD, 
-        a.EndDate AS AED, 
-        u.Name AS PM 
+        a.EndDate AS AED,
+        w.Name AS WL
     FROM Activities a
     LEFT JOIN Projects p ON p.Id = a.Project
     LEFT JOIN Personel u ON p.Manager = u.Id
+    LEFT JOIN Wbso w ON w.Id = a.Wbso
     WHERE Export = 1;"); 
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -62,6 +63,8 @@ try {
         $sheet->setCellValue('C' . $rowNumber, formatDate($row["PED"]));
         $sheet->setCellValue('D' . $rowNumber, $row["PID"]);
         $sheet->setCellValue('F' . $rowNumber, $row["PS"] == 3 ? 'active' : 'inactive');
+        $sheet->setCellValue('G' . $rowNumber, $row["WL"] ?? '');
+        $sheet->setCellValue('H' . $rowNumber, empty($row["WL"]) ? '' : 'WBSO');
         $sheet->setCellValue('P' . $rowNumber, $row["AN"]);
         $sheet->setCellValue('Q' . $rowNumber, str_pad($row['AK'], 3, '0', STR_PAD_LEFT));
         $sheet->setCellValue('R' . $rowNumber, formatDate($row["ASD"]));
@@ -74,7 +77,6 @@ try {
         $sheet->setCellValue('AJ' . $rowNumber, '100');
         $sheet->setCellValue('AK' . $rowNumber, '0');
         $sheet->setCellValue('AL' . $rowNumber, 'eur');
-        $sheet->setCellValue('AM' . $rowNumber, $row["PM"] ?? '');
         $rowNumber++;
     }
   

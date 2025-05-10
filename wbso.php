@@ -135,9 +135,13 @@ if (isset($_GET['success'])) {
 
 // Fetch all WBSO entries
 $stmt = $pdo->query("SELECT w.*, 
-                           (SELECT COUNT(*) FROM Activities WHERE Wbso = w.Id) AS UsageCount 
-                     FROM Wbso w 
-                     ORDER BY Name Desc");
+    COUNT(DISTINCT Activities.Id) AS UsageCount, 
+    COALESCE(SUM(Hours.Hours), 0) AS HoursLogged 
+    FROM Wbso w
+    LEFT JOIN Activities ON Activities.Wbso = w.Id 
+    LEFT JOIN Hours ON Hours.Project = Activities.Project AND Hours.Activity = Activities.Key 
+    GROUP BY w.Id, w.Name
+    ORDER BY w.Name DESC;");
 $wbsoEntries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // If we're still here, check if output has started before sending headers
@@ -182,17 +186,21 @@ if (isset($successMessage) && !empty($successMessage) && ob_get_length() === 0) 
                                         <th>Name</th>
                                         <th>Description</th>
                                         <th>Hours</th>
+                                        <th>Hours logged</th>
                                         <th>Date</th>
                                         <th>Usage</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($wbsoEntries as $entry): ?>
+                                    <?php foreach ($wbsoEntries as $entry): 
+                                        $hourslogged = $entry['HoursLogged'] ?? 0;
+                                        ?>
                                         <tr>
                                             <td><?php echo htmlspecialchars($entry['Name']); ?></td>
                                             <td><?php echo htmlspecialchars($entry['Description'] ?? ''); ?></td>
                                             <td><?php echo htmlspecialchars($entry['Hours'] ?? 'N/A'); ?></td>
+                                            <td><?= round($hourslogged/100) ?></td>
                                             <td>
                                                 <?php 
                                                 if (!empty($entry['Date'])) {
@@ -245,21 +253,21 @@ if (isset($successMessage) && !empty($successMessage) && ob_get_length() === 0) 
                             
                             <div class="form-group">
                                 <label for="description">Description</label>
-                                <input type="text" name="description" id="description" class="form-control" 
+                                <input type="text" name="description" id="description" class="form-control" required
                                        value="<?php echo htmlspecialchars($editEntry['Description'] ?? ''); ?>">
                                 <small class="form-text text-muted">Optional detailed description (max 64 characters)</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="hours">Hours</label>
-                                <input type="number" name="hours" id="hours" class="form-control" min="0" max="32767"
+                                <input type="number" name="hours" id="hours" class="form-control" required min="0" max="32767"
                                        value="<?php echo htmlspecialchars($editEntry['Hours'] ?? ''); ?>">
                                 <small class="form-text text-muted">Number of hours for this WBSO category</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="date">Date</label>
-                                <input type="date" name="date" id="date" class="form-control" 
+                                <input type="date" name="date" id="date" class="form-control" required
                                        value="<?php echo !empty($editEntry['Date']) ? date('Y-m-d', strtotime($editEntry['Date'])) : ''; ?>">
                                 <small class="form-text text-muted">Date associated with this WBSO category</small>
                             </div>
