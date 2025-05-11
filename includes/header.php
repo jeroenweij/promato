@@ -1,5 +1,11 @@
 <?php
 require_once 'auth.php';
+
+$selectedYear = date("Y");
+if (isset($_SESSION['selectedYear'])){
+    $selectedYear=$_SESSION['selectedYear'];
+}
+
 ?>
 
 <!doctype html>
@@ -50,7 +56,10 @@ require_once 'auth.php';
       <img src="images/logo.png" class="img-fluid nav-logo-mobile" alt="Promato" style="height:20px;">
       <div class="collapse navbar-collapse" id="navbarNavDropdown">
       <div class="container">
-        <a href="/index.php"><img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Promato" style="height:40px;"></a>
+        <a href="/index.php"><img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Promato" style="height:40px;"></a>  
+            <div class="nav-item nav-custom-link btn btn-demo-small">
+            <a href=""><?= $selectedYear ?></a>
+          </div>
         <ul class="navbar-nav ml-auto nav-right" data-easing="easeInOutExpo" data-speed="1250" data-offset="65">
 
             <?php
