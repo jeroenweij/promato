@@ -8,13 +8,13 @@ CREATE TABLE `Activities` (
   `Id` smallint NOT NULL,
   `Key` smallint NOT NULL,
   `Project` smallint NOT NULL,
-  `Name` varchar(50) NOT NULL,
+  `Name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
   `StartDate` date NOT NULL,
   `EndDate` date NOT NULL,
-  `WBSO` varchar(20) DEFAULT NULL,
   `Visible` tinyint(1) DEFAULT '1',
   `IsTask` tinyint(1) NOT NULL DEFAULT '1',
-  `Export` tinyint(1) DEFAULT '1'
+  `Export` tinyint(1) DEFAULT '1',
+  `Wbso` smallint DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `Budgets` (
@@ -29,7 +29,7 @@ CREATE TABLE `Budgets` (
 
 CREATE TABLE `Departments` (
   `Id` tinyint NOT NULL,
-  `Name` varchar(16) DEFAULT NULL,
+  `Name` varchar(16) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `Ord` tinyint NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -51,7 +51,7 @@ CREATE TABLE `Hours` (
 
 CREATE TABLE `HourStatus` (
   `Id` int NOT NULL,
-  `Name` varchar(50) NOT NULL
+  `Name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `HourStatus` (`Id`, `Name`) VALUES
@@ -62,29 +62,30 @@ INSERT INTO `HourStatus` (`Id`, `Name`) VALUES
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,
-  `Email` varchar(64) NOT NULL,
-  `Name` varchar(32) DEFAULT NULL,
-  `Shortname` varchar(32) NOT NULL,
-  `StartDate` date NOT NULL DEFAULT '2025-01-01',
+  `Email` varchar(64) COLLATE utf8mb4_general_ci NOT NULL,
+  `Name` varchar(32) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Shortname` varchar(32) COLLATE utf8mb4_general_ci NOT NULL,
+  `StartDate` date NOT NULL DEFAULT '2023-01-01',
   `EndDate` date DEFAULT NULL,
   `WBSO` tinyint(1) DEFAULT '0',
   `Fultime` tinyint DEFAULT '100',
   `Type` tinyint DEFAULT '1',
   `Ord` smallint DEFAULT '100',
   `plan` tinyint(1) NOT NULL DEFAULT '1',
-  `Department` tinyint NOT NULL DEFAULT '1'
+  `Department` tinyint NOT NULL DEFAULT '1',
+  `LastLogin` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `Projects` (
   `Id` smallint NOT NULL,
-  `Name` varchar(50) NOT NULL,
+  `Name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
   `Status` tinyint DEFAULT '0',
   `Manager` smallint DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `Status` (
   `Id` tinyint NOT NULL,
-  `Status` varchar(20) DEFAULT NULL
+  `Status` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `Status` (`Id`, `Status`) VALUES
@@ -95,7 +96,7 @@ INSERT INTO `Status` (`Id`, `Status`) VALUES
 
 CREATE TABLE `Types` (
   `Id` tinyint NOT NULL,
-  `Name` varchar(20) DEFAULT NULL
+  `Name` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `Types` (`Id`, `Name`) VALUES
@@ -105,11 +106,20 @@ INSERT INTO `Types` (`Id`, `Name`) VALUES
 (4, 'Elevated'),
 (5, 'Administrator');
 
+CREATE TABLE `Wbso` (
+  `Id` smallint NOT NULL,
+  `Name` varchar(16) COLLATE utf8mb4_general_ci NOT NULL,
+  `Description` varchar(64) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Hours` smallint DEFAULT NULL,
+  `Date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 ALTER TABLE `Activities`
   ADD PRIMARY KEY (`Id`),
   ADD KEY `Project` (`Project`),
-  ADD KEY `Key` (`Key`);
+  ADD KEY `Key` (`Key`),
+  ADD KEY `fk_activities_wbso` (`Wbso`);
 
 ALTER TABLE `Budgets`
   ADD PRIMARY KEY (`Id`),
@@ -145,6 +155,9 @@ ALTER TABLE `Status`
 ALTER TABLE `Types`
   ADD PRIMARY KEY (`Id`);
 
+ALTER TABLE `Wbso`
+  ADD PRIMARY KEY (`Id`);
+
 
 ALTER TABLE `Activities`
   MODIFY `Id` smallint NOT NULL AUTO_INCREMENT;
@@ -170,9 +183,13 @@ ALTER TABLE `Status`
 ALTER TABLE `Types`
   MODIFY `Id` tinyint NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `Wbso`
+  MODIFY `Id` smallint NOT NULL AUTO_INCREMENT;
+
 
 ALTER TABLE `Activities`
-  ADD CONSTRAINT `Activities_ibfk_1` FOREIGN KEY (`Project`) REFERENCES `Projects` (`Id`);
+  ADD CONSTRAINT `Activities_ibfk_1` FOREIGN KEY (`Project`) REFERENCES `Projects` (`Id`),
+  ADD CONSTRAINT `fk_activities_wbso` FOREIGN KEY (`Wbso`) REFERENCES `Wbso` (`Id`);
 
 ALTER TABLE `Budgets`
   ADD CONSTRAINT `Budgets_ibfk_1` FOREIGN KEY (`Activity`) REFERENCES `Activities` (`Id`);
@@ -191,37 +208,3 @@ ALTER TABLE `Projects`
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
--- 1. Add new nullable Wbso field to Activities
-ALTER TABLE `Activities` CHANGE `WBSO` `WBSOO` VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL;
-ALTER TABLE Activities ADD COLUMN Wbso SMALLINT DEFAULT NULL;
-
--- 2. Create Wbso table
-CREATE TABLE Wbso (
-    Id SMALLINT AUTO_INCREMENT PRIMARY KEY,
-    Name VARCHAR(16) NOT NULL,
-    Description VARCHAR(64) DEFAULT NULL,
-    Hours SMALLINT NULL, 
-    `Date` DATE NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- 3. Insert all distinct non-null, non-empty WBSO values from Activities into Wbso
-INSERT INTO Wbso (Name)
-SELECT DISTINCT WBSOO
-FROM Activities
-WHERE WBSOO IS NOT NULL AND WBSOO <> '';
-
--- 4. Update Activities.Wbso to match new Wbso.Id where WBSO value is set
-UPDATE Activities a
-JOIN Wbso w ON a.WBSOO = w.Name
-SET a.Wbso = w.Id
-WHERE a.WBSOO IS NOT NULL AND a.WBSOO <> '';
-
--- 5. Drop the old string-based WBSO column
-ALTER TABLE Activities DROP COLUMN WBSOO;
-
--- 6. Add optional foreign key constraint (allows NULLs)
-ALTER TABLE Activities
-ADD CONSTRAINT fk_activities_wbso FOREIGN KEY (Wbso) REFERENCES Wbso(Id);
-
-ALTER TABLE Personel ADD LastLogin DATETIME NULL;
