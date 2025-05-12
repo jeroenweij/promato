@@ -5,7 +5,7 @@ require 'includes/db.php';
 
 // ---- DATA PREPARATION ----
 // Fetch personnel with available hours - doing a more efficient query with proper joins
-$stmt = $pdo->query("
+$stmt = $pdo->prepare("
     SELECT 
         p.Shortname AS Name, 
         p.Id AS Number, 
@@ -14,11 +14,18 @@ $stmt = $pdo->query("
         d.Ord AS DeptOrder,
         p.Ord AS PersonOrder
     FROM Personel p 
-    LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0
+    LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND `Year`= :selectedYear
     LEFT JOIN Departments d ON p.Department = d.Id
     WHERE p.plan = 1
+    AND YEAR(p.StartDate) <= :selectedYear 
+    AND (p.EndDate IS NULL OR YEAR(p.EndDate) >= :selectedYear)
     ORDER BY d.Ord, p.Ord, p.Name
 ");
+
+// Execute the prepared statement
+$stmt->execute([
+    ':selectedYear' => $selectedYear
+]);
 
 $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $personnelById = []; // For quicker lookup
@@ -56,7 +63,7 @@ while ($row = $stmtPersonHours->fetch(PDO::FETCH_ASSOC)) {
 }
 
 // Fetch all projects and activities in a single query with JOINs
-$activitiesQuery = $pdo->query("
+$activitiesQuery = $pdo->prepare("
     SELECT 
         a.Project, 
         a.Key, 
@@ -69,9 +76,17 @@ $activitiesQuery = $pdo->query("
     JOIN Projects p ON a.Project = p.Id 
     LEFT JOIN Personel pe ON p.Manager = pe.Id 
     LEFT JOIN Budgets b ON a.Id = b.Activity
-    WHERE p.Status = 3 AND a.Visible = 1 
+    WHERE p.Status = 3 
+    AND a.Visible = 1 
+    AND YEAR(a.StartDate) <= :selectedYear 
+    AND YEAR(a.EndDate) >= :selectedYear
     ORDER BY p.Id, a.Key
 ");
+
+// Execute the prepared statement
+$activitiesQuery->execute([
+    ':selectedYear' => $selectedYear
+]);
 
 $activities = $activitiesQuery->fetchAll(PDO::FETCH_ASSOC);
 
@@ -92,7 +107,7 @@ $allHoursQuery = $pdo->prepare("
         Hours, 
         Plan
     FROM Hours 
-    WHERE CONCAT(Project, '-', Activity) IN ($placeholders)
+    WHERE `Year` = $selectedYear AND CONCAT(Project, '-', Activity) IN ($placeholders)
 ");
 
 // We need to execute with flattened array values

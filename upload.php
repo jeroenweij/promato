@@ -3,11 +3,11 @@ require 'includes/header.php';
 ?>
 <section id="pricing"><div class="container">
 
-<h2>Upload Realised Hours (CSV)</h2>
+<h2>Upload Realised Hours (CSV) for selected year: <?= $selectedYear ?></h2>
 
 <div class="mb-3">
   <label for="csv" class="form-label">Select CSV File</label>
-  <input type="file" id="csv" class="form-control">
+  <input type="file" id="csv" class="form-control" accept=".csv">
 </div>
 <button id="uploadBtn" class="btn btn-primary">Upload</button>
 
@@ -39,6 +39,7 @@ document.getElementById('uploadBtn').addEventListener('click', async () => {
 
   const formData = new FormData();
   formData.append('csv', file);
+  formData.append('year', '<?= $selectedYear ?>');
 
   const response = await fetch('upload_handler.php', {
     method: 'POST',

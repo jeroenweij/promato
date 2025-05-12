@@ -1,9 +1,17 @@
 <?php
 require_once 'auth.php';
 
-$selectedYear = date("Y");
-if (isset($_SESSION['selectedYear'])){
-    $selectedYear=$_SESSION['selectedYear'];
+// Default to 0, which indicates no specific year selected
+$selectedYear = 0;
+
+// Check if a year is set in the session
+if (isset($_SESSION['selectedYear']) && is_numeric($_SESSION['selectedYear'])) {
+    $selectedYear = (int)$_SESSION['selectedYear'];
+}
+
+// If no year is selected, use the current year
+if ($selectedYear === 0) {
+    $selectedYear = (int)date("Y");
 }
 
 ?>
@@ -58,7 +66,7 @@ if (isset($_SESSION['selectedYear'])){
       <div class="container">
         <a href="/index.php"><img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Promato" style="height:40px;"></a>  
             <div class="nav-item nav-custom-link btn btn-demo-small">
-            <a href=""><?= $selectedYear ?></a>
+            <a href="/year.php"><?= $selectedYear ?></a>
           </div>
         <ul class="navbar-nav ml-auto nav-right" data-easing="easeInOutExpo" data-speed="1250" data-offset="65">
 

@@ -119,9 +119,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Update existing budget
             $updateBudgetStmt = $pdo->prepare("
                 UPDATE Budgets SET Budget = ?, OopSpend = ?, Hours = ?, Rate = ?
-                WHERE Activity = ?
+                WHERE Activity = ? AND `Year` = ?
             ");
-            $updateBudgetStmt->execute([$budget, $oopSpend, $hours, $rate, $activityId]);
+            $updateBudgetStmt->execute([$budget, $oopSpend, $hours, $rate, $activityId, $newYear]);
         } else {
             // Insert new budget
             $insertBudgetStmt = $pdo->prepare("
@@ -179,14 +179,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Insert into Budgets table
             $insertBudgetStmt = $pdo->prepare("
                 INSERT INTO Budgets (Activity, Budget, OopSpend, Hours, Rate, Year)
-                VALUES (?, ?, ?, ?, ?, 2025)
+                VALUES (?, ?, ?, ?, ?, ?)
             ");
             $insertBudgetStmt->execute([
                 $newActivityId,
                 $budget,
                 $oopSpend,
                 $hours,
-                $rate
+                $rate,
+                $selectedYear
             ]);
         }
         
@@ -289,7 +290,7 @@ if ($redirectNeeded && ob_get_length() === 0) {
                         <td><input type="date" name="end_date" value="<?php echo $activity['EndDate']; ?>" class="form-control"></td>
                         <td>
                                 <a href="#" class="budget-link" data-activity-id="<?php echo $activity['Id']; ?>" 
-                                   data-year="2025" 
+                                   data-year="<?= $selectedYear ?>" 
                                    data-budget="<?php echo $activity['Budget'] ?? 0; ?>" 
                                    data-oopspend="<?php echo $activity['OopSpend'] ?? 0; ?>" 
                                    data-rate="<?php echo $activity['Rate'] ?? 0; ?>" 

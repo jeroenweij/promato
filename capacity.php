@@ -6,7 +6,11 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 // 1️⃣ Fetch project total budget
-$budgetStmt = $pdo->prepare("SELECT COALESCE(SUM(Budgets.Hours),0) AS Budget FROM Activities LEFT JOIN Budgets ON Activities.Id = Budgets.Activity WHERE Project > 0");
+$budgetStmt = $pdo->prepare("SELECT COALESCE(SUM(Budgets.Hours),0) AS Budget FROM Activities LEFT JOIN Budgets ON Activities.Id = Budgets.Activity WHERE Project > 0
+    AND YEAR(Activities.StartDate) <= :selectedYear 
+    AND (Activities.EndDate IS NULL OR YEAR(Activities.EndDate) >= :selectedYear)
+");
+$budgetStmt->execute(['selectedYear' => $selectedYear]);
 $budgetStmt->execute();
 $projectBudget = $budgetStmt->fetchColumn();
 
@@ -16,20 +20,21 @@ $hoursStmt = $pdo->prepare("
         COALESCE(SUM(CASE WHEN Person > 0 THEN Plan ELSE 0 END),0) AS PlannedHours,
         COALESCE(SUM(CASE WHEN Person = 0 THEN Hours ELSE 0 END),0) AS RealisedHours
     FROM Hours
-    WHERE Project >0
+    WHERE Project >0 AND `Year`= :selectedYear
 ");
-$hoursStmt->execute();
+$hoursStmt->execute(['selectedYear' => $selectedYear]);
 $row = $hoursStmt->fetch();
 $plannedHours = $row['PlannedHours'] / 100;
 $realisedHours = $row['RealisedHours'] / 100;
 
 // Fetch capacity
-$currentYear = date('Y');
 $personStmt = $pdo->prepare("SELECT p.Shortname, p.Id, p.Fultime, COALESCE(h.Plan, 0) AS AvailableHours 
-    FROM Personel p LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 
-    WHERE p.plan=1 AND (YEAR(p.StartDate) <= :currentYear) AND
-        (p.EndDate IS NULL OR YEAR(p.EndDate) >= :currentYear)");
-$personStmt->execute(['currentYear' => $currentYear]);
+    FROM Personel p 
+    LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND h.`Year`= :selectedYear
+    WHERE p.plan=1 
+    AND (YEAR(p.StartDate) <= :selectedYear) 
+    AND (p.EndDate IS NULL OR YEAR(p.EndDate) >= :selectedYear)");
+$personStmt->execute(['selectedYear' => $selectedYear]);
 
 $totalCapacity = 0;
 $persons = [];
@@ -64,10 +69,10 @@ $personHoursStmt = $pdo->prepare("
     SELECT 
         SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END)/100 AS PlannedHours,
         SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END)/100 AS RealisedHours,
-        Person FROM Hours WHERE Person > 0 GROUP BY Person
+        Person FROM Hours WHERE Person > 0 AND `Year`= :selectedYear GROUP BY Person
 ");
 
-$personHoursStmt->execute();
+$personHoursStmt->execute(['selectedYear' => $selectedYear]);
 $personHoursMap = [];
 foreach ($personHoursStmt as $ph) {
     $personHoursMap[$ph['Person']] = [

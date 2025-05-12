@@ -16,7 +16,8 @@ function logmsg($msg) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
   $file = $_FILES['csv']['tmp_name'];
-  
+  $selectedYear = $_POST['year'];
+
   // Count total lines for progress (excluding header)
   $totalRows = max(1, count(file($file)) - 2); // minus 2 headers
   
@@ -45,7 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
       }
     }
 
-    $pdo->exec("UPDATE Hours SET Hours = 0");
+    $stmt = $pdo->prepare("UPDATE Hours SET Hours = 0 WHERE `Year` = :year");
+    $stmt->execute([':year' => $selectedYear]);
+  
     logmsg("🔄 Cleared existing hours...");
 
     $currentProject = null;
@@ -73,14 +76,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
         $hours = floatval($val);  // Convert to float
 
         if ($hours > 0) {
-          $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Hours)
-            VALUES (:project, :activity, :person, :hours)
+          $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Hours, `Year`)
+            VALUES (:project, :activity, :person, :hours, :year)
             ON DUPLICATE KEY UPDATE Hours = :hours");
           $stmt->execute([
             ':project' => $currentProject,
             ':activity' => $activity,
             ':person' => $personId,
             ':hours' => round($hours * 100),
+            ':year' => $selectedYear
           ]);
           
           $count++;
@@ -94,7 +98,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
 
     fclose($handle);
     logmsg("✅ Imported {$count} entries.");
-    $pdo->exec("UPDATE Hours SET Plan=Hours WHERE Project=10 AND Activity=2");
+    $stmt = $pdo->prepare("UPDATE Hours SET Plan = Hours WHERE Project = :project AND Activity = :activity AND `Year` = :year");
+    $stmt->execute([
+        ':project' => 10,
+        ':activity' => 2,
+        ':year' => $selectedYear
+    ]);
     logmsg("📆 Set planned hours for holidays.");
   } else {
     logmsg("❌ Failed to open uploaded file.");

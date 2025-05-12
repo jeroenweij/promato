@@ -18,6 +18,12 @@ $pages = [
         'menu' => null,
         'inhead' => false
     ],
+    'year.php' => [
+        'title' => 'Year selection',
+        'auth_level' => 0,
+        'menu' => null,
+        'inhead' => false
+    ],
     'project_edit.php' => [
         'title' => 'Edit Project',
         'auth_level' => 4,

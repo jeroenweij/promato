@@ -5,16 +5,16 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 $userStmt = $pdo->query("
-    SELECT DISTINCT u.Id, u.Name 
+    SELECT DISTINCT u.Id, u.Name, u.Department, u.Ord
     FROM Personel u 
     JOIN Hours h ON h.Person = u.Id
-    WHERE h.Project > 10 AND u.Plan=1
+    WHERE h.Project > 10 AND u.Plan=1 AND u.Type>1
     ORDER BY u.Department, u.Ord
 ");
 $users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch activities grouped by person
-$stmt = $pdo->query("
+$stmt = $pdo->prepare("
 SELECT 
     h.Plan AS PlannedHours, 
     h.Hours AS LoggedHours,
@@ -28,8 +28,15 @@ SELECT
 FROM Hours h 
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
 JOIN Projects p ON a.Project = p.Id
-WHERE h.Plan>0 AND a.IsTask=1
+WHERE h.Plan>0 AND a.IsTask=1 AND h.`Year` = :selectedYear
 ORDER BY h.Person, h.Prio");
+
+// Execute the prepared statement
+$stmt->execute([
+    ':selectedYear' => $selectedYear
+]);
+
+
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Group by person and status
@@ -93,7 +100,7 @@ foreach ($rows as $row) {
                     
                     <!-- Done Tasks -->
                     <div class="done-header card">
-                        <div class="done-header card-header text-white text-center">
+                        <div class="done-header card-header text-center">
                             Done Tasks
                         </div>
                     </div>

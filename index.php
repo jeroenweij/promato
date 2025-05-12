@@ -20,10 +20,15 @@ SELECT
 FROM Hours h 
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
 JOIN Projects p ON a.Project = p.Id
-WHERE h.Person = ? AND h.Plan > 0 AND a.IsTask = 1
-ORDER BY h.Person, h.Prio DESC
-");
-$stmt->execute([$userId]);
+WHERE h.Person = :userid AND h.Plan > 0 AND a.IsTask = 1 AND h.`Year` = :selectedYear
+ORDER BY h.Person, h.Prio");
+
+// Execute the prepared statement
+$stmt->execute([
+    ':selectedYear' => $selectedYear,
+    ':userid' => $userId,
+]);
+
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

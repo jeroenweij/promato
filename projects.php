@@ -14,12 +14,16 @@ $sql = "SELECT Activities.Id AS ActivityId, Activities.Project, Activities.Key, 
         FROM Activities
         LEFT JOIN Projects ON Activities.Project = Projects.Id
         LEFT JOIN Personel ON Projects.Manager = Personel.Id
-        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity
+        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity AND Budgets.Year=:selectedYear
         LEFT JOIN Wbso ON Activities.Wbso = Wbso.Id
         WHERE Projects.Status = 3
+        AND YEAR(Activities.StartDate) <= :selectedYear 
+        AND YEAR(Activities.EndDate) >= :selectedYear
         ORDER BY Activities.Project, Activities.Key";
 
-$stmt = $pdo->query($sql);
+// Execute the prepared statement
+$stmt = $pdo->prepare($sql);
+$stmt->execute([':selectedYear' => $selectedYear]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Group by project
@@ -55,8 +59,8 @@ foreach ($projects as $projectId => $project) {
         $wbso = $activity['WBSO'] ?? '';
 
         // Get total logged hours
-        $hourStmt = $pdo->prepare("SELECT SUM(Hours) as TotalHours FROM Hours WHERE Project = ? AND Activity = ?");
-        $hourStmt->execute([$activity['Project'], $activity['Key']]);
+        $hourStmt = $pdo->prepare("SELECT SUM(Hours) as TotalHours FROM Hours WHERE `Year` = ? AND Project = ? AND Activity = ?");
+        $hourStmt->execute([$selectedYear, $activity['Project'], $activity['Key']]);
         $hourData = $hourStmt->fetch(PDO::FETCH_ASSOC);
         $logged = $hourData['TotalHours'] ? $hourData['TotalHours'] / 100 : 0;
         $budget = $activity['BudgetHours'] ?? 0;
