@@ -42,9 +42,12 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Group by person and status
 $activeTasks = [];
 $doneTasks = [];
+$hiddenTasks = [];
 foreach ($rows as $row) {
     if ($row['Status'] == 4) { // Done tasks
         $doneTasks[$row['PersonId']][] = $row;
+    } else if ($row['Status'] == 5) { // Hidden tasks
+        $hiddenTasks[$row['PersonId']][] = $row;
     } else { // Active tasks
         $activeTasks[$row['PersonId']][] = $row;
     }
@@ -119,6 +122,28 @@ foreach ($rows as $row) {
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
+                    
+                    <!-- Hidden Tasks -->
+                    <div class="done-header card">
+                        <div class="done-header card-header text-center">
+                            Hidden Tasks
+                        </div>
+                    </div>
+                    <div id="person-hidden-<?= $user['Id'] ?>" class="kanban-cards done-tasks" data-person-id="<?= $user['Id'] ?>">
+                        <?php if (!empty($hiddenTasks[$user['Id']])): ?>
+                            <?php foreach ($hiddenTasks[$user['Id']] as $item): ?>
+                                <div class="card mb-2 done-card task-card"
+                                     data-project-id="<?= $item['ProjectId'] ?>"
+                                     data-activity-id="<?= $item['ActivityId'] ?>"
+                                     data-person-id="<?= $item['PersonId'] ?>"
+                                     data-status="<?= $item['Status'] ?>">
+                                    <div class="card-body">
+                                        <small><?= htmlspecialchars($item['ProjectName']) ?> - <?= htmlspecialchars($item['ActivityName']) ?></small>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -145,7 +170,7 @@ foreach ($rows as $row) {
         });
     }
 
-    // Initialize Sortable for all active and done task containers
+    // Initialize Sortable for all active, done, and hidden task containers
     users.forEach(user => {
         // Active tasks sortable
         const activeContainer = document.getElementById('person-' + user.Id);
@@ -153,7 +178,7 @@ foreach ($rows as $row) {
             group: 'tasks-' + user.Id, // Simple group name to allow cross-container dragging
             animation: 150,
             onAdd: function(evt) {
-                // Task moved from Done to Active
+                // Task moved from Done/Hidden to Active
                 const card = evt.item;
                 const projectId = card.dataset.projectId;
                 const activityId = card.dataset.activityId;
@@ -234,7 +259,7 @@ foreach ($rows as $row) {
             group: 'tasks-' + user.Id, // Same group name to allow cross-container dragging
             animation: 150,
             onAdd: function(evt) {
-                // Task moved from Active to Done
+                // Task moved to Done
                 const card = evt.item;
                 const projectId = card.dataset.projectId;
                 const activityId = card.dataset.activityId;
@@ -246,6 +271,31 @@ foreach ($rows as $row) {
                     activityId: activityId,
                     personId: personId,
                     status: 4 // Set to done
+                }).then(() => {
+                    // Reload page to refresh card UI
+                    window.location.reload();
+                });
+            }
+        });
+        
+        // Hidden tasks sortable
+        const hiddenContainer = document.getElementById('person-hidden-' + user.Id);
+        new Sortable(hiddenContainer, {
+            group: 'tasks-' + user.Id, // Same group name to allow cross-container dragging
+            animation: 150,
+            onAdd: function(evt) {
+                // Task moved to Hidden
+                const card = evt.item;
+                const projectId = card.dataset.projectId;
+                const activityId = card.dataset.activityId;
+                const personId = card.dataset.personId;
+                
+                // Update status in database
+                updateTaskStatus({
+                    projectId: projectId,
+                    activityId: activityId,
+                    personId: personId,
+                    status: 5 // Set to hidden
                 }).then(() => {
                     // Reload page to refresh card UI
                     window.location.reload();
@@ -280,6 +330,8 @@ foreach ($rows as $row) {
         activeContainer.addEventListener('dragend', showEmptyPlaceholdersIfEmpty);
         doneContainer.addEventListener('dragstart', removeEmptyPlaceholders);
         doneContainer.addEventListener('dragend', showEmptyPlaceholdersIfEmpty);
+        hiddenContainer.addEventListener('dragstart', removeEmptyPlaceholders);
+        hiddenContainer.addEventListener('dragend', showEmptyPlaceholdersIfEmpty);
     });
 </script>
 

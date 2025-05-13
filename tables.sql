@@ -57,9 +57,10 @@ CREATE TABLE `HourStatus` (
 
 INSERT INTO `HourStatus` (`Id`, `Name`) VALUES
 (1, 'Backlog'),
-(4, 'Done'),
+(2, 'Todo'),
 (3, 'In Progress'),
-(2, 'Todo');
+(4, 'Done'),
+(5, 'Hidden');
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,

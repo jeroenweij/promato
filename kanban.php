@@ -39,7 +39,7 @@ foreach ($rows as $row) {
     <div class="container">
         <div class="row">
             <?php
-            $statusStmt = $pdo->query("SELECT Id, Name FROM HourStatus ORDER BY Id ASC");
+            $statusStmt = $pdo->query("SELECT Id, Name FROM HourStatus WHERE Id<5 ORDER BY Id ASC");
             $statuses = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
             foreach ($statuses as $status):
                 $statusId = $status['Id'];
