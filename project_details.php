@@ -217,7 +217,7 @@ function isOverBudget($actual, $planned) {
             <h3>Activities</h3>
             <div class="container">
                 <div class="scrollable-columns" style="overflow-x: auto;">
-                    <table class="plantable">
+                    <table class="plantable"  style="min-width: 25%; width: auto;">
                         <thead>
                         <tr>
                             <th class="text">Task Code</th>
