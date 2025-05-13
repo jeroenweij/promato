@@ -22,10 +22,10 @@ FROM Hours h
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
 JOIN Projects p ON a.Project = p.Id
 LEFT JOIN HourStatus hs ON h.Status = hs.Id
-WHERE h.Person = ? AND h.Plan>0 AND a.IsTask=1
+WHERE h.Person = ? AND h.Plan>0 AND a.IsTask=1 AND h.`Year`= ?
 ORDER BY hs.Name, h.Prio DESC
 ");
-$stmt->execute([$userId]);
+$stmt->execute([$userId, $selectedYear]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Group by status

@@ -27,25 +27,6 @@ if ($editing) {
     }
 }
 
-function calculateAvailableHours($startDate, $endDate, $fultimePercent) {
-    $year = date('Y');
-    $start = new DateTime(max($startDate, "$year-01-01"));
-    $end = new DateTime(min($endDate ?? "$year-12-31", "$year-12-31"));
-
-    if ($start > $end) return 0;
-
-    $workdays = 0;
-    while ($start <= $end) {
-        if (in_array($start->format('N'), [1, 2, 3, 4, 5])) {
-            $workdays++;
-        }
-        $start->modify('+1 day');
-    }
-
-    $hoursPerDay = 8;
-    return round($workdays * $hoursPerDay * ($fultimePercent / 100));
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = [
         $_POST['Email'],
@@ -73,15 +54,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $personId = $pdo->lastInsertId();
     }
 
+    function calculateAvailableHoursByYear($startDate, $endDate, $fulltimePercent) {
+        $results = [];
+        $startDate = $startDate ?: date('Y') . '-01-01';
+        $endDate = $endDate ?: date('Y') . '-12-31';
+        
+        $start = new DateTime($startDate);
+        $end = new DateTime($endDate);
+        
+        if ($start > $end) return $results;
+        
+        $startYear = (int)$start->format('Y');
+        $endYear = (int)$end->format('Y');
+        
+        $hoursPerDay = 8;
+        
+        // Calculate hours for each year in the range
+        for ($year = $startYear; $year <= $endYear; $year++) {
+            $yearStart = new DateTime(max($startDate, "$year-01-01"));
+            $yearEnd = new DateTime(min($endDate, "$year-12-31"));
+            
+            $workdays = 0;
+            $currentDate = clone $yearStart;
+            
+            while ($currentDate <= $yearEnd) {
+                // Check if it's a weekday (1-5 = Monday-Friday)
+                if (in_array($currentDate->format('N'), [1, 2, 3, 4, 5])) {
+                    $workdays++;
+                }
+                $currentDate->modify('+1 day');
+            }
+            
+            $yearHours = round($workdays * $hoursPerDay * ($fulltimePercent / 100));
+            if ($yearHours > 0) {
+                $results[$year] = $yearHours;
+            }
+        }
+        
+        return $results;
+    }
+    
     // Calculate and update available work hours
-    $availableHours = calculateAvailableHours($_POST['Startdate'], $_POST['Enddate'] ?: null, $_POST['Fultime']);
-    $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Plan)
-        VALUES (0, 0, :person, :hours)
-        ON DUPLICATE KEY UPDATE Plan = :hours");
-    $stmt->execute([
-        ':person' => $personId,
-        ':hours' => $availableHours * 100 // stored as hundredths
-    ]);
+    $hoursByYear = calculateAvailableHoursByYear($_POST['Startdate'], $_POST['Enddate'], $_POST['Fultime']);
+    
+    // Insert a record for each year
+    foreach ($hoursByYear as $year => $hours) {
+        $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Plan, `Year`) 
+            VALUES (0, 0, :person, :hours, :year)
+            ON DUPLICATE KEY UPDATE Plan = :hours");
+        $stmt->execute([
+            ':person' => $personId,
+            ':hours' => $hours * 100, // stored as hundredths
+            ':year' => $year,
+        ]);
+    }
 
     header("Location: personel.php");
     ?>

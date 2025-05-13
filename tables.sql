@@ -24,7 +24,7 @@ CREATE TABLE `Budgets` (
   `OopSpend` int NOT NULL,
   `Hours` smallint NOT NULL,
   `Rate` smallint NOT NULL,
-  `Year` smallint NOT NULL
+  `Year` smallint NOT NULL DEFAULT (year(curdate()))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `Departments` (
@@ -46,7 +46,8 @@ CREATE TABLE `Hours` (
   `Hours` int DEFAULT NULL,
   `Plan` int DEFAULT '0',
   `Prio` int NOT NULL DEFAULT '0',
-  `Status` int DEFAULT '1'
+  `Status` int DEFAULT '1',
+  `Year` smallint NOT NULL DEFAULT (year(curdate()))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `HourStatus` (
@@ -129,7 +130,7 @@ ALTER TABLE `Departments`
   ADD PRIMARY KEY (`Id`);
 
 ALTER TABLE `Hours`
-  ADD UNIQUE KEY `hoursIndex` (`Project`,`Activity`,`Person`),
+  ADD UNIQUE KEY `hoursIndex` (`Project`,`Activity`,`Person`,`Year`),
   ADD KEY `Activity` (`Activity`),
   ADD KEY `Person` (`Person`),
   ADD KEY `fk_hours_status` (`Status`);
@@ -208,12 +209,3 @@ ALTER TABLE `Projects`
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
-ALTER TABLE `Hours`
-ADD COLUMN `Year` smallint NOT NULL DEFAULT (YEAR(CURDATE()));
-
-ALTER TABLE `Hours`
-DROP INDEX `hoursIndex`,
-ADD UNIQUE KEY `hoursIndex` (`Project`, `Activity`, `Person`, `Year`);
-
-ALTER TABLE mis.Budgets MODIFY COLUMN `Year` smallint DEFAULT (year(curdate())) NOT NULL;

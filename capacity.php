@@ -6,7 +6,7 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 // 1️⃣ Fetch project total budget
-$budgetStmt = $pdo->prepare("SELECT COALESCE(SUM(Budgets.Hours),0) AS Budget FROM Activities LEFT JOIN Budgets ON Activities.Id = Budgets.Activity WHERE Project > 0
+$budgetStmt = $pdo->prepare("SELECT COALESCE(SUM(Budgets.Hours),0) AS Budget FROM Activities LEFT JOIN Budgets ON Activities.Id = Budgets.Activity AND Budgets.`Year`= :selectedYear WHERE Project > 0
     AND YEAR(Activities.StartDate) <= :selectedYear 
     AND (Activities.EndDate IS NULL OR YEAR(Activities.EndDate) >= :selectedYear)
 ");

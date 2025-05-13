@@ -49,7 +49,7 @@ $stmtPersonHours = $pdo->query(
         Person,
         SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END) AS TotalPlanned,
         SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END) AS TotalRealised
-    FROM Hours 
+    FROM Hours WHERE `Year` = $selectedYear
     GROUP BY Person"
 );
 
@@ -99,7 +99,9 @@ foreach ($activities as $a) {
 
 $activityKeys = array_keys($projectActivities);
 $placeholders = implode(',', array_fill(0, count($activityKeys), '?'));
-
+if (empty($placeholders)){
+    $placeholders="''";
+}
 $allHoursQuery = $pdo->prepare("
     SELECT 
         CONCAT(Project, '-', Activity) AS ProjectActivity,
@@ -381,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('update_hours_plan.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `project=${project}&activity=${activity}&person=${person}&plan=${value}`
+            body: `project=${project}&activity=${activity}&person=${person}&year=<?= $selectedYear ?>&plan=${value}`
         }).then(res => {
             if (!res.ok) {
                 alert(`Failed to save: project=${project}, activity=${activity}, person=${person}, plan=${value}`);
