@@ -26,6 +26,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['credential'])) {
             $_SESSION['auth_level'] = $user['Type'];
 
             $pdo->exec('UPDATE Personel SET LastLogin = CURRENT_TIMESTAMP WHERE Id = ' . $user['Id']);
+
+            // Check if there's a redirect URL stored in the session
+            if (isset($_SESSION['redirect_after_login'])) {
+                $redirect_url = $_SESSION['redirect_after_login'];
+                // Clear the stored URL
+                unset($_SESSION['redirect_after_login']);
+                
+                // Redirect to the originally requested page
+                header("Location: $redirect_url");
+                exit;
+            }
+            
+            // Default redirect if no specific page was requested
             header('Location: index.php');
             exit();
         } else {
