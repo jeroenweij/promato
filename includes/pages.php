@@ -7,7 +7,7 @@
 
 $pages = [
     'index.php' => [
-        'title' => 'Dashboard',
+        'title' => 'Promato',
         'auth_level' => 2,
         'menu' => null,
         'inhead' => false
@@ -105,6 +105,12 @@ $pages = [
 
 
     // MAIN Menu
+    'dashboard.php' => [
+        'title' => 'Dashboard',
+        'auth_level' => 2,
+        'menu' => 'main',
+        'inhead' => true
+    ],
     'projects.php' => [
         'title' => 'Projects',
         'auth_level' => 2,
@@ -117,13 +123,6 @@ $pages = [
         'menu' => 'main',
         'inhead' => true
     ],
-    'capacity_planning.php' => [
-        'title' => 'Capacity Planning',
-        'auth_level' => 2,
-        'menu' => 'main',
-        'inhead' => true
-    ],
-
 
     // ADMIN Menu
     'project_add.php' => [
@@ -139,26 +138,25 @@ $pages = [
         'inhead' => true
     ],
     'personel.php' => [
-        'title' => 'Personnel',
+        'title' => 'Users',
         'auth_level' => 5,
         'menu' => 'admin',
         'inhead' => false
     ],
-    'upload.php' => [
-        'title' => 'Upload File',
+    'wbso.php' => [
+        'title' => 'Wbso labels',
         'auth_level' => 4,
         'menu' => 'admin',
-        'inhead' => true
-    ],
-    'export.php' => [
-        'title' => 'Export data',
-        'auth_level' => 5,
-        'menu' => 'admin',
         'inhead' => false
     ],
 
-
     // PLAN Menu
+    'capacity_planning.php' => [
+        'title' => 'Capacity Planning',
+        'auth_level' => 2,
+        'menu' => 'plan',
+        'inhead' => true
+    ],
     'capacity.php' => [
         'title' => 'Capacity Overview',
         'auth_level' => 3,
@@ -177,10 +175,18 @@ $pages = [
         'menu' => 'plan',
         'inhead' => false
     ],
-    'wbso.php' => [
-        'title' => 'Wbso labels',
+
+    // FILE Menu
+    'upload.php' => [
+        'title' => 'Upload Hours',
         'auth_level' => 4,
-        'menu' => 'plan',
+        'menu' => 'file',
+        'inhead' => true
+    ],
+    'export.php' => [
+        'title' => 'Export to Yoobi',
+        'auth_level' => 5,
+        'menu' => 'file',
         'inhead' => false
-    ]
+    ],
 ];

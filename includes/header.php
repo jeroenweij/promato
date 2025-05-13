@@ -64,7 +64,7 @@ if ($selectedYear === 0) {
       <img src="images/logo.png" class="img-fluid nav-logo-mobile" alt="Promato" style="height:20px;">
       <div class="collapse navbar-collapse" id="navbarNavDropdown">
       <div class="container">
-        <a href="/index.php"><img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Promato" style="height:40px;"></a>  
+        <a href="/"><img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Promato" style="height:40px;"></a>  
             <div class="nav-item nav-custom-link btn btn-demo-small">
             <a href="/year.php"><?= $selectedYear ?></a>
           </div>
@@ -88,7 +88,7 @@ if ($selectedYear === 0) {
 
             <?php if (isset($_SESSION['user_id'])): ?>
                 <li class="nav-item nav-custom-link btn btn-demo-small">
-                    <a class="nav-link" href="/"><?= htmlspecialchars($_SESSION['user_name']) ?><i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
+                    <a class="nav-link" href="/dashboard.php"><?= htmlspecialchars($_SESSION['user_name']) ?><i class="icon ion-ios-arrow-forward icon-mobile"></i></a>
                 </li>
             <?php else: ?>
                 <li class="nav-item nav-custom-link btn btn-demo-small">

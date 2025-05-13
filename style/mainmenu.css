@@ -1,0 +1,42 @@
+.menu-card {
+    transition: all 0.3s ease;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.menu-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.icon-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.feather-icon {
+    width: 32px;
+    height: 32px;
+    stroke-width: 2;
+}
+
+.bg-main {
+    background-color: #6772e5;
+}
+
+.bg-plan {
+    background-color: #292c31;
+}
+
+.bg-admin {
+    background-color: #e56f6f;
+}
+
+.bg-file {
+    background-color: #e5b66f;
+}

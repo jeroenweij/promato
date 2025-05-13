@@ -151,7 +151,7 @@ foreach ($activities as $activity) {
 // Start output with CSS optimization
 ?>
 <section>
-    <div class="container">
+    <div class="container" style="max-width: 20000px;">
         <div class="autoheight">
             <div class="budget-table-wrapper">
                 <!-- Scrollable area with fixed and scrollable columns -->

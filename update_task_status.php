@@ -25,7 +25,7 @@ $projectId = $data['projectId'];
 $activityId = $data['activityId'];
 $personId = $data['personId'];
 $status = $data['status'];
-$changePrio = $status == 4 ? ', Prio=250' : '';
+$changePrio = $status > 3 ? ', Prio=250' : '';
 
 try {
     // Update the status in Hours table
