@@ -183,4 +183,10 @@ $pages = [
         'menu' => 'file',
         'inhead' => false
     ],
+    'backup.php' => [
+        'title' => 'Data backup',
+        'auth_level' => 5,
+        'menu' => 'file',
+        'inhead' => false
+    ],
 ];

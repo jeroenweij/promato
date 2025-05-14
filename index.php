@@ -45,7 +45,8 @@ $pageIcons = [
     'priority_planning.php' => 'list',
     'personel_order.php' => 'user-check',
     'wbso.php' => 'tag',
-    'project_add.php' => 'file-plus'
+    'project_add.php' => 'file-plus',
+    'backup.php' => 'download-cloud'
 ];
 
 // Function to get a suitable icon for a page
@@ -53,15 +54,7 @@ function getPageIcon($page, $pageIcons) {
     if (isset($pageIcons[$page])) {
         return $pageIcons[$page];
     }
-    
-    // Default icons based on partial name matches
-    if (strpos($page, 'project') !== false) return 'briefcase';
-    if (strpos($page, 'person') !== false) return 'user';
-    if (strpos($page, 'capacity') !== false) return 'activity';
-    if (strpos($page, 'dashboard') !== false) return 'grid';
-    if (strpos($page, 'upload') !== false) return 'upload-cloud';
-    if (strpos($page, 'export') !== false) return 'download-cloud';
-    
+
     // Generic default
     return 'box';
 }
