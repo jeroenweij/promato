@@ -81,7 +81,7 @@ foreach ($rows as $row) {
                                      data-status="<?= $item['Status'] ?>">
                                     <div class="card-body">
                                         <h6 class="card-title"><?= htmlspecialchars($item['ProjectName']) ?></h6>
-                                        <p class="small text-muted"><?= htmlspecialchars($item['ActivityName']) ?></p>
+                                        <p class="small text-muted"><?= htmlspecialchars($item['ActivityName']) ?> (Prio: <?=  $item['Priority'] ?>)</p>
                                         <div class="text-center"><?= $logged ?> / <?= $planned ?></div>
                                         <div class="kanban-progress">
                                             <?php $overshoot = $realpercent>100 ? 'overshoot' : '' ?>

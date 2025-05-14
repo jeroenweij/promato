@@ -18,12 +18,6 @@ $pages = [
         'menu' => null,
         'inhead' => false
     ],
-    'year.php' => [
-        'title' => 'Year selection',
-        'auth_level' => 0,
-        'menu' => null,
-        'inhead' => false
-    ],
     'project_edit.php' => [
         'title' => 'Edit Project',
         'auth_level' => 4,
@@ -86,13 +80,13 @@ $pages = [
     ],
     'tmp.php' => [
         'title' => 'tmp',
-        'auth_level' => 0,
+        'auth_level' => 5,
         'menu' => null,
         'inhead' => false
     ],
     'tmp_handler.php' => [
         'title' => 'Upload Handler',
-        'auth_level' => 3,
+        'auth_level' => 5,
         'menu' => null,
         'inhead' => false
     ],

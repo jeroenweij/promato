@@ -1,12 +1,20 @@
 <?php
 require_once 'auth.php';
 
+// Check if a new year is being selected
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newYear'])) {
+    $newYear = $_POST['newYear'];
+    $_SESSION['selectedYear'] = (int)$_POST['newYear'];
+    echo("newYear = $newYear - SESSION=" . $_SESSION['selectedYear']);
+}
+
 // Default to 0, which indicates no specific year selected
 $selectedYear = 0;
 
 // Check if a year is set in the session
 if (isset($_SESSION['selectedYear']) && is_numeric($_SESSION['selectedYear'])) {
     $selectedYear = (int)$_SESSION['selectedYear'];
+    echo("selectedYear = $selectedYear - SESSION=" . $_SESSION['selectedYear']);
 }
 
 // If no year is selected, use the current year
@@ -30,6 +38,7 @@ if ($selectedYear === 0) {
 
   <!-- Custom Css -->
   <link rel="stylesheet" href="style/style.css" type="text/css" />
+  <link rel="stylesheet" href="style/dropdown.css" type="text/css" />
 
   <!-- Ionic icons -->
   <link href="https://unpkg.com/ionicons@4.2.0/dist/css/ionicons.min.css" rel="stylesheet">
@@ -50,10 +59,41 @@ if ($selectedYear === 0) {
 
   <title><?= $pages[$currentPage]['title'] ?></title>
   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+  
+  <script>
+  function toggleYearDropdown() {
+    document.getElementById("yearDropdown").style.display = 
+      document.getElementById("yearDropdown").style.display === "none" ? "block" : "none";
+  }
+  
+  function selectYear(year) {
+    // Set the value in the hidden form field
+    document.getElementById("newYear").value = year;
+    // Submit the form to reload the page with the new year
+    document.getElementById("yearSelectForm").submit();
+  }
+  
+  // Close the dropdown if clicked outside
+  window.onclick = function(event) {
+    if (!event.target.matches('.dropdown-toggle')) {
+      var dropdowns = document.getElementsByClassName("dropdown-menu");
+      for (var i = 0; i < dropdowns.length; i++) {
+        var openDropdown = dropdowns[i];
+        if (openDropdown.style.display === "block") {
+          openDropdown.style.display = "none";
+        }
+      }
+    }
+  }
+</script>
 
 </head>
 
 <body>
+        <!-- Hidden form for POST submission -->
+        <form id="yearSelectForm" method="POST" action="<?= $_SERVER['PHP_SELF'] ?>">
+          <input type="hidden" id="newYear" name="newYear" value="">
+        </form>
 
   <!-- N A V B A R -->
   <nav class="navbar navbar-default navbar-expand-lg fixed-top custom-navbar">
@@ -65,9 +105,17 @@ if ($selectedYear === 0) {
       <div class="collapse navbar-collapse" id="navbarNavDropdown">
       <div class="container">
         <a href="/"><img src="images/logo.png" class="img-fluid nav-logo-desktop" alt="Promato" style="height:40px;"></a>  
-            <div class="nav-item nav-custom-link btn btn-demo-small">
-            <a href="/year.php"><?= $selectedYear ?></a>
+        <div class="nav-item nav-custom-link btn btn-demo-small dropdown">
+          <button onclick="toggleYearDropdown()" class="dropdown-toggle">
+            <?= $selectedYear ?> <span class="caret"></span>
+          </button>
+          <div id="yearDropdown" class="dropdown-menu" style="display: none;">
+            <div onclick="selectYear(2024)" class="year-option">2024</div>
+            <div onclick="selectYear(2025)" class="year-option">2025</div>
+            <div onclick="selectYear(2026)" class="year-option">2026</div>
           </div>
+        </div>
+
         <ul class="navbar-nav ml-auto nav-right" data-easing="easeInOutExpo" data-speed="1250" data-offset="65">
 
             <?php
