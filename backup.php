@@ -1,4 +1,5 @@
 <?php
+require_once 'includes/auth.php';
 require 'includes/db.php';
 
 // Handle form submission

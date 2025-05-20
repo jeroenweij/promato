@@ -71,16 +71,17 @@ $activitiesQuery = $pdo->prepare("
         b.Hours AS BudgetHours, 
         p.Name AS ProjectName, 
         pe.ShortName AS Manager, 
-        p.Manager AS ManagerId
+        p.Manager AS ManagerId,
+        p.Status
     FROM Activities a
     JOIN Projects p ON a.Project = p.Id 
     LEFT JOIN Personel pe ON p.Manager = pe.Id 
     LEFT JOIN Budgets b ON a.Id = b.Activity
-    WHERE p.Status = 3 
+    WHERE p.Status > 2 
     AND a.Visible = 1 
     AND YEAR(a.StartDate) <= :selectedYear 
     AND YEAR(a.EndDate) >= :selectedYear
-    ORDER BY p.Id, a.Key
+    ORDER BY p.Status, p.Id, a.Key
 ");
 
 // Execute the prepared statement
@@ -139,6 +140,7 @@ foreach ($activities as $activity) {
     if (!isset($projectGroups[$projectId])) {
         $projectGroups[$projectId] = [
             'id' => $projectId,
+            'Status' => $activity['Status'],
             'name' => $activity['ProjectName'],
             'manager' => $activity['Manager'],
             'managerId' => $activity['ManagerId'],
@@ -147,6 +149,8 @@ foreach ($activities as $activity) {
     }
     $projectGroups[$projectId]['activities'][] = $activity;
 }
+
+$currentStatus = 3;
 
 // Start output with CSS optimization
 ?>
@@ -165,13 +169,37 @@ foreach ($activities as $activity) {
                         <tr><td colspan="5" class="text fixedheigth"><b>Available (hrs)</b></td></tr>
                         <tr><td colspan="5" class="text fixedheigth"><b>Planned / realised</b></td></tr>
                         
-                        <?php foreach ($projectGroups as $project): ?>
+                        <?php foreach ($projectGroups as $project): 
+                            if ($currentStatus != $project["Status"]): 
+                                $currentStatus = $project["Status"];
+                                ?>
+                                <tr>
+                                <td colspan="100%" class="headerspacer"> 
+                                <div class="spacer" style="height: 128px;">
+                                    &nbsp;
+                                </div>
+                                    <div style="display: flex; align-items: center; gap: 10px; height: 64px;">
+                                        <h4 style="margin: 0;">
+                                        Closed Projects
+                                        </h4>
+                                    </div>
+                                </td>
+                                </tr>
+                            
+                            <?php endif; ?>
                             <tr>
                                 <td colspan="100%" class="headerspacer">
-                                    <a href="project_details.php?project_id=<?= htmlspecialchars($project['id']) ?>">
-                                        <h4><b><?= $project['id'] ?> <?= htmlspecialchars($project['name']) ?></b> 
-                                        (<?= htmlspecialchars($project['manager'] ?? '') ?>)</h4>
-                                    </a>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <h4 style="margin: 0;">
+                                            <a href="project_details.php?project_id=<?= htmlspecialchars($project['id']) ?>">
+                                                <b><?= $project['id'] ?> <?= htmlspecialchars($project['name']) ?></b> 
+                                                (<?= htmlspecialchars($project['manager'] ?? '') ?>)
+                                            </a>
+                                        </h4>
+                                        <?php if ($userAuthLevel >= 4): ?>
+                                            <a href="project_edit.php?project_id=<?= htmlspecialchars($project['id']) ?>">Edit</a>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                             </tr>
                             <tr>
@@ -251,7 +279,24 @@ foreach ($activities as $activity) {
                             <?php endforeach; ?>
                         </tr>
                         
-                        <?php foreach ($projectGroups as $project): ?>
+                        <?php 
+                        $currentStatus = 3;
+                        foreach ($projectGroups as $project):  
+                            if ($currentStatus != $project["Status"]): 
+                                $currentStatus = $project["Status"];
+                                ?>
+                                <tr>
+                                <td colspan="100%" class="headerspacer"> 
+                                    <div class="spacer" style="height: 128px;">
+                                        &nbsp;
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px; height: 64px;">
+                                        &nbsp;
+                                    </div>
+                                </td>
+                                </tr>
+                            
+                            <?php endif; ?>
                             <tr>
                                 <td colspan="100%" class="headerspacer">&nbsp;</td>
                             </tr>
@@ -291,7 +336,7 @@ foreach ($activities as $activity) {
                                                       onchange="UpdateValue(this)">
                                             </td>
                                         <?php else: ?>
-                                            <td class="budget fixedheigth"><?= $plan ?></td>
+                                            <td class="editbudget fixedheigth"><?= $plan ?></td>
                                         <?php endif; ?>
                                         <td class="budget <?= $overbudget ?> fixedheigth"><?= $hours ?></td>
                                     <?php endforeach; ?>

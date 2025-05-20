@@ -37,11 +37,11 @@ if (isset($_GET['project_id'])) {
         SELECT Activities.*, Budgets.Hours AS BudgetHours, Budgets.Budget, Budgets.OopSpend, Budgets.Rate,
                Wbso.Name AS WbsoName
         FROM Activities 
-        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity 
+        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity AND Budgets.`Year` = ? 
         LEFT JOIN Wbso ON Activities.Wbso = Wbso.Id
         WHERE Project = ?
     ");
-    $activityStmt->execute([$projectId]);
+    $activityStmt->execute([$selectedYear, $projectId]);
     $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Fetch status options
@@ -64,6 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     // Update the project status
     $updateStatusStmt = $pdo->prepare("UPDATE Projects SET Status = ? WHERE Id = ?");
     $updateStatusStmt->execute([$newStatus, $projectId]);
+
+    $updateStatusStmt = $pdo->prepare("UPDATE Activities SET Export = 1 WHERE Project = ?");
+    $updateStatusStmt->execute([$projectId]);
 
     // Set redirect flag instead of immediate redirect
     $redirectNeeded = true;

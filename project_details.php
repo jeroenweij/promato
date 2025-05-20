@@ -188,7 +188,12 @@ function isOverBudget($actual, $planned) {
     <section id="project-details">
         <div class="container">
             <!-- Project Information -->
-            <h1><?= htmlspecialchars($project['Name']) ?></h1>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <h1 style="margin: 0;"><?= htmlspecialchars($project['Name']) ?></h1>
+                <?php if ($userAuthLevel >= 4): ?>
+                    <a href="project_edit.php?project_id=<?= htmlspecialchars($project['Id']) ?>">Edit</a>
+                <?php endif; ?>
+            </div>
 
             <div class="mb-3">
                 <strong>Status:</strong>
@@ -268,7 +273,7 @@ function isOverBudget($actual, $planned) {
                                     if ($userAuthLevel >= 4 || $_SESSION['user_id'] == $project['Manager']) {
                                         echo '<td class="editbudget"><input type="text" data-project="' . $activity['Project'] . '" data-activity="' . $activity['Key'] . '" data-person="' . $personId . '" value="' . $personPlanned . '" maxlength="4" size="3" class="hiddentext editbudget"></td>';
                                     } else {
-                                        echo '<td class="budget">' . $personPlanned . '</td>';
+                                        echo '<td class="editbudget">' . $personPlanned . '</td>';
                                     }
                                     ?>
                                     <td class="budget <?= $personOverbudget ?>"><?= $personLogged ?></td>

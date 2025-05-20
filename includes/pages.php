@@ -117,6 +117,12 @@ $pages = [
         'menu' => 'main',
         'inhead' => true
     ],
+    'project_dashboard.php' => [
+        'title' => 'Project dashboard',
+        'auth_level' => 4,
+        'menu' => 'main',
+        'inhead' => true
+    ],
 
     // ADMIN Menu
     'project_add.php' => [

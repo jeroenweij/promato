@@ -62,14 +62,14 @@ try {
         $sheet->setCellValue('B' . $rowNumber, formatDate($row["PSD"]));
         $sheet->setCellValue('C' . $rowNumber, formatDate($row["PED"]));
         $sheet->setCellValue('D' . $rowNumber, $row["PID"]);
-        $sheet->setCellValue('F' . $rowNumber, $row["PS"] == 3 ? 'active' : 'inactive');
+        $sheet->setCellValue('F' . $rowNumber, $row["PS"] == 3 ? 'active' : 'closed');
         $sheet->setCellValue('G' . $rowNumber, $row["WL"] ?? '');
         $sheet->setCellValue('H' . $rowNumber, empty($row["WL"]) ? '' : 'WBSO');
         $sheet->setCellValue('P' . $rowNumber, $row["AN"]);
         $sheet->setCellValue('Q' . $rowNumber, str_pad($row['AK'], 3, '0', STR_PAD_LEFT));
         $sheet->setCellValue('R' . $rowNumber, formatDate($row["ASD"]));
         $sheet->setCellValue('S' . $rowNumber, formatDate($row["AED"]));
-        $sheet->setCellValue('T' . $rowNumber, $row["PS"] == 3 ? 'active' : 'inactive');
+        $sheet->setCellValue('T' . $rowNumber, $row["PS"] == 3 ? 'active' : 'closed');
         $sheet->setCellValue('AB' . $rowNumber, 'Time');
         $sheet->setCellValue('AC' . $rowNumber, 'Time');
         $sheet->setCellValue('AD' . $rowNumber, 'activity');
