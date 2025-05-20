@@ -79,6 +79,16 @@
     z-index: 3;
 }
 
+.overspent-bar {
+    background-color: #FF9800;
+    z-index: 4;
+}
+
+.over-budget-bar {
+    background-color: #F44336;
+    z-index: 5;
+}
+
 .plan-bar {
     background-color: #adadad;
     z-index: 2;
