@@ -27,7 +27,7 @@ SELECT
     p.Name AS ProjectName 
 FROM Hours h 
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
-JOIN Projects p ON a.Project = p.Id
+JOIN Projects p ON a.Project = p.Id AND p.Status = 3
 WHERE h.Plan>0 AND a.IsTask=1 AND h.`Year` = :selectedYear
 ORDER BY h.Person, h.Prio");
 
@@ -81,7 +81,7 @@ foreach ($rows as $row) {
                                      data-status="<?= $item['Status'] ?>">
                                     <div class="card-body">
                                         <h6 class="card-title"><?= htmlspecialchars($item['ProjectName']) ?></h6>
-                                        <p class="small text-muted"><?= htmlspecialchars($item['ActivityName']) ?> (Prio: <?=  $item['Priority'] ?>)</p>
+                                        <p class="small text-muted"><?= htmlspecialchars($item['ActivityName']) ?></p>
                                         <div class="text-center"><?= $logged ?> / <?= $planned ?></div>
                                         <div class="kanban-progress">
                                             <?php $overshoot = $realpercent>100 ? 'overshoot' : '' ?>

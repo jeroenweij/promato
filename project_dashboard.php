@@ -271,7 +271,7 @@ function calculateCompletion($logged, $planned) {
                                                 </small>
                                             </td>
                                             <td>
-                                                <strong><?= htmlspecialchars($activity['ProjectName']) ?></strong>
+                                                <strong><a href="/project_details.php?project_id=<?= $activity['ProjectId'] ?>" class="hidden-link"><?= htmlspecialchars($activity['ProjectName']) ?></a></strong>
                                                 <small class="d-block text-muted"><?= htmlspecialchars($activity['ActivityName']) ?></small>
                                             </td>
                                             <td>
@@ -323,7 +323,7 @@ function calculateCompletion($logged, $planned) {
                                         ?>
                                         <tr>
                                             <td>
-                                                <strong><?= htmlspecialchars($activity['ProjectName']) ?></strong>
+                                                <strong><a href="/project_details.php?project_id=<?= $activity['ProjectId'] ?>" class="hidden-link"><?= htmlspecialchars($activity['ProjectName']) ?></a></strong>
                                                 <small class="d-block text-muted"><?= htmlspecialchars($activity['ActivityName']) ?></small>
                                             </td>
                                             <td>
@@ -373,7 +373,7 @@ function calculateCompletion($logged, $planned) {
                                         ?>
                                         <tr>
                                             <td>
-                                                <strong><?= htmlspecialchars($activity['ProjectName']) ?></strong>
+                                                <strong><a href="/project_details.php?project_id=<?= $activity['ProjectId'] ?>" class="hidden-link"><?= htmlspecialchars($activity['ProjectName']) ?></a></strong>
                                                 <small class="d-block text-muted"><?= htmlspecialchars($activity['ActivityName']) ?></small>
                                             </td>
                                             <td>

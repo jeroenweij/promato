@@ -1,0 +1,349 @@
+/* Dashboard Styles */
+#personal-dashboard {
+    background-color: #f5f8fa;
+    min-height: calc(100vh - 100px);
+}
+
+/* Profile Card */
+.profile-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    background-color: white;
+    border-top: 5px solid #007bff;
+}
+
+.profile-image {
+    width: 100px;
+    height: 100px;
+    background-color: #007bff;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 0 auto;
+}
+
+.yearly-hours-summary {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.yearly-hours-summary h4 {
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+/* Cards */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border: none;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 12px 15px;
+    font-weight: 500;
+    border-top-left-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+}
+
+.card-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+.card-header h4 i {
+    margin-right: 8px;
+    color: #007bff;
+}
+
+.card-body {
+    padding: 15px;
+}
+
+.task-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.task-header {
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.task-body {
+    padding: 12px;
+}
+
+.task-name {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #212529;
+}
+
+.task-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.task-status {
+    display: flex;
+    align-items: center;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-backlog {
+    background-color: #6c757d;
+}
+
+.status-todo {
+    background-color: #ffc107;
+}
+
+.status-in.progress {
+    background-color: #17a2b8;
+}
+
+.status-done {
+    background-color: #28a745;
+}
+
+.status-hidden {
+    background-color: #dc3545;
+}
+
+.task-progress {
+    margin-top: 8px;
+}
+
+.hours-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.progress {
+    height: 10px;
+    border-radius: 5px;
+}
+
+.progress-bar.overshoot {
+    background-color: #dc3545;
+}
+
+.task-overdue {
+    border-left: 3px solid #dc3545;
+}
+
+.task-urgent {
+    border-left: 3px solid #ffc107;
+}
+
+.overdue-tag, .urgent-tag {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 5px;
+}
+
+.overdue-tag {
+    background-color: #dc3545;
+    color: white;
+}
+
+.urgent-tag {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+/* Task Status Summary */
+.task-status-summary {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.status-item {
+    text-align: center;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+    flex: 1 0 30%;
+    margin: 5px;
+}
+
+.status-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.status-count {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+/* Project Hours Distribution */
+.project-hours-item {
+    margin-bottom: 15px;
+}
+
+.project-name {
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.project-hours {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+/* Upcoming Deadlines */
+.deadline-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.deadline-item {
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.deadline-item:last-child {
+    border-bottom: none;
+}
+
+.deadline-project {
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+.deadline-activity {
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+}
+
+.deadline-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.days-left {
+    margin-left: 5px;
+}
+
+.urgent-deadline .deadline-date {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+/* Managed Projects */
+.managed-projects-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.managed-project {
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.managed-project:last-child {
+    border-bottom: none;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+.status-lead {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.status-quote {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-active {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-closed {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* WBSO Activities */
+.wbso-item {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 10px;
+}
+
+.wbso-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.wbso-name {
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+.wbso-activity {
+    font-size: 0.9rem;
+    color: #495057;
+    margin-bottom: 3px;
+}
+
+.wbso-description {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+/* Year Selector */
+.year-selector {
+    display: flex;
+    justify-content: center;
+}

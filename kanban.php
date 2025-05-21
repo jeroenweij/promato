@@ -20,10 +20,10 @@ SELECT
     p.Name AS ProjectName 
 FROM Hours h 
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
-JOIN Projects p ON a.Project = p.Id
+JOIN Projects p ON a.Project = p.Id AND p.Status = 3
 LEFT JOIN HourStatus hs ON h.Status = hs.Id
 WHERE h.Person = ? AND h.Plan>0 AND a.IsTask=1 AND h.`Year`= ?
-ORDER BY hs.Name, h.Prio DESC
+ORDER BY h.Prio, hs.Name
 ");
 $stmt->execute([$userId, $selectedYear]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -102,6 +102,7 @@ foreach ($rows as $row) {
                         activityId: activityId,
                         projectId: projectId,
                         personId: personId,
+                        year: <?= $selectedYear ?>,
                         newStatusId: newStatusId
                     })
                 }).then(res => res.json()).then(data => {
