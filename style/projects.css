@@ -1,0 +1,146 @@
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.project-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.project-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.project-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin: 0;
+    color: #333;
+}
+
+.project-meta {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.activity-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.activity-table th {
+    background: #f8f9fa;
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+.activity-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+}
+
+/* Fixed column widths */
+.activity-table th:nth-child(1),
+.activity-table td:nth-child(1) {
+    width: 12%;
+}
+
+.activity-table th:nth-child(2),
+.activity-table td:nth-child(2) {
+    width: 35%;
+}
+
+.activity-table th:nth-child(3),
+.activity-table td:nth-child(3) {
+    width: 12%;
+    text-align: center;
+}
+
+.activity-table th:nth-child(4),
+.activity-table td:nth-child(4) {
+    width: 15%;
+}
+
+.activity-table th:nth-child(5),
+.activity-table td:nth-child(5) {
+    width: 20%;
+}
+
+.activity-table th:nth-child(6),
+.activity-table td:nth-child(6) {
+    width: 6%;
+    text-align: center;
+}
+
+.activity-table tr:hover {
+    background: #f8f9fa;
+}
+
+.progress-bar-empty {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.8rem;
+}
+
+.task-code {
+    font-family: 'Courier New', monospace;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9rem;
+}
+
+.wbso-tag {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 1rem;
+    border-radius: 4px;
+    margin: 1rem 0;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 2rem 0 1rem 0;
+    color: #333;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 0.5rem;
+}
