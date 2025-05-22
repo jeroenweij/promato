@@ -18,7 +18,7 @@
 }
 
 .kanban-cards {
-    min-height: 50px;
+    min-height: 5px;
 }
 
 /* Make done cards cursor draggable */
@@ -28,4 +28,10 @@
 
 .done-card:active {
     cursor: grabbing;
+}
+
+.nospacing {
+    margin-bottom: 0px !important;
+    padding-top: 1px !important;
+    padding-bottom: 1px !important;
 }

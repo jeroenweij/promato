@@ -95,6 +95,11 @@ b {
 
 section {
 	padding: 100px 0px;
+	background-color: #f5f8fa;
+}
+
+section.white{
+	background-color: #ffffff;
 }
 
 .title-block {

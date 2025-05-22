@@ -154,7 +154,7 @@ $currentStatus = 3;
 
 // Start output with CSS optimization
 ?>
-<section>
+<section class="white">
     <div class="container" style="max-width: 20000px;">
         <div class="autoheight">
             <div class="budget-table-wrapper">

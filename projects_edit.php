@@ -17,7 +17,7 @@ if (!$stmt) {
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Render the table
-echo '<section id="projects"><div class="container">';
+echo '<section class="white" id="projects"><div class="container">';
 
 echo '<div class="row mb-4">';
 echo '  <div class="col">';

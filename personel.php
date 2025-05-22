@@ -12,7 +12,7 @@ $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Render table
 ?>
-<section><div class="container"><h2>Personel Overview</h2>
+<section class="white"><div class="container"><h2>Personel Overview</h2>
 <a href="personel_edit.php" class="btn btn-primary mb-3">+ Add Person</a>
 <a href="personel_order.php" class="btn btn-primary mb-3">Change order</a>
 <table class="table table-striped">

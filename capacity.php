@@ -97,7 +97,7 @@ foreach ($persons as $p) {
 }
 ?>
 
-<section id="capacity-overview">
+<section class="white" id="capacity-overview">
     <div class="container">
         <h1>Capacity Overview</h1>
 

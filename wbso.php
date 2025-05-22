@@ -151,7 +151,7 @@ if (isset($successMessage) && !empty($successMessage) && ob_get_length() === 0) 
 }
 ?>
 
-<section id="wbso-management">
+<section class="white">
     <div class="container">        
         <?php if (!empty($successMessage)): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">

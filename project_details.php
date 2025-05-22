@@ -185,7 +185,7 @@ function isOverBudget($actual, $planned) {
 }
 ?>
 
-    <section id="project-details">
+    <section class="white">
         <div class="container">
             <!-- Project Information -->
             <div style="display: flex; align-items: center; gap: 12px;">

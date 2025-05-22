@@ -209,7 +209,7 @@ if ($redirectNeeded && ob_get_length() === 0) {
 // If we couldn't redirect with header (output already sent), we'll use JavaScript later
 ?>
 
-<section id="project-details">
+<section class="white">
     <div class="container">
         <?php if ($redirectNeeded): ?>
         <script>

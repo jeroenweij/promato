@@ -32,20 +32,22 @@ foreach ($users as $user) {
             <?php foreach ($departments as $group): ?>
                 <div class="col-md-3">
                     <div class="card mb-3">
-                        <div class="card-header bg-primary text-white text-center">
+                        <div class="card-header bg-secondary text-white text-center">
                             <?= htmlspecialchars($group['Name']) ?>
                         </div>
-                    </div>
-                    <div id="dep-<?= $group['Id'] ?>" class="kanban-cards department-container" data-department-id="<?= $group['Id'] ?>">
-                        <?php if (!empty($persons[$group['Id']])): ?>
-                            <?php foreach ($persons[$group['Id']] as $user): ?>
-                                <div class="card mb-3 user-card" data-person-id="<?= $user['Id'] ?>">
-                                    <div class="card-body">
-                                        <h6 class="card-title"><?= htmlspecialchars($user['Name']) ?></h6>                                    
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                        <div class="card-body">
+                            <div id="dep-<?= $group['Id'] ?>" class="kanban-cards department-container" data-department-id="<?= $group['Id'] ?>">
+                                <?php if (!empty($persons[$group['Id']])): ?>
+                                    <?php foreach ($persons[$group['Id']] as $user): ?>
+                                        <div class="card mb-3 user-card" data-person-id="<?= $user['Id'] ?>">
+                                            <div class="card-body">
+                                                <h6 class="card-title"><?= htmlspecialchars($user['Name']) ?></h6>                                    
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>

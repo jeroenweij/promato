@@ -297,7 +297,7 @@ $upcomingDeadlines = $upcomingDeadlinesStmt->fetchAll(PDO::FETCH_ASSOC);
                                         <span class="project-name">
                                             <a href="/project_details.php?project_id=<?= $task['ProjectId'] ?>" class="hidden-link"><?= htmlspecialchars($task['ProjectName']) ?></a>
                                         </span>
-                                        <span class="task-priority"><?= $task['Priority']>0 ? $task['Priority'] : '' ?></span>
+                                        <span class="task-priority"><?= ($task['Priority']>0 && $task['Priority']<250) ? $task['Priority'] : '' ?></span>
                                     </div>
                                     <div class="task-body">
                                         <div class="task-name"><?= htmlspecialchars($task['ActivityName']) ?></div>

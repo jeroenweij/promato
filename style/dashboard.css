@@ -39,78 +39,6 @@
     color: #495057;
 }
 
-/* Cards */
-.card {
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-    border: none;
-}
-
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 12px 15px;
-    font-weight: 500;
-    border-top-left-radius: 8px !important;
-    border-top-right-radius: 8px !important;
-}
-
-.card-header h4 {
-    margin: 0;
-    font-size: 1.1rem;
-    color: #495057;
-}
-
-.card-header h4 i {
-    margin-right: 8px;
-    color: #007bff;
-}
-
-.card-body {
-    padding: 15px;
-}
-
-.task-card {
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    margin-bottom: 15px;
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-}
-
-.task-header {
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.task-body {
-    padding: 12px;
-}
-
-.task-name {
-    font-size: 1rem;
-    font-weight: 500;
-    margin-bottom: 10px;
-    color: #212529;
-}
-
-.task-details {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
-    color: #6c757d;
-}
-
-.task-status {
-    display: flex;
-    align-items: center;
-}
-
 .status-indicator {
     display: inline-block;
     width: 10px;
@@ -141,22 +69,6 @@
 
 .task-progress {
     margin-top: 8px;
-}
-
-.hours-info {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85rem;
-    margin-bottom: 5px;
-}
-
-.progress {
-    height: 10px;
-    border-radius: 5px;
-}
-
-.progress-bar.overshoot {
-    background-color: #dc3545;
 }
 
 .task-overdue {
@@ -215,11 +127,6 @@
 /* Project Hours Distribution */
 .project-hours-item {
     margin-bottom: 15px;
-}
-
-.project-name {
-    font-weight: 500;
-    margin-bottom: 5px;
 }
 
 .project-hours {

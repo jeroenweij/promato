@@ -1,7 +1,7 @@
 <?php
 require 'includes/header.php';
 ?>
-<section id="pricing"><div class="container">
+<section class="white"><div class="container">
 
 <h2>Upload Realised Hours (CSV) for selected year: <?= $selectedYear ?></h2>
 

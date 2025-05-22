@@ -49,8 +49,7 @@ foreach ($rows as $row) {
                         <div class="card-header bg-secondary text-white text-center">
                             <?= $status['Name'] ?>
                         </div>
-                    </div>
-                    <div id="status-<?= $statusId ?>" class="kanban-cards">
+                    <div id="status-<?= $statusId ?>" class="card-body">
                     <?php if (!empty($kanban[$statusId])): ?>
                         <?php foreach ($kanban[$statusId] as $item):
                             $planned = $item['PlannedHours'] / 100;
@@ -58,14 +57,21 @@ foreach ($rows as $row) {
                             $realpercent = $planned > 0 ? round(($logged / $planned) * 100) : 0;
                             $percent = min(100, $realpercent);
                             ?>
-                            <div class="card mb-3" data-project-id="<?= $item['ProjectId'] ?>" data-activity-id="<?= $item['ActivityId'] ?>" data-person-id="<?= $userId ?>">
-                                <div class="card-header bg-primary text-white text-center">
-                                    <?= htmlspecialchars($item['ProjectName']) ?>
-                                </div>     
+                            <div class="task-card" data-project-id="<?= $item['ProjectId'] ?>" data-activity-id="<?= $item['ActivityId'] ?>" data-person-id="<?= $userId ?>">
+                                <div class="task-header bg-primary text-white project-header">
+                                    <span class="project-name">
+                                        <?= htmlspecialchars($item['ProjectName']) ?>
+                                    </span>
+                                    <span class="task-priority">
+                                        <?= ($item['Priority']>0 && $item['Priority']<250) ? $item['Priority'] : '' ?>
+                                    </span>
+                                </div> 
                                     <div class="card-body">
-                                    <p class="card-title"><?= htmlspecialchars($item['ActivityName']) ?></p>
-                                    <div class="text center"><?= $logged ?> / <?= $planned ?></div>
-                                    <div class="kanban-progress">
+                                    <div class="task-name"><?= htmlspecialchars($item['ActivityName']) ?></div>
+                                    <div class="hours-info">
+                                        <?= $logged ?> / <?= $planned ?> hours
+                                    </div>
+                                    <div class="progress">
                                         <?php $overshoot = $realpercent>100 ? 'overshoot' : '' ?>
                                         <div class="progress-bar <?= $overshoot ?>" role="progressbar" style="width: <?= $percent ?>%;" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100">
                                             <?= $realpercent ?>%
@@ -75,6 +81,7 @@ foreach ($rows as $row) {
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
+                    </div>
                     </div>
                 </div>
             <?php endforeach; ?>
