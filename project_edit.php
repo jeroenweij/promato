@@ -2,6 +2,12 @@
 // Start output buffering to prevent "headers already sent" errors
 ob_start();
 
+// Validate project ID and redirect if not provided
+if (!isset($_GET['project_id']) || !is_numeric($_GET['project_id'])) {
+    header('Location: index.php');
+    exit;
+}
+
 require 'includes/header.php';
 require 'includes/db.php';
 
@@ -15,47 +21,44 @@ $wbsoOptions = [];
 $redirectNeeded = false;
 $redirectUrl = '';
 
-// Check if the project ID is provided in the URL
-if (isset($_GET['project_id'])) {
-    $projectId = $_GET['project_id'];
+$projectId = $_GET['project_id'];
 
-    // Fetch the project details
-    $projectStmt = $pdo->prepare("SELECT * FROM Projects WHERE Id = ?");
-    $projectStmt->execute([$projectId]);
-    $project = $projectStmt->fetch(PDO::FETCH_ASSOC);
+// Fetch the project details
+$projectStmt = $pdo->prepare("SELECT * FROM Projects WHERE Id = ?");
+$projectStmt->execute([$projectId]);
+$project = $projectStmt->fetch(PDO::FETCH_ASSOC);
 
-    // If project is not found
-    if (!$project) {
-        echo 'Project not found.';
-        require 'includes/footer.php';
-        ob_end_flush(); // Flush the buffer and end it
-        exit;
-    }
-
-    // Fetch the activities for the project with budget information
-    $activityStmt = $pdo->prepare("
-        SELECT Activities.*, Budgets.Hours AS BudgetHours, Budgets.Budget, Budgets.OopSpend, Budgets.Rate,
-               Wbso.Name AS WbsoName
-        FROM Activities 
-        LEFT JOIN Budgets ON Activities.Id = Budgets.Activity AND Budgets.`Year` = ? 
-        LEFT JOIN Wbso ON Activities.Wbso = Wbso.Id
-        WHERE Project = ?
-    ");
-    $activityStmt->execute([$selectedYear, $projectId]);
-    $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Fetch status options
-    $statusStmt = $pdo->query("SELECT * FROM Status");
-    $statuses = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Fetch project managers
-    $managerStmt = $pdo->query("SELECT Id, Shortname AS Name FROM Personel WHERE Type>2");
-    $managers = $managerStmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Fetch WBSO options
-    $wbsoStmt = $pdo->query("SELECT Id, Name, Description FROM Wbso");
-    $wbsoOptions = $wbsoStmt->fetchAll(PDO::FETCH_ASSOC);
+// If project is not found
+if (!$project) {
+    echo 'Project not found.';
+    require 'includes/footer.php';
+    ob_end_flush(); // Flush the buffer and end it
+    exit;
 }
+
+// Fetch the activities for the project with budget information
+$activityStmt = $pdo->prepare("
+    SELECT Activities.*, Budgets.Hours AS BudgetHours, Budgets.Budget, Budgets.OopSpend, Budgets.Rate,
+            Wbso.Name AS WbsoName
+    FROM Activities 
+    LEFT JOIN Budgets ON Activities.Id = Budgets.Activity AND Budgets.`Year` = ? 
+    LEFT JOIN Wbso ON Activities.Wbso = Wbso.Id
+    WHERE Project = ?
+");
+$activityStmt->execute([$selectedYear, $projectId]);
+$activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch status options
+$statusStmt = $pdo->query("SELECT * FROM Status");
+$statuses = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch project managers
+$managerStmt = $pdo->query("SELECT Id, Shortname AS Name FROM Personel WHERE Type>2");
+$managers = $managerStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch WBSO options
+$wbsoStmt = $pdo->query("SELECT Id, Name, Description FROM Wbso");
+$wbsoOptions = $wbsoStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle form submission to update the project status
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
