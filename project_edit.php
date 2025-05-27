@@ -361,25 +361,25 @@ if ($redirectNeeded && ob_get_length() === 0) {
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="budget">Budget (€):</label>
-                            <input type="number" id="budget" name="budget" class="form-control budget-field" oninput="calculateBudget('budget')">
+                            <input type="number" id="budget" name="budget" class="form-control budget-field" onchange="calculateBudget('budget')">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="oop_spend">Operational Spending (€):</label>
-                            <input type="number" id="oop_spend" name="oop_spend" class="form-control budget-field" oninput="calculateBudget('oop')">
+                            <input type="number" id="oop_spend" name="oop_spend" class="form-control budget-field" onchange="calculateBudget('oop')">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="rate">Hour Rate (€):</label>
-                            <input type="number" id="rate" name="rate" class="form-control budget-field" oninput="calculateBudget('rate')">
+                            <input type="number" id="rate" name="rate" class="form-control budget-field" onchange="calculateBudget('rate')">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="hours">Budget Hours:</label>
-                            <input type="number" id="hours" name="hours" class="form-control budget-field" oninput="calculateBudget('hours')">
+                            <input type="number" id="hours" name="hours" class="form-control budget-field" onchange="calculateBudget('hours')">
                         </div>
                     </div>
                 </div>
@@ -440,22 +440,26 @@ function calculateBudget(changedField, prefix='') {
     
     switch(changedField) {
         case 'budget':
-            if (rateValue > 0) {
-                hours.value = Math.round((budgetValue - oopValue) / rateValue);
+            if (budgetValue > 0) {
+                if (rateValue > 0) {
+                    hours.value = Math.round((budgetValue - oopValue) / rateValue);
+                } else if (hoursValue > 0) {
+                    rate.value = Math.round((budgetValue - oopValue) / hoursValue);
+                }
             }
             break;
         case 'oop':
-            if (rateValue > 0) {
+            if (rateValue > 0 && budgetValue > 0) {
                 hours.value = Math.round((budgetValue - oopValue) / rateValue);
             }
             break;
         case 'rate':
-            if (rateValue > 0) {
+            if (rateValue > 0 && budgetValue > 0) {
                 hours.value = Math.round((budgetValue - oopValue) / rateValue);
             }
             break;
         case 'hours':
-            if (budgetValue > 0) {
+            if (budgetValue > 0 && budgetValue > 0) {
                 rate.value = Math.round((budgetValue - oopValue) / hoursValue);
             }
             break;
@@ -485,14 +489,14 @@ function calculateBudget(changedField, prefix='') {
                             <div class="form-group">
                                 <label for="modal_budget">Budget (€):</label>
                                 <input type="number" id="modal_budget" name="budget" class="form-control" 
-                                       oninput="calculateBudget('budget', 'modal_')">
+                                       onchange="calculateBudget('budget', 'modal_')">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="modal_oop_spend">Operational Spending (€):</label>
                                 <input type="number" id="modal_oop_spend" name="oop_spend" class="form-control" 
-                                       oninput="calculateBudget('oop', 'modal_')">
+                                       onchange="calculateBudget('oop', 'modal_')">
                             </div>
                         </div>
                     </div>
@@ -501,14 +505,14 @@ function calculateBudget(changedField, prefix='') {
                             <div class="form-group">
                                 <label for="modal_rate">Hour Rate (€):</label>
                                 <input type="number" id="modal_rate" name="rate" class="form-control" 
-                                       oninput="calculateBudget('rate', 'modal_')">
+                                       onchange="calculateBudget('rate', 'modal_')">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="modal_hours">Budget Hours:</label>
                                 <input type="number" id="modal_hours" name="hours" class="form-control" 
-                                       oninput="calculateBudget('hours', 'modal_')">
+                                       onchange="calculateBudget('hours', 'modal_')">
                             </div>
                         </div>
                     </div>

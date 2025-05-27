@@ -31,7 +31,7 @@ foreach ($users as $user) {
         <div class="row">
             <?php foreach ($departments as $group): ?>
                 <div class="col-md-3">
-                    <div class="card mb-3">
+                    <div class="card card-full mb-3">
                         <div class="card-header bg-secondary text-white text-center">
                             <?= htmlspecialchars($group['Name']) ?>
                         </div>

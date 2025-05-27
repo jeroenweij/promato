@@ -3,14 +3,35 @@ session_start();
 
 require 'includes/header.php';
 require 'includes/db.php';
+
+// Function to get user-friendly error messages
+function getErrorMessage($error_code) {
+    switch($error_code) {
+        case 'user_not_found':
+            return 'Access denied. Your account was not found or you do not have sufficient privileges to access this system.';
+        case 'invalid_token':
+            return 'Authentication failed. Please try signing in again.';
+        case 'no_token':
+            return 'No authentication token received. Please try signing in again.';
+        default:
+            return 'An error occurred during login. Please try again.';
+    }
+}
 ?>
 
     <meta name="google-signin-client_id" content="736797298668-1380256p7or78ojij5eqssddb8d4gpge.apps.googleusercontent.com">
-        <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <section>
     <div class="container">
     <h2>Login</h2>
+
+    <?php if (isset($_GET['error'])): ?>
+        <div class="error-message">
+            <strong>⚠️ Login Error:</strong><br>
+            <?= htmlspecialchars(getErrorMessage($_GET['error'])) ?>
+        </div>
+    <?php endif; ?>
 
     <div id="g_id_onload"
          data-client_id="736797298668-1380256p7or78ojij5eqssddb8d4gpge.apps.googleusercontent.com"

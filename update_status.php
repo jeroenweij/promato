@@ -4,18 +4,37 @@ require 'includes/db.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-$activityId = (int) $data['activityId'];
-$projectId = (int) $data['projectId'];
-$personId = (int) $data['personId'];
-$year = $data['year'];
-$statusId = $data['newStatusId'];
+// Common variables
+$projectId = $data['projectId'] ?? null;
+$statusId = $data['newStatusId'] ?? null;
 
-$update = $pdo->prepare("
-    UPDATE Hours
-    SET Status = ?
-    WHERE Project = ? AND Activity = ? AND Person = ? AND `Year` = ?
-");
-$update->execute([$statusId, $projectId, $activityId, $personId, $year]);
+// Hours-specific variables
+$activityId = $data['activityId'] ?? null;
+$personId = $data['personId'] ?? null;
+$year = $data['year'] ?? null;
+if ($projectId !== null && $statusId !== null) {
+    if ($activityId !== null && $personId !== null && $year !== null) {
+        // Update Hours table
+        $update = $pdo->prepare("
+            UPDATE Hours
+            SET Status = ?
+            WHERE Project = ? AND Activity = ? AND Person = ? AND `Year` = ?
+        ");
+        $update->execute([$statusId, $projectId, $activityId, $personId, $year]);
+
+    } else {
+        // Update Projects table
+        $update = $pdo->prepare("
+            UPDATE Projects
+            SET Status = ?
+            WHERE ID = ?
+        ");
+        $update->execute([$statusId, $projectId]);
+    }
+} else {
+    echo json_encode(['success' => false, 'error' => 'Invalid parameters']);
+    exit;
+}
+
 echo json_encode(['success' => true]);
-
 ?>

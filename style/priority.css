@@ -34,4 +34,5 @@
     margin-bottom: 0px !important;
     padding-top: 1px !important;
     padding-bottom: 1px !important;
+    max-height: fit-content;
 }

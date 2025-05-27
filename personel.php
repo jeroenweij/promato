@@ -43,11 +43,13 @@ $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
       if (!empty($p['LastLogin'])) {
           $loginTime = new DateTime($p['LastLogin']);
           $now = new DateTime();
-          $diff = $now->diff($loginTime);
-          
-          if ($diff->days == 0) {
+
+          $loginDate = $loginTime->format('Y-m-d');
+          $nowDate = $now->format('Y-m-d');
+
+          if ($loginDate == $nowDate) {
               $LastLogin = 'Today ' . $loginTime->format('H:i');
-          } elseif ($diff->days == 1) {
+          } elseif ($loginDate == $now->modify('-1 day')->format('Y-m-d')) {
               $LastLogin = 'Yesterday ' . $loginTime->format('H:i');
           } else {
               $LastLogin = $loginTime->format('d/m/Y H:i');

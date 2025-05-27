@@ -45,7 +45,7 @@ foreach ($rows as $row) {
                 $statusId = $status['Id'];
             ?>
                 <div class="col-md-3" class="kanban-column">
-                    <div class="card mb-3">
+                    <div class="card card-full mb-3">
                         <div class="card-header bg-secondary text-white text-center">
                             <?= $status['Name'] ?>
                         </div>

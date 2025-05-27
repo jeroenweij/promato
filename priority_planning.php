@@ -59,9 +59,9 @@ foreach ($rows as $row) {
         <h1>Priority Planning</h1>
         <div class="row">
             <?php foreach ($users as $user): ?>
-                <div class="col-md-3">
+                <div class="col-md-3 bottom-margin">
                     <!-- Active Tasks -->
-                    <div class="card mb-3">
+                    <div class="card card-full mb-3">
                         <div class="card-header bg-secondary text-white text-center">
                             <strong><?= htmlspecialchars($user['Name']) ?></strong>
                         </div>
@@ -110,58 +110,54 @@ foreach ($rows as $row) {
                                 <?php endif; ?>
                             </div>
                         </div>
-                    </div>
                     
-                    <!-- Done Tasks -->
-                    <div class="card">
-                        <div class="done-header card nospacing">
-                            <div class="done-header card-header text-center">
-                                Done Tasks
+                        <!-- Done Tasks -->
+                        <!-- <div class="card"> -->
+                            <div class="done-header card-header nospacing text-center">
+                                    Done Tasks
                             </div>
-                        </div>
-                        <div class="card-body tasks-container nospacing">
-                            <div id="person-done-<?= $user['Id'] ?>" class="kanban-cards done-tasks" data-person-id="<?= $user['Id'] ?>">
-                                <?php if (!empty($doneTasks[$user['Id']])): ?>
-                                    <?php foreach ($doneTasks[$user['Id']] as $item): ?>
-                                        <div class="card mb-2 done-card task-card"
-                                            data-project-id="<?= $item['ProjectId'] ?>"
-                                            data-activity-id="<?= $item['ActivityId'] ?>"
-                                            data-person-id="<?= $item['PersonId'] ?>"
-                                            data-status="<?= $item['Status'] ?>">
-                                            <div class="card-body">
-                                                <small><strong><?= htmlspecialchars($item['ProjectName']) ?></strong> - <?= htmlspecialchars($item['ActivityName']) ?></small>
+                            <div class="card-body tasks-container nospacing">
+                                <div id="person-done-<?= $user['Id'] ?>" class="kanban-cards done-tasks" data-person-id="<?= $user['Id'] ?>">
+                                    <?php if (!empty($doneTasks[$user['Id']])): ?>
+                                        <?php foreach ($doneTasks[$user['Id']] as $item): ?>
+                                            <div class="card mb-2 done-card task-card"
+                                                data-project-id="<?= $item['ProjectId'] ?>"
+                                                data-activity-id="<?= $item['ActivityId'] ?>"
+                                                data-person-id="<?= $item['PersonId'] ?>"
+                                                data-status="<?= $item['Status'] ?>">
+                                                <div class="card-body">
+                                                    <small><strong><?= htmlspecialchars($item['ProjectName']) ?></strong> - <?= htmlspecialchars($item['ActivityName']) ?></small>
+                                                </div>
                                             </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Hidden Tasks -->
-                    <div class="card">
-                        <div class="done-header card nospacing">
-                            <div class="done-header card-header text-center">
-                                Hidden Tasks
+                        <!-- </div> -->
+                        
+                        <!-- Hidden Tasks -->
+                        <!-- <div class="card"> -->
+                            <div class="done-header card-header nospacing text-center">
+                                    Hidden Tasks
                             </div>
-                        </div>
-                        <div class="card-body tasks-container nospacing">
-                            <div id="person-hidden-<?= $user['Id'] ?>" class="kanban-cards done-tasks" data-person-id="<?= $user['Id'] ?>">
-                                <?php if (!empty($hiddenTasks[$user['Id']])): ?>
-                                    <?php foreach ($hiddenTasks[$user['Id']] as $item): ?>
-                                        <div class="card mb-2 done-card task-card"
-                                            data-project-id="<?= $item['ProjectId'] ?>"
-                                            data-activity-id="<?= $item['ActivityId'] ?>"
-                                            data-person-id="<?= $item['PersonId'] ?>"
-                                            data-status="<?= $item['Status'] ?>">
-                                            <div class="card-body">
-                                                <small><strong><?= htmlspecialchars($item['ProjectName']) ?></strong> - <?= htmlspecialchars($item['ActivityName']) ?></small>
+                            <div class="card-body tasks-container nospacing">
+                                <div id="person-hidden-<?= $user['Id'] ?>" class="kanban-cards done-tasks" data-person-id="<?= $user['Id'] ?>">
+                                    <?php if (!empty($hiddenTasks[$user['Id']])): ?>
+                                        <?php foreach ($hiddenTasks[$user['Id']] as $item): ?>
+                                            <div class="card mb-2 done-card task-card"
+                                                data-project-id="<?= $item['ProjectId'] ?>"
+                                                data-activity-id="<?= $item['ActivityId'] ?>"
+                                                data-person-id="<?= $item['PersonId'] ?>"
+                                                data-status="<?= $item['Status'] ?>">
+                                                <div class="card-body">
+                                                    <small><strong><?= htmlspecialchars($item['ProjectName']) ?></strong> - <?= htmlspecialchars($item['ActivityName']) ?></small>
+                                                </div>
                                             </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                        </div>
+                        <!-- </div> -->
                     </div>
                 </div>
             <?php endforeach; ?>

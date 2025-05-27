@@ -337,8 +337,8 @@ $upcomingDeadlines = $upcomingDeadlinesStmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
-                </div>
-            </div>
+                </div> <!-- Close the card -->
+            </div> <!-- Close the col-md-4 -->
 
             <!-- Right Column -->
             <div class="col-md-4">

@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['credential'])) {
         $email = $payload['email'];
 
         // Look up user in database
-        $stmt = $pdo->prepare("SELECT Id, Shortname, Type FROM Personel WHERE Email = ?");
+        $stmt = $pdo->prepare("SELECT Id, Shortname, Type FROM Personel WHERE Type > 1 AND Email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
