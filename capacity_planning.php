@@ -247,7 +247,7 @@ $currentStatus = 3;
                 
                 <!-- Scrollable right columns -->
                 <div class="scrollable-columns">
-                    <table>
+                    <table class="plantable">
                         <tr>
                             <?php foreach ($personnel as $p): ?>
                                 <th colspan="2" class="name fixedheigth"><?= htmlspecialchars($p['Name']) ?></th>
