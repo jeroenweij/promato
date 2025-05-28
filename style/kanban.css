@@ -87,6 +87,11 @@
     margin-bottom: 5px;
 }
 
+.date-range {
+    display: flex;
+    justify-content: space-between;
+}
+
 /* Progress bar container */
 .progress {
     position: relative;

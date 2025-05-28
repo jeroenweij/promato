@@ -91,7 +91,7 @@ if ($selectedYear === 0) {
 
 <body>
         <!-- Hidden form for POST submission -->
-        <form id="yearSelectForm" method="POST" action="<?= $_SERVER['PHP_SELF'] ?>">
+        <form id="yearSelectForm" method="POST" action="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
           <input type="hidden" id="newYear" name="newYear" value="">
         </form>
 

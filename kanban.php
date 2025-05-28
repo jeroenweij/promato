@@ -66,7 +66,7 @@ foreach ($rows as $row) {
                                         <?= ($item['Priority']>0 && $item['Priority']<250) ? $item['Priority'] : '' ?>
                                     </span>
                                 </div> 
-                                    <div class="card-body">
+                                <div class="card-body">
                                     <div class="task-name"><?= htmlspecialchars($item['ActivityName']) ?></div>
                                     <div class="hours-info">
                                         <?= $logged ?> / <?= $planned ?> hours

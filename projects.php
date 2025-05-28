@@ -243,7 +243,7 @@ function getProgressBar($current, $total) {
                             </td>
                             <td>
                                 <small>
-                                    <?php echo date('M j', strtotime($activity['StartDate'])) . ' - ' . date('M j, Y', strtotime($activity['EndDate'])); ?>
+                                    <?php echo date('j M Y', strtotime($activity['StartDate'])) . ' - ' . date('j M Y', strtotime($activity['EndDate'])); ?>
                                 </small>
                             </td>
                             <td>

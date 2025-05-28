@@ -153,13 +153,17 @@ try {
     $jsGanttData = [];
     $jsProgressData = [];
     
+    $yearStart = "{$selectedYear}-01-01";
+    $yearEnd = "{$selectedYear}-12-31";
+
     foreach ($activities as $a) {
         $activityKey = $a['Key'];
+
         // Add data to Gantt chart
         $jsGanttData[] = [
             'name' => $a['Name'],
-            'startDate' => $a['StartDate'],
-            'endDate' => $a['EndDate'],
+            'startDate' => max($a['StartDate'], $yearStart),
+            'endDate' => min($a['EndDate'], $yearEnd),
         ];
         
         // Add data to Progress chart

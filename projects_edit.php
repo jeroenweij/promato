@@ -9,7 +9,10 @@ $stmt = $pdo->prepare("SELECT
     Projects.Name AS ProjectName, 
     Projects.Status AS StatusId, 
     Personel.Shortname AS ProjectManager, 
-    Status.Status
+    Status.Status,
+    (SELECT MIN(StartDate) FROM Activities WHERE Project = Projects.Id) AS StartDate,
+    (SELECT MAX(EndDate) FROM Activities WHERE Project = Projects.Id) AS EndDate,
+    (SELECT COUNT(Id) FROM Activities WHERE Project = Projects.Id) AS ActivityCount
     FROM Projects
     LEFT JOIN Status ON Projects.Status = Status.Id
     LEFT JOIN Personel ON Projects.Manager = Personel.Id
@@ -52,6 +55,13 @@ foreach ($rows as $row) {
                                 </div> 
                                 <div class="card-body">
                                     <div class="task-name"><?= htmlspecialchars($item['ProjectManager']) ?></div>
+                                    <div class="hours-info">
+                                        <?= $item['ActivityCount'] ?> Activities
+                                    </div>
+                                    <div class="date-range">
+                                        <span><?= date('j M Y', strtotime($item['StartDate'])) ?></span>
+                                        <span><?= date('j M Y', strtotime($item['EndDate'])) ?></span>
+                                    </div>                                
                                 </div>
                             </div>
                         <?php endforeach; ?>

@@ -104,6 +104,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
         ':activity' => 2,
         ':year' => $selectedYear
     ]);
+    $stmt = $pdo->prepare("UPDATE Hours SET Plan = Hours WHERE Plan < Hours AND Project = :project AND Activity = :activity AND `Year` = :year");
+    $stmt->execute([
+        ':project' => 10,
+        ':activity' => 1,
+        ':year' => $selectedYear
+    ]);
     logmsg("📆 Set planned hours for holidays.");
   } else {
     logmsg("❌ Failed to open uploaded file.");
