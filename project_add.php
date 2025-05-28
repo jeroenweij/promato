@@ -12,7 +12,7 @@ $selectedManager = '';
 $statusStmt = $pdo->query("SELECT Id, Status FROM Status");
 $statuses = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
 
-$managerStmt = $pdo->query("SELECT Id, Shortname AS ManagerName FROM Personel WHERE Type>1");
+$managerStmt = $pdo->query("SELECT Id, Shortname AS ManagerName FROM Personel WHERE Type>2");
 $managers = $managerStmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

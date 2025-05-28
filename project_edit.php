@@ -243,6 +243,9 @@ if ($redirectNeeded && ob_get_length() === 0) {
                 <form method="POST" class="form-inline">
                     <label for="manager">Project Manager: </label>
                     <select name="manager" id="manager" class="form-control ml-2" onchange="this.form.submit()">
+                        <?php if ($project['Manager'] == null): ?>
+                            <option value="null" selected >Not set</option>
+                        <?php endif; ?>
                         <?php foreach ($managers as $manager): ?>
                             <option value="<?php echo $manager['Id']; ?>" <?php echo $manager['Id'] == $project['Manager'] ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($manager['Name']); ?>
