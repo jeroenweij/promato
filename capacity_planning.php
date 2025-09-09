@@ -48,7 +48,8 @@ $stmtPersonHours = $pdo->query(
     "SELECT 
         Person,
         SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END) AS TotalPlanned,
-        SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END) AS TotalRealised
+        SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END) - 
+        SUM(CASE WHEN Project = 10 AND Activity = 7 THEN Hours ELSE 0 END) AS TotalRealised
     FROM Hours WHERE `Year` = $selectedYear
     GROUP BY Person"
 );
@@ -330,7 +331,7 @@ $currentStatus = 3;
                                                 <input type="text" 
                                                       name="<?= $activity['Project'] ?>#<?= $activity['Key'] ?>#<?= $personId ?>" 
                                                       value="<?= $plan ?>" 
-                                                      maxlength="4" 
+                                                      maxlength="5" 
                                                       size="3" 
                                                       class="hiddentext editbudget" 
                                                       onchange="UpdateValue(this)">

@@ -99,9 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $wbso = $_POST['wbso'] !== '' ? $_POST['wbso'] : null;
         $visible = isset($_POST['visible']) ? 1 : 0;
         $isTask = isset($_POST['is_task']) ? 1 : 0;
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
 
-        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, StartDate = ?, EndDate = ?, Wbso = ?, Visible = ?, IsTask = ?, Export = 1 WHERE Id = ?");
-        $updateStmt->execute([$name, $startDate, $endDate, $wbso, $visible, $isTask, $activityId]);
+        $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, StartDate = ?, EndDate = ?, Wbso = ?, Visible = ?, IsTask = ?, Active = ?, Export = 1 WHERE Id = ?");
+        $updateStmt->execute([$name, $startDate, $endDate, $wbso, $visible, $isTask, $isActive, $activityId]);
 
         // Set redirect flag instead of immediate redirect
         $redirectNeeded = true;
@@ -274,6 +275,7 @@ if ($redirectNeeded && ob_get_length() === 0) {
                 <th>Budget Hours</th>
                 <th>Visible</th>
                 <th>Is Task</th>
+                <th>Active</th>
             </tr>
             </thead>
             <tbody>
@@ -310,6 +312,7 @@ if ($redirectNeeded && ob_get_length() === 0) {
                         </td>
                         <td><input type="checkbox" name="visible" value="1" <?php echo $activity['Visible'] ? 'checked' : ''; ?>></td>
                         <td><input type="checkbox" name="is_task" value="1" <?php echo $activity['IsTask'] ? 'checked' : ''; ?>></td>
+                        <td><input type="checkbox" name="is_active" value="1" <?php echo $activity['Active'] ? 'checked' : ''; ?>></td>
                         <td><button type="submit" name="edit_activity" class="btn btn-primary">Save</button></td>
                     </form>
                 </tr>

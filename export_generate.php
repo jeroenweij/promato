@@ -25,6 +25,7 @@ try {
         (SELECT MIN(StartDate) FROM Activities WHERE Project = p.Id) AS PSD,
         (SELECT MAX(EndDate) FROM Activities WHERE Project = p.Id) AS PED,
         a.Name AS AN, 
+        a.Active AS AA, 
         p.Status AS PS, 
         a.Key AS AK, 
         a.StartDate AS ASD, 
@@ -69,7 +70,7 @@ try {
         $sheet->setCellValue('Q' . $rowNumber, str_pad($row['AK'], 3, '0', STR_PAD_LEFT));
         $sheet->setCellValue('R' . $rowNumber, formatDate($row["ASD"]));
         $sheet->setCellValue('S' . $rowNumber, formatDate($row["AED"]));
-        $sheet->setCellValue('T' . $rowNumber, $row["PS"] == 3 ? 'active' : 'closed');
+        $sheet->setCellValue('T' . $rowNumber, $row["AA"] ? 'active' : 'closed');
         $sheet->setCellValue('AB' . $rowNumber, 'Time');
         $sheet->setCellValue('AC' . $rowNumber, 'Time');
         $sheet->setCellValue('AD' . $rowNumber, 'activity');

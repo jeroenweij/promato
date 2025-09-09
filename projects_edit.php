@@ -29,6 +29,11 @@ foreach ($rows as $row) {
 ?>
 <section id="kanban-board">
     <div class="container">
+        <div class="row mb-4">
+            <div class="col">
+                <a href="project_add.php" class="btn btn-primary">➕ Add Project</a>
+            </div>
+        </div>
         <div class="row">
             <?php
             $statusStmt = $pdo->query("SELECT Id, Status AS Name FROM Status ORDER BY Id ASC");

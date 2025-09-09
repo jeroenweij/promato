@@ -1,5 +1,5 @@
 <?php
-require 'includes/header.php';
+require_once 'includes/auth.php';
 require 'includes/db.php';
 
 $errors = [];
@@ -44,9 +44,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $insertStmt = $pdo->prepare("INSERT INTO Projects (Id, Name, Status, Manager) VALUES (?, ?, ?, ?)");
         $insertStmt->execute([$projectId, $projectName, $selectedStatus, $selectedManager]);
         header("Location: project_details.php?project_id=" . urlencode($projectId));
+        ?>
+        <script>
+            window.location.href = "project_details.php?project_id=<?= urlencode($projectId) ?>";
+        </script>
+        <?php
         exit;
     }
 }
+
+require 'includes/header.php';
 ?>
 
 <section class="container">

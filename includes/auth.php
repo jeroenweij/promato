@@ -10,10 +10,7 @@ if (!isset($pages[$currentPage])) {
 }
 
 if ($userAuthLevel < $pages[$currentPage]['auth_level']) {
-    // Store the current URL (including query parameters) for redirect after login
     $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
-    
-    // Redirect to login page
     header("Location: login.php");
     exit;
 }
