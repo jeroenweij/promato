@@ -4,21 +4,16 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 // ---- DATA PREPARATION ----
-// Get department filter from URL parameter
-$departmentFilter = isset($_GET['department']) ? (int)$_GET['department'] : null;
-
-// Fetch personnel with available hours - doing a more efficient query with proper joins
-$whereClause = "WHERE p.plan = 1
-    AND YEAR(p.StartDate) <= :selectedYear 
-    AND (p.EndDate IS NULL OR YEAR(p.EndDate) >= :selectedYear)";
-$params = [':selectedYear' => $selectedYear];
-
-// Add department filter if specified
-if ($departmentFilter) {
-    $whereClause .= " AND p.Department = :departmentFilter";
-    $params[':departmentFilter'] = $departmentFilter;
+// Fetch departments first
+$deptStmt = $pdo->prepare("SELECT Id, Name, Ord FROM Departments ORDER BY Ord");
+$deptStmt->execute();
+$departments = $deptStmt->fetchAll(PDO::FETCH_ASSOC);
+$departmentById = [];
+foreach ($departments as $dept) {
+    $departmentById[$dept['Id']] = $dept;
 }
 
+// Fetch personnel with available hours - doing a more efficient query with proper joins
 $stmt = $pdo->prepare("
     SELECT 
         p.Shortname AS Name, 
@@ -27,24 +22,30 @@ $stmt = $pdo->prepare("
         p.Department,
         COALESCE(h.Plan, 0) AS AvailableHours,
         d.Ord AS DeptOrder,
-        d.Name AS DepartmentName,
         p.Ord AS PersonOrder
     FROM Personel p 
     LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND `Year`= :selectedYear
     LEFT JOIN Departments d ON p.Department = d.Id
-    $whereClause
+    WHERE p.plan = 1
+    AND YEAR(p.StartDate) <= :selectedYear 
+    AND (p.EndDate IS NULL OR YEAR(p.EndDate) >= :selectedYear)
     ORDER BY d.Ord, p.Ord, p.Name
 ");
 
 // Execute the prepared statement
-$stmt->execute($params);
+$stmt->execute([
+    ':selectedYear' => $selectedYear
+]);
 
 $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $personnelById = []; // For quicker lookup
+$departmentTotals = []; // Department aggregated data
 
 // Initialize person summary - calculate available hours once
 foreach ($personnel as $p) {
     $id = $p['Number'];
+    $deptId = $p['Department'];
+    
     $available = $p['AvailableHours'] > 0
         ? round($p['AvailableHours'] / 100)  // Stored as hundredths in DB
         : round(($p['Fultime'] ?? 100) * 2080 / 100); // Fallback to estimate
@@ -53,7 +54,26 @@ foreach ($personnel as $p) {
     $personnelById[$id]['available'] = $available;
     $personnelById[$id]['planned'] = 0;
     $personnelById[$id]['realised'] = 0;
+    
+    // Initialize department totals if not exists
+    if (!isset($departmentTotals[$deptId])) {
+        $departmentTotals[$deptId] = [
+            'id' => $deptId,
+            'name' => $departmentById[$deptId]['Name'] ?? 'Unknown',
+            'available' => 0,
+            'planned' => 0,
+            'realised' => 0
+        ];
+    }
+    
+    // Add to department totals
+    $departmentTotals[$deptId]['available'] += $available;
 }
+
+// Filter out departments with no active personnel
+$departments = array_filter($departments, function($dept) use ($departmentTotals) {
+    return isset($departmentTotals[$dept['Id']]) && $departmentTotals[$dept['Id']]['available'] > 0;
+});
 
 // Single query to fetch all hours data grouped by person
 $stmtPersonHours = $pdo->query(
@@ -71,8 +91,18 @@ while ($row = $stmtPersonHours->fetch(PDO::FETCH_ASSOC)) {
     $pid = $row['Person'];
     if (!isset($personnelById[$pid])) continue;
 
-    $personnelById[$pid]['planned'] = $row['TotalPlanned'] / 100;
-    $personnelById[$pid]['realised'] = $row['TotalRealised'] / 100;
+    $plannedHours = $row['TotalPlanned'] / 100;
+    $realisedHours = $row['TotalRealised'] / 100;
+    
+    $personnelById[$pid]['planned'] = $plannedHours;
+    $personnelById[$pid]['realised'] = $realisedHours;
+    
+    // Add to department totals
+    $deptId = $personnelById[$pid]['Department'];
+    if (isset($departmentTotals[$deptId])) {
+        $departmentTotals[$deptId]['planned'] += $plannedHours;
+        $departmentTotals[$deptId]['realised'] += $realisedHours;
+    }
 }
 
 // Fetch all projects and activities in a single query with JOINs
@@ -116,14 +146,20 @@ $placeholders = implode(',', array_fill(0, count($activityKeys), '?'));
 if (empty($placeholders)){
     $placeholders="''";
 }
+
+// Get both planned and actual hours for activities from real people
 $allHoursQuery = $pdo->prepare("
     SELECT 
-        CONCAT(Project, '-', Activity) AS ProjectActivity,
-        Person, 
-        Hours, 
-        Plan
-    FROM Hours 
-    WHERE `Year` = $selectedYear AND CONCAT(Project, '-', Activity) IN ($placeholders)
+        CONCAT(h.Project, '-', h.Activity) AS ProjectActivity,
+        h.Person, 
+        h.Hours, 
+        h.Plan,
+        COALESCE(p.Department, 0) AS Department
+    FROM Hours h
+    LEFT JOIN Personel p ON h.Person = p.Id
+    WHERE h.`Year` = $selectedYear 
+    AND CONCAT(h.Project, '-', h.Activity) IN ($placeholders)
+    AND h.Person > 0
 ");
 
 // We need to execute with flattened array values
@@ -133,17 +169,27 @@ foreach ($activities as $a) {
 }
 $allHoursQuery->execute(array_unique($params));
 
-// Organize hours data for quick access
-$hoursData = [];
+// Organize hours data for quick access grouped by department
+$departmentHoursData = [];
+
+// Process both planned and actual hours by department
 while ($row = $allHoursQuery->fetch(PDO::FETCH_ASSOC)) {
     $key = $row['ProjectActivity'];
-    if (!isset($hoursData[$key])) {
-        $hoursData[$key] = [];
+    $personId = $row['Person'];
+    $deptId = $row['Department'];
+    
+    // Aggregate both planned and actual hours by department
+    if (!isset($departmentHoursData[$key])) {
+        $departmentHoursData[$key] = [];
     }
-    $hoursData[$key][$row['Person']] = [
-        'Hours' => $row['Hours'],
-        'Plan' => $row['Plan']
-    ];
+    if (!isset($departmentHoursData[$key][$deptId])) {
+        $departmentHoursData[$key][$deptId] = [
+            'Plan' => 0,
+            'Hours' => 0
+        ];
+    }
+    $departmentHoursData[$key][$deptId]['Plan'] += $row['Plan'];
+    $departmentHoursData[$key][$deptId]['Hours'] += $row['Hours'];
 }
 
 // Additional preparation for project grouping
@@ -165,28 +211,10 @@ foreach ($activities as $activity) {
 
 $currentStatus = 3;
 
-// Get department name for page title if filtering
-$departmentName = '';
-if ($departmentFilter && !empty($personnel)) {
-    $departmentName = $personnel[0]['DepartmentName'] ?? '';
-}
-
 // Start output with CSS optimization
 ?>
 <section class="white">
     <div class="container" style="max-width: 20000px;">
-        <?php if ($departmentFilter): ?>
-            <div style="margin-bottom: 20px; padding: 10px; background-color: #f0f8ff; border: 1px solid #d0d0d0; border-radius: 5px;">
-                <h3 style="margin: 0; display: inline-block;">
-                    Showing: <?= htmlspecialchars($departmentName) ?> Department
-                </h3>
-                <a href="capacity_planning.php" style="float: right; color: #0066cc; text-decoration: none;">
-                    [Show All Departments]
-                </a>
-                <div style="clear: both;"></div>
-            </div>
-        <?php endif; ?>
-        
         <div class="autoheight">
             <div class="budget-table-wrapper">
                 <!-- Scrollable area with fixed and scrollable columns -->
@@ -246,28 +274,14 @@ if ($departmentFilter && !empty($personnel)) {
                                 $taskCode = $activity['Project'] . '-' . str_pad($activity['Key'], 3, '0', STR_PAD_LEFT);
                                 $activityKey = $activity['Project'] . '-' . $activity['Key'];
                                 
-                                // Calculate totals for this activity (only for filtered personnel if applicable)
+                                // Calculate totals for this activity across all departments
                                 $planned = 0;
                                 $realised = 0;
                                 
-                                if (isset($hoursData[$activityKey])) {
-                                    foreach ($hoursData[$activityKey] as $personId => $data) {
-                                        // If department filter is active, only count hours from personnel in that department
-                                        if ($departmentFilter && isset($personnelById[$personId])) {
-                                            // Only include if person is in our filtered personnel list
-                                            if ($personId != 0) {
-                                                $planned += $data['Plan'] / 100;
-                                            } else {
-                                                $realised = $data['Hours'] / 100;
-                                            }
-                                        } elseif (!$departmentFilter) {
-                                            // No filter - include all hours
-                                            if ($personId != 0) {
-                                                $planned += $data['Plan'] / 100;
-                                            } else {
-                                                $realised = $data['Hours'] / 100;
-                                            }
-                                        }
+                                if (isset($departmentHoursData[$activityKey])) {
+                                    foreach ($departmentHoursData[$activityKey] as $deptId => $data) {
+                                        $planned += $data['Plan'] / 100;
+                                        $realised += $data['Hours'] / 100;
                                     }
                                 }
                                 
@@ -291,31 +305,35 @@ if ($departmentFilter && !empty($personnel)) {
                 <div class="scrollable-columns">
                     <table class="plantable">
                         <tr>
-                            <?php foreach ($personnel as $p): ?>
-                                <th colspan="2" class="name fixedheigth"><?= htmlspecialchars($p['Name']) ?></th>
+                            <?php foreach ($departments as $dept): ?>
+                                <th colspan="2" class="name fixedheigth">
+                                    <a href="capacity_planning.php?department=<?= urlencode($dept['Id']) ?>" style="color: inherit; text-decoration: none;">
+                                        <?= htmlspecialchars($dept['Name']) ?>
+                                    </a>
+                                </th>
                             <?php endforeach; ?>
                         </tr>
                         <tr>
-                            <?php foreach ($personnel as $p): ?>
-                                <td colspan="2" class="totals available-total fixedheigth" data-person="<?= $p['Number'] ?>">
-                                    <?= $personnelById[$p['Number']]['available'] ?>
+                            <?php foreach ($departments as $dept): ?>
+                                <td colspan="2" class="totals available-total fixedheigth" data-department="<?= $dept['Id'] ?>">
+                                    <?= $departmentTotals[$dept['Id']]['available'] ?? 0 ?>
                                 </td>
                             <?php endforeach; ?>
                         </tr>
                         <tr>
-                            <?php foreach ($personnel as $p): 
-                                $pid = $p['Number'];
-                                $planned = $personnelById[$pid]['planned'];
-                                $realised = $personnelById[$pid]['realised'];
-                                $available = $personnelById[$pid]['available'];
+                            <?php foreach ($departments as $dept): 
+                                $deptId = $dept['Id'];
+                                $planned = $departmentTotals[$deptId]['planned'] ?? 0;
+                                $realised = $departmentTotals[$deptId]['realised'] ?? 0;
+                                $available = $departmentTotals[$deptId]['available'] ?? 0;
                                 
                                 $plannedClass = $planned > $available ? 'overbudget' : '';
                                 $realisedClass = $realised > $planned ? 'overbudget' : '';
                             ?>
-                                <td class="totals fixedheigth planned-total <?= $plannedClass ?>" data-person="<?= $pid ?>">
+                                <td class="totals fixedheigth planned-total <?= $plannedClass ?>" data-department="<?= $deptId ?>">
                                     <?= round($planned, 2) ?>
                                 </td>
-                                <td class="totals fixedheigth realised-total <?= $realisedClass ?>" data-person="<?= $pid ?>">
+                                <td class="totals fixedheigth realised-total <?= $realisedClass ?>" data-department="<?= $deptId ?>">
                                     <?= round($realised, 2) ?>
                                 </td>
                             <?php endforeach; ?>
@@ -343,43 +361,37 @@ if ($departmentFilter && !empty($personnel)) {
                                 <td colspan="100%" class="headerspacer">&nbsp;</td>
                             </tr>
                             <tr>
-                                <?php foreach ($personnel as $p): ?>
-                                    <th colspan="2" class="name fixedheigth"><?= htmlspecialchars($p['Name']) ?></th>
+                                <?php foreach ($departments as $dept): ?>
+                                    <th colspan="2" class="name fixedheigth">
+                                        <a href="capacity_planning.php?department=<?= urlencode($dept['Id']) ?>" style="color: inherit; text-decoration: none;">
+                                            <?= htmlspecialchars($dept['Name']) ?>
+                                        </a>
+                                    </th>
                                 <?php endforeach; ?>
                             </tr>
                             
                             <?php foreach ($project['activities'] as $activity): ?>
                                 <?php $activityKey = $activity['Project'] . '-' . $activity['Key']; ?>
                                 <tr>
-                                    <?php foreach ($personnel as $p): 
-                                        $personId = $p['Number'];
+                                    <?php foreach ($departments as $dept): 
+                                        $deptId = $dept['Id'];
                                         $plan = '';
                                         $hours = '&nbsp;';
                                         
-                                        if (isset($hoursData[$activityKey][$personId])) {
-                                            $entry = $hoursData[$activityKey][$personId];
-                                            $hoursVal = $entry['Hours'] / 100;
+                                        // Get both planned and actual hours for this department
+                                        if (isset($departmentHoursData[$activityKey][$deptId])) {
+                                            $entry = $departmentHoursData[$activityKey][$deptId];
                                             $planVal = $entry['Plan'] / 100;
-                                            if ($hoursVal > 0) $hours = $hoursVal;
+                                            $hoursVal = $entry['Hours'] / 100;
+                                            
                                             if ($planVal > 0) $plan = $planVal;
+                                            if ($hoursVal > 0) $hours = $hoursVal;
                                         }
                                         
-                                        $overbudget = ($hours != '&nbsp;' && $hours > $plan) ? 'overbudget' : '';
-                                        $isEditable = $userAuthLevel >= 4 || ($_SESSION['user_id'] ?? 0) == $activity['ManagerId'];
+                                        $overbudget = ($hours != '&nbsp;' && $plan > 0 && $hours > $plan) ? 'overbudget' : '';
+                                        $isEditable = false; // Department view is read-only for now
                                     ?>
-                                        <?php if ($isEditable): ?>
-                                            <td class="editbudget fixedheigth">
-                                                <input type="text" 
-                                                      name="<?= $activity['Project'] ?>#<?= $activity['Key'] ?>#<?= $personId ?>" 
-                                                      value="<?= $plan ?>" 
-                                                      maxlength="5" 
-                                                      size="3" 
-                                                      class="hiddentext editbudget" 
-                                                      onchange="UpdateValue(this)">
-                                            </td>
-                                        <?php else: ?>
-                                            <td class="editbudget fixedheigth"><?= $plan ?></td>
-                                        <?php endif; ?>
+                                        <td class="editbudget fixedheigth"><?= $plan ?></td>
                                         <td class="budget <?= $overbudget ?> fixedheigth"><?= $hours ?></td>
                                     <?php endforeach; ?>
                                 </tr>
@@ -457,115 +469,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial setup
     window.addEventListener('DOMContentLoaded', setElementHeight);
     window.addEventListener('resize', debounce(setElementHeight, 100));
-
-    // Handle updating values
-    window.UpdateValue = function(input) {
-        const [project, activity, person] = input.name.split('#');
-        const value = parseFloat(input.value) || 0;
-
-        // Update UI immediately for better UX
-        updateUIForChangedValue(input);
-
-        // Send data to server
-        fetch('update_hours_plan.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `project=${project}&activity=${activity}&person=${person}&year=<?= $selectedYear ?>&plan=${value}`
-        }).then(res => {
-            if (!res.ok) {
-                alert(`Failed to save: project=${project}, activity=${activity}, person=${person}, plan=${value}`);
-                return;
-            }
-        }).catch(err => {
-            console.error('Error saving data:', err);
-            alert('Failed to save data. Please try again.');
-        });
-    }
-
-    // Update UI without waiting for server response
-    function updateUIForChangedValue(input) {
-        const [project, activity, person] = input.name.split('#');
-        const value = parseFloat(input.value) || 0;
-        const row = input.closest('tr');
-        
-        // 1. Update row totals
-        let totalPlanned = 0;
-        row.querySelectorAll('input').forEach(inp => {
-            const v = parseFloat(inp.value);
-            if (!isNaN(v)) totalPlanned += v;
-        });
-
-        // 2. Check overbudget statuses for each cell in row
-        row.querySelectorAll('input').forEach(inp => {
-            const planVal = parseFloat(inp.value) || 0;
-            const tdInput = inp.closest('td');
-            const tdBudget = tdInput.nextElementSibling;
-
-            if (tdBudget && tdBudget.classList.contains('budget')) {
-                const loggedVal = parseFloat(tdBudget.innerText) || 0;
-                tdBudget.classList.toggle('overbudget', loggedVal > 0 && loggedVal > planVal);
-            }
-        });
-        
-        // 3. Find and update the corresponding row in the fixed left table
-        const taskCode = `${project}-${activity.padStart(3, '0')}`;
-        const fixedTable = document.querySelector('.fixed-columns table');
-        const fixedRows = fixedTable.querySelectorAll('tr');
-        
-        for (let i = 0; i < fixedRows.length; i++) {
-            const cells = fixedRows[i].querySelectorAll('td');
-            // Find the row with the matching task code (first column)
-            if (cells.length > 0 && cells[0].textContent === taskCode) {
-                // Get the relevant cells from the fixed table
-                const budgetCell = cells[2];    // Available hours
-                const plannedCell = cells[3];   // Planned hours
-                const loggedCell = cells[4];    // Realized hours
-                
-                if (plannedCell && budgetCell) {
-                    // Update the planned hours cell
-                    plannedCell.textContent = totalPlanned;
-                    
-                    // Check if planned is over budget
-                    const budget = parseFloat(budgetCell.textContent) || 0;
-                    plannedCell.classList.toggle('overbudget', totalPlanned > budget);
-                    
-                    // Check if logged is over planned
-                    if (loggedCell) {
-                        const logged = parseFloat(loggedCell.textContent) || 0;
-                        loggedCell.classList.toggle('overbudget', logged > totalPlanned);
-                    }
-                }
-                break;
-            }
-        }
-
-        // 4. Update person total planned hours
-        let personPlanned = 0;
-        document.querySelectorAll(`input[name$="#${person}"]`).forEach(inp => {
-            const v = parseFloat(inp.value);
-            if (!isNaN(v)) personPlanned += v;
-        });
-
-        const personPlannedCell = document.querySelector(`.planned-total[data-person="${person}"]`);
-        const availableCell = document.querySelector(`.available-total[data-person="${person}"]`);
-        const realisedCell = document.querySelector(`.realised-total[data-person="${person}"]`);
-        
-        if (personPlannedCell) {
-            personPlannedCell.innerText = personPlanned;
-            
-            // Check against available hours
-            if (availableCell) {
-                const available = parseFloat(availableCell.innerText) || 0;
-                personPlannedCell.classList.toggle('overbudget', personPlanned > available);
-            }
-            
-            // Check realised vs planned
-            if (realisedCell) {
-                const realised = parseFloat(realisedCell.innerText) || 0;
-                realisedCell.classList.toggle('overbudget', realised > personPlanned);
-            }
-        }
-    }
 })();
 </script>
 

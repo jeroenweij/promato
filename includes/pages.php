@@ -157,6 +157,12 @@ $pages = [
         'menu' => 'plan',
         'inhead' => true
     ],
+    'capacity_planning_teams.php' => [
+        'title' => 'Team Planning',
+        'auth_level' => 2,
+        'menu' => 'plan',
+        'inhead' => true
+    ],
     'capacity.php' => [
         'title' => 'Capacity Overview',
         'auth_level' => 3,
