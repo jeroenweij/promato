@@ -96,6 +96,18 @@ $pages = [
         'menu' => null,
         'inhead' => false
     ],
+    'kroketto.php' => [
+        'title' => 'Kroketto',
+        'auth_level' => 2,
+        'menu' => 'file',
+        'inhead' => false
+    ],
+    'kroketto_admin.php' => [
+        'title' => 'Kroketto Admin',
+        'auth_level' => 5,
+        'menu' => null,
+        'inhead' => false
+    ],
 
 
     // MAIN Menu
