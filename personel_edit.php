@@ -13,7 +13,8 @@ $person = [
     'Type' => 1,
     'Ord' => 250,
     'plan' => 1,
-    'Shortname' => ''
+    'Shortname' => '',
+    'Department' => 0
 ];
 
 if ($editing) {
@@ -94,6 +95,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return $results;
     }
     
+    function calculateLeaveHoursByYear($startDate, $endDate, $fulltimePercent) {
+        $results = [];
+        $fullLeaveHours = 248; // Annual leave for fulltime employee
+        
+        $startDate = $startDate ?: date('Y') . '-01-01';
+        $endDate = $endDate ?: date('Y') . '-12-31';
+        
+        $start = new DateTime($startDate);
+        $end = new DateTime($endDate);
+        
+        if ($start > $end) return $results;
+        
+        $startYear = (int)$start->format('Y');
+        $endYear = (int)$end->format('Y');
+        
+        // Calculate leave for each year in the range
+        for ($year = $startYear; $year <= $endYear; $year++) {
+            $yearStart = new DateTime("$year-01-01");
+            $yearEnd = new DateTime("$year-12-31");
+            
+            // Determine actual work period in this year
+            $workStart = ($start > $yearStart) ? $start : $yearStart;
+            $workEnd = ($end < $yearEnd) ? $end : $yearEnd;
+            
+            // Calculate the fraction of the year worked
+            $daysInYear = 365;
+            if ($yearStart->format('L') == 1) {
+                $daysInYear = 366; // Leap year
+            }
+            
+            $daysWorked = $workStart->diff($workEnd)->days + 1;
+            $yearFraction = $daysWorked / $daysInYear;
+            
+            // Calculate pro-rated leave hours
+            $leaveHours = round($fullLeaveHours * $yearFraction * ($fulltimePercent / 100));
+            
+            if ($leaveHours > 0) {
+                $results[$year] = $leaveHours;
+            }
+        }
+        
+        return $results;
+    }
+    
     // Calculate and update available work hours
     $hoursByYear = calculateAvailableHoursByYear($_POST['Startdate'], $_POST['Enddate'], $_POST['Fultime']);
     
@@ -105,6 +150,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([
             ':person' => $personId,
             ':hours' => $hours * 100, // stored as hundredths
+            ':year' => $year,
+        ]);
+    }
+    
+    // Calculate and update leave hours
+    $leaveByYear = calculateLeaveHoursByYear($_POST['Startdate'], $_POST['Enddate'], $_POST['Fultime']);
+    
+    // Insert/update leave hours for each year
+    foreach ($leaveByYear as $year => $leaveHours) {
+        // First, insert or update the Hours record
+        $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Plan, Hours, `Year`) 
+            VALUES (10, 1, :person, :hours, 0, :year)
+            ON DUPLICATE KEY UPDATE Plan = GREATEST(Hours, :hours)");
+        $stmt->execute([
+            ':person' => $personId,
+            ':hours' => $leaveHours * 100, // stored as hundredths
             ':year' => $year,
         ]);
     }
@@ -172,4 +233,3 @@ $departments = $pdo->query("SELECT Id, Name FROM Departments ORDER BY Ord")->fet
 </section>
 
 <?php require 'includes/footer.php'; ?>
-
