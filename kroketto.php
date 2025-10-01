@@ -162,26 +162,36 @@ if (date('w') == 5 && date('H') >= 12) { // If it's Friday after noon, show next
                 <h2 class="text-center mb-4">🥖 Kroketto - Friday Lunch Orders</h2>
                 <p class="text-center text-muted mb-4">Order your snack for Friday lunch (<?= date('d-m-Y', strtotime($nextFriday)) ?>)</p>
                 
+                <?php if ($currentOrder): ?>
+                <div class="card mb-4 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Your Current Order</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-1"><?= htmlspecialchars($currentOrder['name']) ?></h4>
+                                <p class="text-muted mb-0">
+                                    <small>For Friday, <?= date('d-m-Y', strtotime($nextFriday)) ?></small><br>
+                                    <small>You can change your selection or cancel until Friday morning.</small>
+                                </p>
+                            </div>
+                            <form method="POST" action="" class="d-inline">
+                                <input type="hidden" name="action" value="cancel_order">
+                                <button type="submit" class="btn btn-outline-danger" 
+                                        onclick="return confirm('Are you sure you want to cancel your order for <?= htmlspecialchars($currentOrder['name'], ENT_QUOTES) ?>?')">
+                                    ❌ Cancel Order
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
                 <?php if ($message): ?>
                 <div class="alert alert-<?= $messageType == 'success' ? 'success' : ($messageType == 'error' ? 'danger' : 'info') ?> alert-dismissible fade show" role="alert">
                     <?= htmlspecialchars($message) ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                <?php endif; ?>
-
-                <?php if ($currentOrder): ?>
-                <div class="alert alert-info d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>Your current order:</strong> <?= htmlspecialchars($currentOrder['name']) ?>
-                        <small class="d-block">You can change your selection or cancel until Friday morning.</small>
-                    </div>
-                    <form method="POST" action="" class="d-inline">
-                        <input type="hidden" name="action" value="cancel_order">
-                        <button type="submit" class="btn btn-outline-danger btn-sm" 
-                                onclick="return confirm('Are you sure you want to cancel your order for <?= htmlspecialchars($currentOrder['name'], ENT_QUOTES) ?>?')">
-                            ❌ Cancel Order
-                        </button>
-                    </form>
                 </div>
                 <?php endif; ?>
 
