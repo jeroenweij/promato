@@ -219,4 +219,16 @@ $pages = [
         'menu' => 'file',
         'inhead' => false
     ],
+    'finance.php' => [
+        'title' => 'Financial dashboard',
+        'auth_level' => 5,
+        'menu' => 'file',
+        'inhead' => false
+    ],
+    'project_finance.php' => [
+        'title' => 'Project finance',
+        'auth_level' => 5,
+        'menu' => 'file',
+        'inhead' => false
+    ],
 ];
