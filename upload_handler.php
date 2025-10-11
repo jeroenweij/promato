@@ -25,12 +25,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
     fgetcsv($handle); // skip empty header
     $header = fgetcsv($handle);
 
-    $stmt = $pdo->query("SELECT Id, Name FROM Personel");
+    $stmt = $pdo->query("SELECT Id, Name, Team FROM Personel");
     $personMap = [];
+    $teamMap = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
       $personMap[strtolower(trim($row['Name']))] = $row['Id'];
+      $teamMap[$row['Id']] = $row['Team']; // Map person ID to their team
     }
     $personMap[strtolower('Totaal Som van Uren')] = 0;
+    $teamMap[0] = null;
 
     $colMap = [];
     $skipColumns = ['projectcode', 'project', 'activiteitscode', 'activiteit'];
@@ -47,6 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
     }
 
     $stmt = $pdo->prepare("UPDATE Hours SET Hours = 0 WHERE `Year` = :year");
+    $stmt->execute([':year' => $selectedYear]);
+    $stmt = $pdo->prepare("UPDATE TeamHours SET Hours = 0 WHERE `Year` = :year");
     $stmt->execute([':year' => $selectedYear]);
   
     logmsg("🔄 Cleared existing hours...");
@@ -74,8 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
         $val = trim(str_replace('.', '', $row[$colIndex] ?? '')); // Remove thousands separator (dot)
         $val = str_replace(',', '.', $val);  // Replace comma with dot for decimal point
         $hours = floatval($val);  // Convert to float
-
+      
         if ($hours > 0) {
+          $team = $teamMap[$personId]; // Get the team for this person
           $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Hours, `Year`)
             VALUES (:project, :activity, :person, :hours, :year)
             ON DUPLICATE KEY UPDATE Hours = :hours");
@@ -83,6 +89,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
             ':project' => $currentProject,
             ':activity' => $activity,
             ':person' => $personId,
+            ':hours' => round($hours * 100),
+            ':year' => $selectedYear
+          ]);
+      
+          $stmt = $pdo->prepare("INSERT INTO TeamHours (Project, Activity, Team, Hours, `Year`)
+            VALUES (:project, :activity, :team, :hours, :year)
+            ON DUPLICATE KEY UPDATE Hours = Hours + :hours");
+          $stmt->execute([
+            ':project' => $currentProject,
+            ':activity' => $activity,
+            ':team' => $team,
             ':hours' => round($hours * 100),
             ':year' => $selectedYear
           ]);
@@ -98,12 +115,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
 
     fclose($handle);
     logmsg("✅ Imported {$count} entries.");
+
+    // Update national hollidays
     $stmt = $pdo->prepare("UPDATE Hours SET Plan = Hours WHERE Project = :project AND Activity = :activity AND `Year` = :year");
     $stmt->execute([
         ':project' => 10,
         ':activity' => 2,
         ':year' => $selectedYear
     ]);
+
+    // Update planned leave if leave > planned
     $stmt = $pdo->prepare("UPDATE Hours SET Plan = Hours WHERE Plan < Hours AND Project = :project AND Activity = :activity AND `Year` = :year");
     $stmt->execute([
         ':project' => 10,
@@ -111,6 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
         ':year' => $selectedYear
     ]);
     logmsg("📆 Set planned hours for holidays.");
+
   } else {
     logmsg("❌ Failed to open uploaded file.");
   }

@@ -37,6 +37,7 @@ $pageIcons = [
     'projects.php' => 'briefcase',
     'kanban.php' => 'trello',
     'capacity_planning.php' => 'bar-chart-2',
+    'team_planning.php' => 'bar-chart',
     'projects_edit.php' => 'edit',
     'personel.php' => 'users',
     'upload.php' => 'upload',

@@ -169,7 +169,7 @@ $pages = [
         'menu' => 'plan',
         'inhead' => true
     ],
-    'capacity_planning_teams.php' => [
+    'team_planning.php' => [
         'title' => 'Team Planning',
         'auth_level' => 2,
         'menu' => 'plan',
