@@ -1,8 +1,7 @@
 <?php
 $pageSpecificCSS = ['kanban.css', 'dashboard.css'];
 require 'includes/header.php';
-require 'includes/db.php';
-$userId = $_SESSION['user_id'] ?? null;
+require_once 'includes/db.php';
 
 // Get user information
 $userStmt = $pdo->prepare("

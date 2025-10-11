@@ -1,6 +1,6 @@
 <?php
 require 'includes/auth.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $project = $_POST['project'] ?? null;

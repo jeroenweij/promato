@@ -1,6 +1,6 @@
 <?php
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // Handle leave calculation request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['calculate_leave'])) {

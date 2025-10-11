@@ -2,9 +2,7 @@
 $pageSpecificCSS = ['kanban.css'];
 
 require 'includes/header.php';
-require 'includes/db.php';
 
-$userId = $_SESSION['user_id'] ?? null;
 $teamId = $_SESSION['user_team'] ?? null;
 
 // Fetch activities per project and status from joined status table

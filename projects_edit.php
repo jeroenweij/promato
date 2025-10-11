@@ -1,7 +1,6 @@
 <?php
 $pageSpecificCSS = ['kanban.css'];
 require 'includes/header.php';
-require 'includes/db.php';
 
 // Get project data with status and project manager
 $stmt = $pdo->prepare("SELECT 
@@ -59,7 +58,7 @@ foreach ($rows as $row) {
                                     </span>
                                 </div> 
                                 <div class="card-body">
-                                    <div class="task-name"><?= htmlspecialchars($item['ProjectManager']) ?></div>
+                                    <div class="task-name"><?= htmlspecialchars($item['ProjectManager'] ?? "-") ?></div>
                                     <div class="hours-info">
                                         <?= $item['ActivityCount'] ?> Activities
                                     </div>

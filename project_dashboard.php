@@ -2,7 +2,7 @@
 $pageSpecificCSS = ['kanban.css', 'management-dashboard.css'];
 
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // Get current date for deadline calculations
 $currentDate = date('Y-m-d');

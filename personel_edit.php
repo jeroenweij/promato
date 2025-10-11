@@ -1,6 +1,6 @@
 <?php
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 $editing = isset($_GET['id']);
 $person = [

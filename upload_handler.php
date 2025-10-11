@@ -1,6 +1,6 @@
 <?php
 require 'includes/auth.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 header('Content-Type: text/plain');
 set_time_limit(0); // Important for long uploads

@@ -1,8 +1,6 @@
 <?php
 require 'includes/header.php';
-require 'includes/db.php';
-
-$userId = $_SESSION['user_id'] ?? null;
+require_once 'includes/db.php';
 
 // Redirect if not logged in
 if (!$userId) {

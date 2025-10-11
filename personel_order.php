@@ -2,7 +2,7 @@
 $pageSpecificCSS = ['kanban.css'];
 
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // Fetch personel 
 $stmt = $pdo->query("SELECT Id, Shortname AS Name, Ord, Team 

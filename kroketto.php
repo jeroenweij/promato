@@ -1,8 +1,5 @@
 <?php
 require 'includes/header.php';
-require 'includes/db.php';
-
-$userId = $_SESSION['user_id'] ?? null;
 
 // Redirect if not logged in
 if (!$userId) {
@@ -26,21 +23,26 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'cancel_order') {
         $pdo->beginTransaction();
         
         // Get the current order to restore stock
-        $orderStmt = $pdo->prepare("SELECT snack_id FROM snack_orders WHERE user_id = ? AND order_date >= ?");
+        $orderStmt = $pdo->prepare("SELECT snack_id FROM snack_orders WHERE user_id = ? AND order_date >= ? FOR UPDATE");
         $orderStmt->execute([$userId, $currentWeekStart]);
         $currentOrder = $orderStmt->fetch();
         
         if ($currentOrder) {
-            // Restore stock count
-            $restoreStmt = $pdo->prepare("UPDATE snack_options SET available_count = available_count + 1 WHERE id = ?");
-            $restoreStmt->execute([$currentOrder['snack_id']]);
-            
-            // Delete the order
+            // Delete the order FIRST
             $deleteStmt = $pdo->prepare("DELETE FROM snack_orders WHERE user_id = ? AND order_date >= ?");
-            $deleteStmt->execute([$userId, $currentWeekStart]);
+            $result = $deleteStmt->execute([$userId, $currentWeekStart]);
             
-            $message = "Your order has been cancelled successfully!";
-            $messageType = "success";
+            // Only restore stock if deletion was successful
+            if ($result && $deleteStmt->rowCount() > 0) {
+                $restoreStmt = $pdo->prepare("UPDATE snack_options SET available_count = available_count + 1 WHERE id = ?");
+                $restoreStmt->execute([$currentOrder['snack_id']]);
+                
+                $message = "Your order has been cancelled successfully!";
+                $messageType = "success";
+            } else {
+                $message = "No active order found to cancel.";
+                $messageType = "info";
+            }
         } else {
             $message = "No active order found to cancel.";
             $messageType = "info";
@@ -62,18 +64,18 @@ if ($_POST && isset($_POST['snack_id'])) {
     try {
         $pdo->beginTransaction();
         
-        // Check if user already has an order this week
-        $checkStmt = $pdo->prepare("SELECT snack_id FROM snack_orders WHERE user_id = ? AND order_date >= ?");
+        // Lock the rows to prevent race conditions
+        $checkStmt = $pdo->prepare("SELECT snack_id FROM snack_orders WHERE user_id = ? AND order_date >= ? FOR UPDATE");
         $checkStmt->execute([$userId, $currentWeekStart]);
         $existingOrder = $checkStmt->fetch();
         
-        // Check if selected snack is available
-        $availabilityStmt = $pdo->prepare("SELECT name, available_count FROM snack_options WHERE id = ? AND available_count > 0");
+        // Check if selected snack is available (with row lock)
+        $availabilityStmt = $pdo->prepare("SELECT name, available_count FROM snack_options WHERE id = ? FOR UPDATE");
         $availabilityStmt->execute([$snackId]);
         $selectedSnack = $availabilityStmt->fetch();
         
         if (!$selectedSnack) {
-            throw new Exception("Selected snack is not available!");
+            throw new Exception("Selected snack not found!");
         }
         
         if ($existingOrder) {
@@ -81,38 +83,57 @@ if ($_POST && isset($_POST['snack_id'])) {
             $oldSnackId = $existingOrder['snack_id'];
             
             if ($oldSnackId != $snackId) {
-                // Restore count for old snack
-                $restoreStmt = $pdo->prepare("UPDATE snack_options SET available_count = available_count + 1 WHERE id = ?");
-                $restoreStmt->execute([$oldSnackId]);
+                // Check if new snack has stock available
+                if ($selectedSnack['available_count'] <= 0) {
+                    throw new Exception("Selected snack is not available!");
+                }
                 
-                // Decrease count for new snack
-                $decreaseStmt = $pdo->prepare("UPDATE snack_options SET available_count = available_count - 1 WHERE id = ?");
-                $decreaseStmt->execute([$snackId]);
-                
-                // Update the order
+                // Update the order FIRST
                 $updateStmt = $pdo->prepare("UPDATE snack_orders SET snack_id = ?, order_date = CURDATE() WHERE user_id = ? AND order_date >= ?");
-                $updateStmt->execute([$snackId, $userId, $currentWeekStart]);
+                $result = $updateStmt->execute([$snackId, $userId, $currentWeekStart]);
                 
-                $message = "Your snack choice has been updated to " . htmlspecialchars($selectedSnack['name']) . "!";
-                $messageType = "success";
+                // Only update stock if order update was successful
+                if ($result && $updateStmt->rowCount() > 0) {
+                    // Restore count for old snack
+                    $restoreStmt = $pdo->prepare("UPDATE snack_options SET available_count = available_count + 1 WHERE id = ?");
+                    $restoreStmt->execute([$oldSnackId]);
+                    
+                    // Decrease count for new snack
+                    $decreaseStmt = $pdo->prepare("UPDATE snack_options SET available_count = available_count - 1 WHERE id = ?");
+                    $decreaseStmt->execute([$snackId]);
+                    
+                    $message = "Your snack choice has been updated to " . htmlspecialchars($selectedSnack['name']) . "!";
+                    $messageType = "success";
+                } else {
+                    throw new Exception("Failed to update order.");
+                }
             } else {
                 $message = "You already selected " . htmlspecialchars($selectedSnack['name']) . " for this week!";
                 $messageType = "info";
             }
         } else {
             // Create new order
-            $decreaseStmt = $pdo->prepare("UPDATE snack_options SET available_count = available_count - 1 WHERE id = ?");
-            $decreaseStmt->execute([$snackId]);
+            if ($selectedSnack['available_count'] <= 0) {
+                throw new Exception("Selected snack is not available!");
+            }
             
-            $insertStmt = $pdo->prepare("INSERT INTO snack_orders (user_id, snack_id, order_date) VALUES (?, ?, CURDATE())");
-            $insertStmt->execute([$userId, $snackId]);
+            // Decrease stock FIRST, then insert order
+            $decreaseStmt = $pdo->prepare("UPDATE snack_options SET available_count = available_count - 1 WHERE id = ? AND available_count > 0");
+            $decreaseResult = $decreaseStmt->execute([$snackId]);
             
-            $message = "Your snack choice " . htmlspecialchars($selectedSnack['name']) . " has been registered!";
-            $messageType = "success";
+            if ($decreaseResult && $decreaseStmt->rowCount() > 0) {
+                $insertStmt = $pdo->prepare("INSERT INTO snack_orders (user_id, snack_id, order_date) VALUES (?, ?, CURDATE())");
+                $insertStmt->execute([$userId, $snackId]);
+                
+                $message = "Your snack choice " . htmlspecialchars($selectedSnack['name']) . " has been registered!";
+                $messageType = "success";
+            } else {
+                throw new Exception("Selected snack is no longer available!");
+            }
         }
         
         $pdo->commit();
-        
+               
     } catch (Exception $e) {
         $pdo->rollBack();
         $message = "Error: " . $e->getMessage();

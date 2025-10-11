@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/auth.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 $errors = [];
 $projectId = '';

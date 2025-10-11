@@ -3,7 +3,7 @@
 ob_start();
 
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // Initialize variables
 $wbsoEntries = [];

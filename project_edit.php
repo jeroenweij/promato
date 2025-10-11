@@ -9,7 +9,7 @@ if (!isset($_GET['project_id']) || !is_numeric($_GET['project_id'])) {
 }
 
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // Initialize variables
 $projectId = null;

@@ -1,6 +1,6 @@
 <?php
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // Use selected year from header.php
 // $selectedYear should already be set in header.php

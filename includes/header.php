@@ -57,7 +57,7 @@ if ($selectedYear === 0) {
     }
   ?>
 
-  <title><?= $pages[$currentPage]['title'] ?></title>
+  <title><?= htmlspecialchars($pageInfo['Name']) ?></title>
   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
   
   <script>
@@ -119,17 +119,31 @@ if ($selectedYear === 0) {
         <ul class="navbar-nav ml-auto nav-right" data-easing="easeInOutExpo" data-speed="1250" data-offset="65">
 
             <?php
-            foreach ($pages as $filename => $page) {
-                // skip hidden menu items
-                if (empty($page['inhead']) || !$page['inhead']) continue;
-                // check auth
-                if ($page['auth_level'] > $userAuthLevel) continue;
+            // Fetch header menu pages from database
+            $headerMenusStmt = $pdo->prepare("
+            SELECT 
+                p.Path,
+                p.Name
+            FROM Pages p 
+            LEFT JOIN PageAccess pa ON pa.PageId = p.Id AND pa.UserId = :userId
+            WHERE p.Id IS NOT NULL AND p.InHead=1
+                AND (p.Auth <= :authLevel OR pa.UserId IS NOT NULL)
+            ORDER BY p.Id
+            ");
 
+            $headerMenusStmt->execute([
+            ':userId' => $userId ?? 0,
+            ':authLevel' => $userAuthLevel ?? 1
+            ]);
+            $headerResults = $headerMenusStmt->fetchAll(PDO::FETCH_ASSOC);
+            $headerMenus = [];
+
+            foreach ($headerResults as $page) {
                 // highlight active page
-                $activeClass = ($filename === $currentPage) ? ' active' : '';
+                $activeClass = ($page['Path'] === $currentPage) ? ' active' : '';
 
                 echo '<li class="nav-item nav-custom-link' . $activeClass . '">';
-                echo '<a class="nav-link" href="/' . htmlspecialchars($filename) . '">' . htmlspecialchars($page['title']) . '<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>';
+                echo '<a class="nav-link" href="/' . htmlspecialchars($page['Path']) . '">' . htmlspecialchars($page['Name']) . '<i class="icon ion-ios-arrow-forward icon-mobile"></i></a>';
                 echo '</li>';
             }
             ?>

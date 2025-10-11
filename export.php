@@ -2,7 +2,7 @@
 session_start();
 
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // Directory where exports are saved
 $exportDir = __DIR__ . '/exports';

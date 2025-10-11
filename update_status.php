@@ -1,6 +1,6 @@
 <?php
 require 'includes/auth.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 

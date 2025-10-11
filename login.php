@@ -2,7 +2,7 @@
 session_start();
 
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // Function to get user-friendly error messages
 function getErrorMessage($error_code) {

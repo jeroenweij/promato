@@ -1,6 +1,6 @@
 <?php
 require_once 'vendor/autoload.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 session_start();
 

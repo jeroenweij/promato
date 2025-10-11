@@ -4,7 +4,7 @@ ob_start();
 
 require 'includes/auth.php';
 require 'PhpSpreadsheet/autoload.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;

@@ -2,7 +2,7 @@
 $pageSpecificCSS = ['kanban.css', 'priority.css'];
 
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // Fetch teams that have tasks assigned
 $teamStmt = $pdo->query("

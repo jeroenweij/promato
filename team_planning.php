@@ -1,7 +1,7 @@
 <?php
 $pageSpecificCSS = ['plantable.css'];
 require 'includes/header.php';
-require 'includes/db.php';
+require_once 'includes/db.php';
 
 // ---- DATA PREPARATION ----
 // Fetch teams first
