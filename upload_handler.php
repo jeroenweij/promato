@@ -33,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
       $teamMap[$row['Id']] = $row['Team']; // Map person ID to their team
     }
     $personMap[strtolower('Totaal Som van Uren')] = 0;
+    $personMap[strtolower('Total Sum of Uren')] = 0;
     $teamMap[0] = null;
 
     $colMap = [];
@@ -82,7 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
         $hours = floatval($val);  // Convert to float
       
         if ($hours > 0) {
-          $team = $teamMap[$personId]; // Get the team for this person
           $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Hours, `Year`)
             VALUES (:project, :activity, :person, :hours, :year)
             ON DUPLICATE KEY UPDATE Hours = :hours");
@@ -94,7 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
             ':year' => $selectedYear
           ]);
       
-          if ($currentProject > 0){
+          if ($currentProject > 0 && $personId > 0){
+            $team = $teamMap[$personId]; // Get the team for this person
             $stmt = $pdo->prepare("INSERT INTO TeamHours (Project, Activity, Team, Hours, `Year`)
               VALUES (:project, :activity, :team, :hours, :year)
               ON DUPLICATE KEY UPDATE Hours = Hours + :hours");

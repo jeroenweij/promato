@@ -322,8 +322,7 @@ if ($teamFilter && !empty($personnel)) {
                                             // Only include if person is in our filtered personnel list
                                             if ($personId != 0) {
                                                 $planned += $data['Plan'] / 100;
-                                            } else {
-                                                $realised = $data['Hours'] / 100;
+                                                $realised += $data['Hours'] / 100;
                                             }
                                         } elseif (!$teamFilter) {
                                             // No filter - include all hours
@@ -337,7 +336,7 @@ if ($teamFilter && !empty($personnel)) {
                                 }
                                 
                                 $plannedClass = ($availableHours !== '' && $planned > $availableHours) ? 'overbudget' : '';
-                                $realisedClass = ($planned > 0 && $realised > $planned) ? 'overbudget' : '';
+                                $realisedClass = ($realised > $planned) ? 'overbudget' : '';
                                 ?>
                                 <tr>
                                     <td class="text fixedheigth"><?= $taskCode ?></td>

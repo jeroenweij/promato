@@ -249,7 +249,7 @@ $currentStatus = 3;
                                 }
                                 
                                 $plannedClass = ($activity['BudgetHours'] && $planned > $activity['BudgetHours']) ? 'overbudget' : '';
-                                $realisedClass = ($planned > 0 && $realised > $planned) ? 'overbudget' : '';
+                                $realisedClass = ($realised > $planned) ? 'overbudget' : '';
                                 ?>
                                 <tr>
                                     <td class="text fixedheigth"><?= $taskCode ?></td>
