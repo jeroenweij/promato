@@ -4,8 +4,8 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 // ---- DATA PREPARATION ----
-// Get department filter from URL parameter
-$departmentFilter = isset($_GET['department']) ? (int)$_GET['department'] : null;
+// Get team filter from URL parameter
+$teamFilter = isset($_GET['team']) ? (int)$_GET['team'] : null;
 
 // Fetch personnel with available hours - doing a more efficient query with proper joins
 $whereClause = "WHERE p.plan = 1
@@ -13,10 +13,10 @@ $whereClause = "WHERE p.plan = 1
     AND (p.EndDate IS NULL OR YEAR(p.EndDate) >= :selectedYear)";
 $params = [':selectedYear' => $selectedYear];
 
-// Add department filter if specified
-if ($departmentFilter) {
-    $whereClause .= " AND p.Department = :departmentFilter";
-    $params[':departmentFilter'] = $departmentFilter;
+// Add team filter if specified
+if ($teamFilter) {
+    $whereClause .= " AND p.Team = :teamFilter";
+    $params[':teamFilter'] = $teamFilter;
 }
 
 $stmt = $pdo->prepare("
@@ -24,14 +24,14 @@ $stmt = $pdo->prepare("
         p.Shortname AS Name, 
         p.Id AS Number, 
         p.Fultime, 
-        p.Department,
+        p.Team,
         COALESCE(h.Plan, 0) AS AvailableHours,
         d.Ord AS DeptOrder,
-        d.Name AS DepartmentName,
+        d.Name AS TeamName,
         p.Ord AS PersonOrder
     FROM Personel p 
     LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND `Year`= :selectedYear
-    LEFT JOIN Departments d ON p.Department = d.Id
+    LEFT JOIN Teams d ON p.Team = d.Id
     $whereClause
     ORDER BY d.Ord, p.Ord, p.Name
 ");
@@ -165,23 +165,23 @@ foreach ($activities as $activity) {
 
 $currentStatus = 3;
 
-// Get department name for page title if filtering
-$departmentName = '';
-if ($departmentFilter && !empty($personnel)) {
-    $departmentName = $personnel[0]['DepartmentName'] ?? '';
+// Get team name for page title if filtering
+$teamName = '';
+if ($teamFilter && !empty($personnel)) {
+    $teamName = $personnel[0]['TeamName'] ?? '';
 }
 
 // Start output with CSS optimization
 ?>
 <section class="white">
     <div class="container" style="max-width: 20000px;">
-        <?php if ($departmentFilter): ?>
+        <?php if ($teamFilter): ?>
             <div style="margin-bottom: 20px; padding: 10px; background-color: #f0f8ff; border: 1px solid #d0d0d0; border-radius: 5px;">
                 <h3 style="margin: 0; display: inline-block;">
-                    Showing: <?= htmlspecialchars($departmentName) ?> Department
+                    Showing: <?= htmlspecialchars($teamName) ?> Team
                 </h3>
                 <a href="capacity_planning.php" style="float: right; color: #0066cc; text-decoration: none;">
-                    [Show All Departments]
+                    [Show All Teams]
                 </a>
                 <div style="clear: both;"></div>
             </div>
@@ -252,15 +252,15 @@ if ($departmentFilter && !empty($personnel)) {
                                 
                                 if (isset($hoursData[$activityKey])) {
                                     foreach ($hoursData[$activityKey] as $personId => $data) {
-                                        // If department filter is active, only count hours from personnel in that department
-                                        if ($departmentFilter && isset($personnelById[$personId])) {
+                                        // If team filter is active, only count hours from personnel in that team
+                                        if ($teamFilter && isset($personnelById[$personId])) {
                                             // Only include if person is in our filtered personnel list
                                             if ($personId != 0) {
                                                 $planned += $data['Plan'] / 100;
                                             } else {
                                                 $realised = $data['Hours'] / 100;
                                             }
-                                        } elseif (!$departmentFilter) {
+                                        } elseif (!$teamFilter) {
                                             // No filter - include all hours
                                             if ($personId != 0) {
                                                 $planned += $data['Plan'] / 100;

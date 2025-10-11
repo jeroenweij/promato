@@ -16,18 +16,18 @@ try {
     $pdo->beginTransaction();
     
     // Prepare the update statement
-    $stmt = $pdo->prepare("UPDATE Personel SET Department = :department, Ord = :order WHERE Id = :personId");
+    $stmt = $pdo->prepare("UPDATE Personel SET Team = :team, Ord = :order WHERE Id = :personId");
     
     foreach ($data['users'] as $user) {
         // Validate required fields
-        if (!isset($user['personId']) || !isset($user['department']) || !isset($user['order'])) {
+        if (!isset($user['personId']) || !isset($user['team']) || !isset($user['order'])) {
             throw new Exception('Missing required fields for user update');
         }
         
         // Execute the update for each user
         $stmt->execute([
             ':personId' => $user['personId'],
-            ':department' => $user['department'],
+            ':team' => $user['team'],
             ':order' => $user['order']
         ]);
     }
@@ -37,7 +37,7 @@ try {
     
     echo json_encode([
         'success' => true,
-        'message' => 'User order and departments updated successfully',
+        'message' => 'User order and teams updated successfully',
         'updated_count' => count($data['users'])
     ]);
     

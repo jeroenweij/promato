@@ -5,11 +5,11 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 $userStmt = $pdo->query("
-    SELECT DISTINCT u.Id, u.Name, u.Department, u.Ord
+    SELECT DISTINCT u.Id, u.Name, u.Team, u.Ord
     FROM Personel u 
     JOIN Hours h ON h.Person = u.Id
     WHERE h.Project > 10 AND u.Plan=1 AND u.Type>1
-    ORDER BY u.Department, u.Ord
+    ORDER BY u.Team, u.Ord
 ");
 $users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
 

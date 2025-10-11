@@ -131,14 +131,14 @@ $resourceAllocationStmt = $pdo->prepare("
     SELECT 
         u.Id AS PersonId,
         u.Name AS PersonName,
-        u.Department,
+        u.Team,
         SUM(h.Plan)AS AvailableHours,
         SUM(h.Hours) AS AllocatedHours
     FROM Personel u
     LEFT JOIN Hours h ON h.Person = u.Id AND h.Project > 0 AND h.`Year` = :selectedYear
     WHERE u.Plan = 1 AND u.Type > 1
     GROUP BY u.Id
-    ORDER BY u.Department, u.Name
+    ORDER BY u.Team, u.Name
 ");
 
 $resourceAllocationStmt->execute([
@@ -417,7 +417,7 @@ function calculateCompletion($logged, $planned) {
                                     <thead>
                                         <tr>
                                             <th>Personnel</th>
-                                            <th>Department</th>
+                                            <th>Team</th>
                                             <th>Allocation</th>
                                         </tr>
                                     </thead>
@@ -431,7 +431,7 @@ function calculateCompletion($logged, $planned) {
                                         ?>
                                         <tr class="<?= $overallocated ?>">
                                             <td><?= htmlspecialchars($resource['PersonName']) ?></td>
-                                            <td><?= htmlspecialchars($resource['Department']) ?></td>
+                                            <td><?= htmlspecialchars($resource['Team']) ?></td>
                                             <td>
                                                 <div class="progress">
                                                     <div class="progress-bar <?= $allocPercent > 90 ? ($allocPercent > 100 ? 'bg-danger' : 'bg-warning') : 'bg-success' ?>" 

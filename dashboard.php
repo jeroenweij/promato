@@ -7,10 +7,10 @@ $userId = $_SESSION['user_id'] ?? null;
 // Get user information
 $userStmt = $pdo->prepare("
     SELECT 
-        p.Id, p.Name, p.Email, p.Shortname, p.Fultime, p.Department, p.StartDate, p.WBSO,
-        d.Name AS DepartmentName
+        p.Id, p.Name, p.Email, p.Shortname, p.Fultime, p.Team, p.StartDate, p.WBSO,
+        d.Name AS TeamName
     FROM Personel p
-    JOIN Departments d ON p.Department = d.Id
+    JOIN Teams d ON p.Team = d.Id
     JOIN Types t ON p.Type = t.Id
     WHERE p.Id = :userid
 ");
@@ -185,7 +185,7 @@ $upcomingDeadlines = $upcomingDeadlinesStmt->fetchAll(PDO::FETCH_ASSOC);
                             <div class="col-md-6">
                                 <h2><?= htmlspecialchars($userInfo['Name']) ?></h2>
                                 <p><i class="fas fa-envelope"></i> <?= htmlspecialchars($userInfo['Email']) ?></p>
-                                <p><i class="fas fa-briefcase"></i> <?= htmlspecialchars($userInfo['DepartmentName']) ?></p>
+                                <p><i class="fas fa-briefcase"></i> <?= htmlspecialchars($userInfo['TeamName']) ?></p>
                             </div>
                             <div class="col-md-4">
                                 <div class="yearly-hours-summary">

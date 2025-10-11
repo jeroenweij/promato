@@ -27,17 +27,18 @@ CREATE TABLE `Budgets` (
   `Year` smallint NOT NULL DEFAULT (year(curdate()))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `Departments` (
+CREATE TABLE `Teams` (
   `Id` tinyint NOT NULL,
   `Name` varchar(16) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `Ord` tinyint NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO `Departments` (`Id`, `Name`, `Ord`) VALUES
-(1, 'Software', 1),
-(2, 'Hardware', 2),
-(3, 'Management', 3),
-(4, 'Other', 4);
+INSERT INTO `Teams` (`Id`, `Name`, `Ord`) VALUES
+(1, 'Software 1', 1),
+(2, 'Software 2', 2),
+(3, 'Hardware', 3),
+(4, 'Management', 4),
+(5, 'Other', 5);
 
 CREATE TABLE `Hours` (
   `Project` smallint DEFAULT NULL,
@@ -47,6 +48,16 @@ CREATE TABLE `Hours` (
   `Plan` int DEFAULT '0',
   `Prio` int NOT NULL DEFAULT '0',
   `Status` int DEFAULT '1',
+  `Year` smallint NOT NULL DEFAULT (year(curdate()))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `TeamHours` (
+  `Project` smallint DEFAULT NULL,
+  `Activity` smallint DEFAULT NULL,
+  `Team` smallint DEFAULT NULL,
+  `Hours` int DEFAULT NULL,
+  `Plan` int DEFAULT '0',
+  `Prio` int NOT NULL DEFAULT '0',
   `Year` smallint NOT NULL DEFAULT (year(curdate()))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -74,7 +85,7 @@ CREATE TABLE `Personel` (
   `Type` tinyint DEFAULT '1',
   `Ord` smallint DEFAULT '100',
   `plan` tinyint(1) NOT NULL DEFAULT '1',
-  `Department` tinyint NOT NULL DEFAULT '1',
+  `Team` tinyint NOT NULL DEFAULT '1',
   `LastLogin` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -127,7 +138,7 @@ ALTER TABLE `Budgets`
   ADD PRIMARY KEY (`Id`),
   ADD KEY `Budgets_ibfk_1` (`Activity`);
 
-ALTER TABLE `Departments`
+ALTER TABLE `Teams`
   ADD PRIMARY KEY (`Id`);
 
 ALTER TABLE `Hours`
@@ -144,7 +155,7 @@ ALTER TABLE `Personel`
   ADD PRIMARY KEY (`Id`),
   ADD UNIQUE KEY `Personel_UNIQUE` (`Email`),
   ADD KEY `Type` (`Type`),
-  ADD KEY `fk_department` (`Department`);
+  ADD KEY `fk_team` (`Team`);
 
 ALTER TABLE `Projects`
   ADD PRIMARY KEY (`Id`),
@@ -167,7 +178,7 @@ ALTER TABLE `Activities`
 ALTER TABLE `Budgets`
   MODIFY `Id` smallint NOT NULL AUTO_INCREMENT;
 
-ALTER TABLE `Departments`
+ALTER TABLE `Teams`
   MODIFY `Id` tinyint NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `HourStatus`
@@ -200,7 +211,7 @@ ALTER TABLE `Hours`
   ADD CONSTRAINT `fk_hours_status` FOREIGN KEY (`Status`) REFERENCES `HourStatus` (`Id`);
 
 ALTER TABLE `Personel`
-  ADD CONSTRAINT `fk_department` FOREIGN KEY (`Department`) REFERENCES `Departments` (`Id`),
+  ADD CONSTRAINT `fk_team` FOREIGN KEY (`Team`) REFERENCES `Teams` (`Id`),
   ADD CONSTRAINT `Personel_ibfk_1` FOREIGN KEY (`Type`) REFERENCES `Types` (`Id`);
 
 ALTER TABLE `Projects`

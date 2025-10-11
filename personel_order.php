@@ -5,38 +5,38 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 // Fetch personel 
-$stmt = $pdo->query("SELECT Id, Shortname AS Name, Ord, Department 
+$stmt = $pdo->query("SELECT Id, Shortname AS Name, Ord, Team 
     FROM Personel
     WHERE `Type` > 1 AND plan=1
-    ORDER BY Department, Ord, Shortname;
+    ORDER BY Team, Ord, Shortname;
 ");
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch Departments 
+// Fetch Teams 
 $stmt = $pdo->query("SELECT Id, Name, Ord
-    FROM Departments
+    FROM Teams
     ORDER BY Ord;
 ");
-$departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Group by department
+// Group by team
 $persons = [];
 foreach ($users as $user) {
-    $persons[$user['Department']][] = $user;
+    $persons[$user['Team']][] = $user;
 }
 ?>
 
 <section id="priority-planning">
     <div class="container">
         <div class="row">
-            <?php foreach ($departments as $group): ?>
+            <?php foreach ($teams as $group): ?>
                 <div class="col-md-3">
                     <div class="card card-full mb-3">
                         <div class="card-header bg-secondary text-white text-center">
                             <?= htmlspecialchars($group['Name']) ?>
                         </div>
                         <div class="card-body">
-                            <div id="dep-<?= $group['Id'] ?>" class="kanban-cards department-container" data-department-id="<?= $group['Id'] ?>">
+                            <div id="dep-<?= $group['Id'] ?>" class="kanban-cards team-container" data-team-id="<?= $group['Id'] ?>">
                                 <?php if (!empty($persons[$group['Id']])): ?>
                                     <?php foreach ($persons[$group['Id']] as $user): ?>
                                         <div class="card mb-3 user-card" data-person-id="<?= $user['Id'] ?>">
@@ -58,32 +58,32 @@ foreach ($users as $user) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const departmentContainers = document.querySelectorAll('.department-container');
+        const teamContainers = document.querySelectorAll('.team-container');
         
-        departmentContainers.forEach(container => {
+        teamContainers.forEach(container => {
             new Sortable(container, {
-                group: 'shared', // Allow cross-department dragging
+                group: 'shared', // Allow cross-team dragging
                 animation: 150,
                 ghostClass: 'sortable-ghost',
                 chosenClass: 'sortable-chosen',
                 dragClass: 'sortable-drag',
                 onEnd: function(evt) {
-                    // Get the source and destination departments
-                    const fromDepartmentId = evt.from.dataset.departmentId;
-                    const toDepartmentId = evt.to.dataset.departmentId;
+                    // Get the source and destination teams
+                    const fromTeamId = evt.from.dataset.teamId;
+                    const toTeamId = evt.to.dataset.teamId;
                     
-                    // Collect all user cards in all departments with their new order
+                    // Collect all user cards in all teams with their new order
                     const updates = [];
                     
-                    departmentContainers.forEach(depContainer => {
-                        const departmentId = depContainer.dataset.departmentId;
+                    teamContainers.forEach(depContainer => {
+                        const teamId = depContainer.dataset.teamId;
                         const cards = depContainer.querySelectorAll('.user-card');
                         
                         cards.forEach((card, index) => {
                             updates.push({
                                 personId: card.dataset.personId,
                                 order: index + 1,
-                                department: departmentId
+                                team: teamId
                             });
                         });
                     });

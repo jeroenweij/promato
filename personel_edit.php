@@ -14,7 +14,7 @@ $person = [
     'Ord' => 250,
     'plan' => 1,
     'Shortname' => '',
-    'Department' => 0
+    'Team' => 0
 ];
 
 if ($editing) {
@@ -44,12 +44,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($editing) {
         $data[] = $_GET['id'];
-        $sql = "UPDATE Personel SET Email=?, Name=?, StartDate=?, EndDate=?, WBSO=?, Fultime=?, Type=?, Department=?, plan=?, Shortname=? WHERE Id=?";
+        $sql = "UPDATE Personel SET Email=?, Name=?, StartDate=?, EndDate=?, WBSO=?, Fultime=?, Type=?, Team=?, plan=?, Shortname=? WHERE Id=?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($data);
         $personId = $_GET['id'];
     } else {
-        $sql = "INSERT INTO Personel (Email, Name, StartDate, EndDate, WBSO, Fultime, Type, Department, Plan, Shortname) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO Personel (Email, Name, StartDate, EndDate, WBSO, Fultime, Type, Team, Plan, Shortname) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($data);
         $personId = $pdo->lastInsertId();
@@ -190,8 +190,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get types
 $types = $pdo->query("SELECT Id, Name FROM Types ORDER BY Id")->fetchAll(PDO::FETCH_ASSOC);
-// Get departments
-$departments = $pdo->query("SELECT Id, Name FROM Departments ORDER BY Ord")->fetchAll(PDO::FETCH_ASSOC);
+// Get teams
+$teams = $pdo->query("SELECT Id, Name FROM Teams ORDER BY Ord")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <section>
@@ -204,11 +204,11 @@ $departments = $pdo->query("SELECT Id, Name FROM Departments ORDER BY Ord")->fet
             <label>Start Date:<br><input type="date" name="Startdate" value="<?= htmlspecialchars($person['StartDate'] ?? '') ?>"></label><br><br>
             <label>End Date:<br><input type="date" name="Enddate" value="<?= htmlspecialchars($person['EndDate'] ?? '') ?>"></label><br><br>
             <label>Fulltime %:<br><input type="number" name="Fultime" value="<?= htmlspecialchars($person['Fultime']) ?>" min="0" max="100"></label><br><br>
-            <label>Department:<br>
+            <label>Team:<br>
                 <select name="Deparment">
-                        <?php foreach ($departments as $department): ?>
-                            <option value="<?= $department['Id'] ?>" <?= ($department['Id'] == $person['Department']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($department['Name']) ?>
+                        <?php foreach ($teams as $team): ?>
+                            <option value="<?= $team['Id'] ?>" <?= ($team['Id'] == $person['Team']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($team['Name']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

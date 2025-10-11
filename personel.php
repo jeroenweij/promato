@@ -101,7 +101,7 @@ $sortableColumns = [
     'LastLogin' => 'Personel.LastLogin',
     'StartDate' => 'Personel.StartDate',
     'EndDate' => 'Personel.EndDate',
-    'Department' => 'Departments.name',
+    'Team' => 'Teams.name',
     'Type' => 'Types.Name',
     'Plan' => 'Personel.plan'
 ];
@@ -113,7 +113,7 @@ $sortOrder = isset($_GET['order']) && strtolower($_GET['order']) === 'desc' ? 'D
 // Build ORDER BY clause
 $orderClause = '';
 if ($sortBy === 'default') {
-    $orderClause = 'ORDER BY Departments.Ord, Personel.Ord, Personel.Name';
+    $orderClause = 'ORDER BY Teams.Ord, Personel.Ord, Personel.Name';
 } else {
     $sortColumns = explode(',', $sortBy);
     $validSorts = [];
@@ -128,15 +128,15 @@ if ($sortBy === 'default') {
     if (!empty($validSorts)) {
         $orderClause = 'ORDER BY ' . implode(', ', $validSorts);
     } else {
-        $orderClause = 'ORDER BY Departments.Ord, Personel.Ord, Personel.Name';
+        $orderClause = 'ORDER BY Teams.Ord, Personel.Ord, Personel.Name';
     }
 }
 
 // Fetch all personnel with dynamic sorting
-$sql = "SELECT Personel.*, Types.Name AS TypeName, Departments.name AS DepName 
+$sql = "SELECT Personel.*, Types.Name AS TypeName, Teams.name AS DepName 
         FROM Personel 
         LEFT JOIN Types ON Personel.Type = Types.Id 
-        LEFT JOIN Departments ON Personel.Department = Departments.Id 
+        LEFT JOIN Teams ON Personel.Team = Teams.Id 
         " . $orderClause;
 
 $stmt = $pdo->query($sql);
@@ -209,7 +209,7 @@ function getSortIcon($column, $currentSort, $currentOrder) {
       <th><a href="<?= getSortUrl('EndDate', $sortBy, $sortOrder) ?>" class="text-decoration-none">End Date<?= getSortIcon('EndDate', $sortBy, $sortOrder) ?></a></th>
       <th>WBSO</th>
       <th>Fulltime %</th>
-      <th><a href="<?= getSortUrl('Department', $sortBy, $sortOrder) ?>" class="text-decoration-none">Department<?= getSortIcon('Department', $sortBy, $sortOrder) ?></a></th>
+      <th><a href="<?= getSortUrl('Team', $sortBy, $sortOrder) ?>" class="text-decoration-none">Team<?= getSortIcon('Team', $sortBy, $sortOrder) ?></a></th>
       <th><a href="<?= getSortUrl('Type', $sortBy, $sortOrder) ?>" class="text-decoration-none">Type<?= getSortIcon('Type', $sortBy, $sortOrder) ?></a></th>
       <th><a href="<?= getSortUrl('Plan', $sortBy, $sortOrder) ?>" class="text-decoration-none">Plan<?= getSortIcon('Plan', $sortBy, $sortOrder) ?></a></th>
       <th>Actions</th>

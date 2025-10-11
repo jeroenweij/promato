@@ -4,13 +4,13 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 // ---- DATA PREPARATION ----
-// Fetch departments first
-$deptStmt = $pdo->prepare("SELECT Id, Name, Ord FROM Departments ORDER BY Ord");
+// Fetch teams first
+$deptStmt = $pdo->prepare("SELECT Id, Name, Ord FROM Teams ORDER BY Ord");
 $deptStmt->execute();
-$departments = $deptStmt->fetchAll(PDO::FETCH_ASSOC);
-$departmentById = [];
-foreach ($departments as $dept) {
-    $departmentById[$dept['Id']] = $dept;
+$teams = $deptStmt->fetchAll(PDO::FETCH_ASSOC);
+$teamById = [];
+foreach ($teams as $dept) {
+    $teamById[$dept['Id']] = $dept;
 }
 
 // Fetch personnel with available hours - doing a more efficient query with proper joins
@@ -19,13 +19,13 @@ $stmt = $pdo->prepare("
         p.Shortname AS Name, 
         p.Id AS Number, 
         p.Fultime, 
-        p.Department,
+        p.Team,
         COALESCE(h.Plan, 0) AS AvailableHours,
         d.Ord AS DeptOrder,
         p.Ord AS PersonOrder
     FROM Personel p 
     LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND `Year`= :selectedYear
-    LEFT JOIN Departments d ON p.Department = d.Id
+    LEFT JOIN Teams d ON p.Team = d.Id
     WHERE p.plan = 1
     AND YEAR(p.StartDate) <= :selectedYear 
     AND (p.EndDate IS NULL OR YEAR(p.EndDate) >= :selectedYear)
@@ -39,12 +39,12 @@ $stmt->execute([
 
 $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $personnelById = []; // For quicker lookup
-$departmentTotals = []; // Department aggregated data
+$teamTotals = []; // Team aggregated data
 
 // Initialize person summary - calculate available hours once
 foreach ($personnel as $p) {
     $id = $p['Number'];
-    $deptId = $p['Department'];
+    $deptId = $p['Team'];
     
     $available = $p['AvailableHours'] > 0
         ? round($p['AvailableHours'] / 100)  // Stored as hundredths in DB
@@ -55,24 +55,24 @@ foreach ($personnel as $p) {
     $personnelById[$id]['planned'] = 0;
     $personnelById[$id]['realised'] = 0;
     
-    // Initialize department totals if not exists
-    if (!isset($departmentTotals[$deptId])) {
-        $departmentTotals[$deptId] = [
+    // Initialize team totals if not exists
+    if (!isset($teamTotals[$deptId])) {
+        $teamTotals[$deptId] = [
             'id' => $deptId,
-            'name' => $departmentById[$deptId]['Name'] ?? 'Unknown',
+            'name' => $teamById[$deptId]['Name'] ?? 'Unknown',
             'available' => 0,
             'planned' => 0,
             'realised' => 0
         ];
     }
     
-    // Add to department totals
-    $departmentTotals[$deptId]['available'] += $available;
+    // Add to team totals
+    $teamTotals[$deptId]['available'] += $available;
 }
 
-// Filter out departments with no active personnel
-$departments = array_filter($departments, function($dept) use ($departmentTotals) {
-    return isset($departmentTotals[$dept['Id']]) && $departmentTotals[$dept['Id']]['available'] > 0;
+// Filter out teams with no active personnel
+$teams = array_filter($teams, function($dept) use ($teamTotals) {
+    return isset($teamTotals[$dept['Id']]) && $teamTotals[$dept['Id']]['available'] > 0;
 });
 
 // Single query to fetch all hours data grouped by person
@@ -97,11 +97,11 @@ while ($row = $stmtPersonHours->fetch(PDO::FETCH_ASSOC)) {
     $personnelById[$pid]['planned'] = $plannedHours;
     $personnelById[$pid]['realised'] = $realisedHours;
     
-    // Add to department totals
-    $deptId = $personnelById[$pid]['Department'];
-    if (isset($departmentTotals[$deptId])) {
-        $departmentTotals[$deptId]['planned'] += $plannedHours;
-        $departmentTotals[$deptId]['realised'] += $realisedHours;
+    // Add to team totals
+    $deptId = $personnelById[$pid]['Team'];
+    if (isset($teamTotals[$deptId])) {
+        $teamTotals[$deptId]['planned'] += $plannedHours;
+        $teamTotals[$deptId]['realised'] += $realisedHours;
     }
 }
 
@@ -154,7 +154,7 @@ $allHoursQuery = $pdo->prepare("
         h.Person, 
         h.Hours, 
         h.Plan,
-        COALESCE(p.Department, 0) AS Department
+        COALESCE(p.Team, 0) AS Team
     FROM Hours h
     LEFT JOIN Personel p ON h.Person = p.Id
     WHERE h.`Year` = $selectedYear 
@@ -169,27 +169,27 @@ foreach ($activities as $a) {
 }
 $allHoursQuery->execute(array_unique($params));
 
-// Organize hours data for quick access grouped by department
-$departmentHoursData = [];
+// Organize hours data for quick access grouped by team
+$teamHoursData = [];
 
-// Process both planned and actual hours by department
+// Process both planned and actual hours by team
 while ($row = $allHoursQuery->fetch(PDO::FETCH_ASSOC)) {
     $key = $row['ProjectActivity'];
     $personId = $row['Person'];
-    $deptId = $row['Department'];
+    $deptId = $row['Team'];
     
-    // Aggregate both planned and actual hours by department
-    if (!isset($departmentHoursData[$key])) {
-        $departmentHoursData[$key] = [];
+    // Aggregate both planned and actual hours by team
+    if (!isset($teamHoursData[$key])) {
+        $teamHoursData[$key] = [];
     }
-    if (!isset($departmentHoursData[$key][$deptId])) {
-        $departmentHoursData[$key][$deptId] = [
+    if (!isset($teamHoursData[$key][$deptId])) {
+        $teamHoursData[$key][$deptId] = [
             'Plan' => 0,
             'Hours' => 0
         ];
     }
-    $departmentHoursData[$key][$deptId]['Plan'] += $row['Plan'];
-    $departmentHoursData[$key][$deptId]['Hours'] += $row['Hours'];
+    $teamHoursData[$key][$deptId]['Plan'] += $row['Plan'];
+    $teamHoursData[$key][$deptId]['Hours'] += $row['Hours'];
 }
 
 // Additional preparation for project grouping
@@ -274,12 +274,12 @@ $currentStatus = 3;
                                 $taskCode = $activity['Project'] . '-' . str_pad($activity['Key'], 3, '0', STR_PAD_LEFT);
                                 $activityKey = $activity['Project'] . '-' . $activity['Key'];
                                 
-                                // Calculate totals for this activity across all departments
+                                // Calculate totals for this activity across all teams
                                 $planned = 0;
                                 $realised = 0;
                                 
-                                if (isset($departmentHoursData[$activityKey])) {
-                                    foreach ($departmentHoursData[$activityKey] as $deptId => $data) {
+                                if (isset($teamHoursData[$activityKey])) {
+                                    foreach ($teamHoursData[$activityKey] as $deptId => $data) {
                                         $planned += $data['Plan'] / 100;
                                         $realised += $data['Hours'] / 100;
                                     }
@@ -305,35 +305,35 @@ $currentStatus = 3;
                 <div class="scrollable-columns">
                     <table class="plantable">
                         <tr>
-                            <?php foreach ($departments as $dept): ?>
+                            <?php foreach ($teams as $dept): ?>
                                 <th colspan="2" class="name fixedheigth">
-                                    <a href="capacity_planning.php?department=<?= urlencode($dept['Id']) ?>" style="color: inherit; text-decoration: none;">
+                                    <a href="capacity_planning.php?team=<?= urlencode($dept['Id']) ?>" style="color: inherit; text-decoration: none;">
                                         <?= htmlspecialchars($dept['Name']) ?>
                                     </a>
                                 </th>
                             <?php endforeach; ?>
                         </tr>
                         <tr>
-                            <?php foreach ($departments as $dept): ?>
-                                <td colspan="2" class="totals available-total fixedheigth" data-department="<?= $dept['Id'] ?>">
-                                    <?= $departmentTotals[$dept['Id']]['available'] ?? 0 ?>
+                            <?php foreach ($teams as $dept): ?>
+                                <td colspan="2" class="totals available-total fixedheigth" data-team="<?= $dept['Id'] ?>">
+                                    <?= $teamTotals[$dept['Id']]['available'] ?? 0 ?>
                                 </td>
                             <?php endforeach; ?>
                         </tr>
                         <tr>
-                            <?php foreach ($departments as $dept): 
+                            <?php foreach ($teams as $dept): 
                                 $deptId = $dept['Id'];
-                                $planned = $departmentTotals[$deptId]['planned'] ?? 0;
-                                $realised = $departmentTotals[$deptId]['realised'] ?? 0;
-                                $available = $departmentTotals[$deptId]['available'] ?? 0;
+                                $planned = $teamTotals[$deptId]['planned'] ?? 0;
+                                $realised = $teamTotals[$deptId]['realised'] ?? 0;
+                                $available = $teamTotals[$deptId]['available'] ?? 0;
                                 
                                 $plannedClass = $planned > $available ? 'overbudget' : '';
                                 $realisedClass = $realised > $planned ? 'overbudget' : '';
                             ?>
-                                <td class="totals fixedheigth planned-total <?= $plannedClass ?>" data-department="<?= $deptId ?>">
+                                <td class="totals fixedheigth planned-total <?= $plannedClass ?>" data-team="<?= $deptId ?>">
                                     <?= round($planned, 2) ?>
                                 </td>
-                                <td class="totals fixedheigth realised-total <?= $realisedClass ?>" data-department="<?= $deptId ?>">
+                                <td class="totals fixedheigth realised-total <?= $realisedClass ?>" data-team="<?= $deptId ?>">
                                     <?= round($realised, 2) ?>
                                 </td>
                             <?php endforeach; ?>
@@ -361,9 +361,9 @@ $currentStatus = 3;
                                 <td colspan="100%" class="headerspacer">&nbsp;</td>
                             </tr>
                             <tr>
-                                <?php foreach ($departments as $dept): ?>
+                                <?php foreach ($teams as $dept): ?>
                                     <th colspan="2" class="name fixedheigth">
-                                        <a href="capacity_planning.php?department=<?= urlencode($dept['Id']) ?>" style="color: inherit; text-decoration: none;">
+                                        <a href="capacity_planning.php?team=<?= urlencode($dept['Id']) ?>" style="color: inherit; text-decoration: none;">
                                             <?= htmlspecialchars($dept['Name']) ?>
                                         </a>
                                     </th>
@@ -373,14 +373,14 @@ $currentStatus = 3;
                             <?php foreach ($project['activities'] as $activity): ?>
                                 <?php $activityKey = $activity['Project'] . '-' . $activity['Key']; ?>
                                 <tr>
-                                    <?php foreach ($departments as $dept): 
+                                    <?php foreach ($teams as $dept): 
                                         $deptId = $dept['Id'];
                                         $plan = '';
                                         $hours = '&nbsp;';
                                         
-                                        // Get both planned and actual hours for this department
-                                        if (isset($departmentHoursData[$activityKey][$deptId])) {
-                                            $entry = $departmentHoursData[$activityKey][$deptId];
+                                        // Get both planned and actual hours for this team
+                                        if (isset($teamHoursData[$activityKey][$deptId])) {
+                                            $entry = $teamHoursData[$activityKey][$deptId];
                                             $planVal = $entry['Plan'] / 100;
                                             $hoursVal = $entry['Hours'] / 100;
                                             
@@ -389,7 +389,7 @@ $currentStatus = 3;
                                         }
                                         
                                         $overbudget = ($hours != '&nbsp;' && $plan > 0 && $hours > $plan) ? 'overbudget' : '';
-                                        $isEditable = false; // Department view is read-only for now
+                                        $isEditable = false; // Team view is read-only for now
                                     ?>
                                         <td class="editbudget fixedheigth"><?= $plan ?></td>
                                         <td class="budget <?= $overbudget ?> fixedheigth"><?= $hours ?></td>
