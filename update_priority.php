@@ -22,19 +22,17 @@ try {
 
     // Prepare statement outside loop for better performance
     $stmt = $pdo->prepare("
-        UPDATE Hours 
+        UPDATE TeamHours 
         SET Prio = :priority
-        WHERE Person = :personId 
+        WHERE Team = :teamId 
         AND Project = :projectId 
-        AND Activity = :activityId
     ");
 
     foreach ($data as $item) {
         // Validate required fields for each item
         if (
             !isset($item['projectId']) || 
-            !isset($item['activityId']) || 
-            !isset($item['personId']) || 
+            !isset($item['teamId']) || 
             !isset($item['priority'])
         ) {
             $errors[] = "Missing required fields in item";
@@ -44,9 +42,8 @@ try {
         // Execute update
         $params = [
             ':priority' => $item['priority'],
-            ':personId' => $item['personId'],
-            ':projectId' => $item['projectId'],
-            ':activityId' => $item['activityId']
+            ':teamId' => $item['teamId'],
+            ':projectId' => $item['projectId']
         ];
         
         error_log("Updating priority with params: " . print_r($params, true));

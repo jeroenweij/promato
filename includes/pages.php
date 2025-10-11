@@ -72,8 +72,8 @@ $pages = [
         'menu' => null,
         'inhead' => false
     ],
-    'update_task_status.php' => [
-        'title' => 'User task status',
+    'update_team_project_status.php' => [
+        'title' => 'Team task status',
         'auth_level' => 3,
         'menu' => null,
         'inhead' => false

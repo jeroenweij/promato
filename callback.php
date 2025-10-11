@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['credential'])) {
         $email = $payload['email'];
 
         // Look up user in database
-        $stmt = $pdo->prepare("SELECT Id, Shortname, Type FROM Personel WHERE Type > 1 AND Email = ?");
+        $stmt = $pdo->prepare("SELECT Id, Shortname, Type, Team FROM Personel WHERE Type > 1 AND Email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['credential'])) {
             $_SESSION['user_id'] = $user['Id'];
             $_SESSION['user_email'] = $email;
             $_SESSION['user_name'] = $user['Shortname'];
+            $_SESSION['user_team'] = $user['Team'];
             $_SESSION['auth_level'] = $user['Type'];
 
             $pdo->exec('UPDATE Personel SET LastLogin = CURRENT_TIMESTAMP WHERE Id = ' . $user['Id']);

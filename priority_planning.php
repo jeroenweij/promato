@@ -4,160 +4,231 @@ $pageSpecificCSS = ['kanban.css', 'priority.css'];
 require 'includes/header.php';
 require 'includes/db.php';
 
-$userStmt = $pdo->query("
-    SELECT DISTINCT u.Id, u.Name, u.Team, u.Ord
-    FROM Personel u 
-    JOIN Hours h ON h.Person = u.Id
-    WHERE h.Project > 10 AND u.Plan=1 AND u.Type>1
-    ORDER BY u.Team, u.Ord
+// Fetch teams that have tasks assigned
+$teamStmt = $pdo->query("
+    SELECT DISTINCT t.Id, t.Name, t.Ord
+    FROM Teams t 
+    JOIN TeamHours th ON th.Team = t.Id
+    WHERE th.Plan > 0 AND th.`Year` = $selectedYear
+    ORDER BY t.Ord, t.Name
 ");
-$users = $userStmt->fetchAll(PDO::FETCH_ASSOC);
+$teams = $teamStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch activities grouped by person
+// Fetch activities grouped by team and project
 $stmt = $pdo->prepare("
 SELECT 
-    h.Plan AS PlannedHours, 
-    h.Hours AS LoggedHours,
-    h.Prio AS Priority,
-    h.Person AS PersonId,
-    h.Status AS Status,
+    th.Plan AS PlannedHours, 
+    th.Hours AS LoggedHours,
+    th.Prio AS Priority,
+    th.Team AS TeamId,
+    th.Status AS Status,
+    th.Project AS ProjectId,
+    th.Activity AS ActivityKey,
     a.Name AS ActivityName, 
-    a.Key AS ActivityId, 
-    p.Id AS ProjectId, 
     p.Name AS ProjectName 
-FROM Hours h 
-JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
+FROM TeamHours th 
+JOIN Activities a ON th.Activity = a.Key AND th.Project = a.Project
 JOIN Projects p ON a.Project = p.Id AND p.Status = 3
-WHERE h.Plan>0 AND a.IsTask=1 AND h.`Year` = :selectedYear
-ORDER BY h.Person, h.Prio");
+WHERE th.Plan > 0 AND a.IsTask = 1 AND th.`Year` = :selectedYear
+ORDER BY th.Team, th.Prio, p.Id, a.Key
+");
 
-// Execute the prepared statement
 $stmt->execute([
     ':selectedYear' => $selectedYear
 ]);
 
-
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Group by person and status
-$activeTasks = [];
-$doneTasks = [];
-$hiddenTasks = [];
+// Group by team, status, and project
+$activeProjects = [];
+$doneProjects = [];
+$hiddenProjects = [];
+
 foreach ($rows as $row) {
-    if ($row['Status'] == 4) { // Done tasks
-        $doneTasks[$row['PersonId']][] = $row;
-    } else if ($row['Status'] == 5) { // Hidden tasks
-        $hiddenTasks[$row['PersonId']][] = $row;
-    } else { // Active tasks
-        $activeTasks[$row['PersonId']][] = $row;
+    $teamId = $row['TeamId'];
+    $projectId = $row['ProjectId'];
+    
+    // Initialize project structure if it doesn't exist
+    $projectKey = $teamId . '-' . $projectId;
+    
+    if ($row['Status'] == 4) { // Done
+        if (!isset($doneProjects[$projectKey])) {
+            $doneProjects[$projectKey] = [
+                'teamId' => $teamId,
+                'projectId' => $projectId,
+                'projectName' => $row['ProjectName'],
+                'priority' => $row['Priority'],
+                'activities' => []
+            ];
+        }
+        $doneProjects[$projectKey]['activities'][] = $row;
+    } else if ($row['Status'] == 5) { // Hidden
+        if (!isset($hiddenProjects[$projectKey])) {
+            $hiddenProjects[$projectKey] = [
+                'teamId' => $teamId,
+                'projectId' => $projectId,
+                'projectName' => $row['ProjectName'],
+                'priority' => $row['Priority'],
+                'activities' => []
+            ];
+        }
+        $hiddenProjects[$projectKey]['activities'][] = $row;
+    } else { // Active
+        if (!isset($activeProjects[$projectKey])) {
+            $activeProjects[$projectKey] = [
+                'teamId' => $teamId,
+                'projectId' => $projectId,
+                'projectName' => $row['ProjectName'],
+                'priority' => $row['Priority'],
+                'activities' => []
+            ];
+        }
+        $activeProjects[$projectKey]['activities'][] = $row;
     }
+}
+
+// Sort active projects by priority within each team
+foreach ($teams as $team) {
+    $teamActiveProjects = array_filter($activeProjects, function($project) use ($team) {
+        return $project['teamId'] == $team['Id'];
+    });
+    
+    usort($teamActiveProjects, function($a, $b) {
+        return ($a['priority'] ?? 999) - ($b['priority'] ?? 999);
+    });
 }
 ?>
 
 <section id="priority-planning">
     <div class="container">
-        <h1>Priority Planning</h1>
+        <h1>Team Priority Planning</h1>
         <div class="row">
-            <?php foreach ($users as $user): ?>
+            <?php foreach ($teams as $team): ?>
                 <div class="col-md-3 bottom-margin">
-                    <!-- Active Tasks -->
+                    <!-- Active Projects -->
                     <div class="card card-full mb-3">
                         <div class="card-header bg-secondary text-white text-center">
-                            <strong><?= htmlspecialchars($user['Name']) ?></strong>
+                            <strong><?= htmlspecialchars($team['Name']) ?></strong>
                         </div>
                         <div class="card-body tasks-container">
-                            <div id="person-<?= $user['Id'] ?>" class="kanban-cards active-tasks" data-person-id="<?= $user['Id'] ?>">
-                                <?php if (!empty($activeTasks[$user['Id']])): ?>
-                                    <?php foreach ($activeTasks[$user['Id']] as $item):
-                                        $planned = $item['PlannedHours'] / 100;
-                                        $logged = $item['LoggedHours'] / 100;
-                                        $realpercent = $planned > 0 ? round(($logged / $planned) * 100) : 0;
+                            <div id="team-<?= $team['Id'] ?>" class="kanban-cards active-tasks" data-team-id="<?= $team['Id'] ?>">
+                                <?php 
+                                $teamActiveProjects = array_filter($activeProjects, function($project) use ($team) {
+                                    return $project['teamId'] == $team['Id'];
+                                });
+                                
+                                if (!empty($teamActiveProjects)): 
+                                    foreach ($teamActiveProjects as $project): 
+                                        // Calculate totals for the project
+                                        $totalPlanned = 0;
+                                        $totalLogged = 0;
+                                        foreach ($project['activities'] as $activity) {
+                                            $totalPlanned += $activity['PlannedHours'] / 100;
+                                            $totalLogged += $activity['LoggedHours'] / 100;
+                                        }
+                                        $realpercent = $totalPlanned > 0 ? round(($totalLogged / $totalPlanned) * 100) : 0;
                                         $percent = min(100, $realpercent);
                                         ?>
                                         <div class="card mb-3 task-card"
-                                            data-project-id="<?= $item['ProjectId'] ?>"
-                                            data-activity-id="<?= $item['ActivityId'] ?>"
-                                            data-person-id="<?= $item['PersonId'] ?>"
-                                            data-status="<?= $item['Status'] ?>">
+                                            data-project-id="<?= $project['projectId'] ?>"
+                                            data-team-id="<?= $project['teamId'] ?>"
+                                            data-status="2">
                                             <div class="task-header bg-primary text-white project-header">
                                                 <span class="project-name">
-                                                    <?= htmlspecialchars($item['ProjectName']) ?>
+                                                    <?= htmlspecialchars($project['projectName']) ?>
                                                 </span>
                                                 <span class="item-priority">
-                                                    <?= ($item['Priority']>0 && $item['Priority']<250) ? $item['Priority'] : '' ?>
+                                                    <?= ($project['priority'] > 0 && $project['priority'] < 250) ? $project['priority'] : '' ?>
                                                 </span>
                                             </div> 
                                             <div class="card-body">
-                                            <div class="task-name"><?= htmlspecialchars($item['ActivityName']) ?></div>
-                                            <div class="hours-info">
-                                                <?= $logged ?> / <?= $planned ?> hours
-                                            </div>
-                                            <div class="progress">
-                                                <?php $overshoot = $realpercent>100 ? 'overshoot' : '' ?>
-                                                <div class="progress-bar <?= $overshoot ?>" role="progressbar" style="width: <?= $percent ?>%;" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100">
-                                                    <?= $realpercent ?>%
+                                                <?php foreach ($project['activities'] as $activity): 
+                                                    $planned = $activity['PlannedHours'] / 100;
+                                                    $logged = $activity['LoggedHours'] / 100;
+                                                ?>
+                                                    <div class="activity-item" style="margin-bottom: 8px;">
+                                                        <div class="task-name" style="font-size: 0.9em;">
+                                                            <?= htmlspecialchars($activity['ActivityName']) ?>
+                                                        </div>
+                                                        <div class="hours-info" style="font-size: 0.85em;">
+                                                            <?= $logged ?> / <?= $planned ?> hours
+                                                        </div>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                                
+                                                <div class="hours-info" style="margin-top: 10px; font-weight: bold;">
+                                                    Total: <?= $totalLogged ?> / <?= $totalPlanned ?> hours
                                                 </div>
-                                            </div>
+                                                <div class="progress">
+                                                    <?php $overshoot = $realpercent > 100 ? 'overshoot' : '' ?>
+                                                    <div class="progress-bar <?= $overshoot ?>" role="progressbar" style="width: <?= $percent ?>%;" aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100">
+                                                        <?= $realpercent ?>%
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <div class="card mb-3 empty-placeholder">
                                         <div class="card-body text-muted text-center">
-                                            No active tasks
+                                            No active projects
                                         </div>
                                     </div>
                                 <?php endif; ?>
                             </div>
                         </div>
                     
-                        <!-- Done Tasks -->
-                        <!-- <div class="card"> -->
-                            <div class="done-header card-header nospacing text-center">
-                                    Done Tasks
-                            </div>
-                            <div class="card-body tasks-container nospacing">
-                                <div id="person-done-<?= $user['Id'] ?>" class="kanban-cards done-tasks" data-person-id="<?= $user['Id'] ?>">
-                                    <?php if (!empty($doneTasks[$user['Id']])): ?>
-                                        <?php foreach ($doneTasks[$user['Id']] as $item): ?>
-                                            <div class="card mb-2 done-card task-card"
-                                                data-project-id="<?= $item['ProjectId'] ?>"
-                                                data-activity-id="<?= $item['ActivityId'] ?>"
-                                                data-person-id="<?= $item['PersonId'] ?>"
-                                                data-status="<?= $item['Status'] ?>">
-                                                <div class="card-body">
-                                                    <small><strong><?= htmlspecialchars($item['ProjectName']) ?></strong> - <?= htmlspecialchars($item['ActivityName']) ?></small>
-                                                </div>
+                        <!-- Done Projects -->
+                        <div class="done-header card-header nospacing text-center">
+                            Done Projects
+                        </div>
+                        <div class="card-body tasks-container nospacing">
+                            <div id="team-done-<?= $team['Id'] ?>" class="kanban-cards done-tasks" data-team-id="<?= $team['Id'] ?>">
+                                <?php 
+                                $teamDoneProjects = array_filter($doneProjects, function($project) use ($team) {
+                                    return $project['teamId'] == $team['Id'];
+                                });
+                                
+                                if (!empty($teamDoneProjects)): 
+                                    foreach ($teamDoneProjects as $project): ?>
+                                        <div class="card mb-2 done-card task-card"
+                                            data-project-id="<?= $project['projectId'] ?>"
+                                            data-team-id="<?= $project['teamId'] ?>"
+                                            data-status="4">
+                                            <div class="card-body">
+                                                <small><strong><?= htmlspecialchars($project['projectName']) ?></strong></small>
                                             </div>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
-                        <!-- </div> -->
+                        </div>
                         
-                        <!-- Hidden Tasks -->
-                        <!-- <div class="card"> -->
-                            <div class="done-header card-header nospacing text-center">
-                                    Hidden Tasks
-                            </div>
-                            <div class="card-body tasks-container nospacing">
-                                <div id="person-hidden-<?= $user['Id'] ?>" class="kanban-cards done-tasks" data-person-id="<?= $user['Id'] ?>">
-                                    <?php if (!empty($hiddenTasks[$user['Id']])): ?>
-                                        <?php foreach ($hiddenTasks[$user['Id']] as $item): ?>
-                                            <div class="card mb-2 done-card task-card"
-                                                data-project-id="<?= $item['ProjectId'] ?>"
-                                                data-activity-id="<?= $item['ActivityId'] ?>"
-                                                data-person-id="<?= $item['PersonId'] ?>"
-                                                data-status="<?= $item['Status'] ?>">
-                                                <div class="card-body">
-                                                    <small><strong><?= htmlspecialchars($item['ProjectName']) ?></strong> - <?= htmlspecialchars($item['ActivityName']) ?></small>
-                                                </div>
+                        <!-- Hidden Projects -->
+                        <div class="done-header card-header nospacing text-center">
+                            Hidden Projects
+                        </div>
+                        <div class="card-body tasks-container nospacing">
+                            <div id="team-hidden-<?= $team['Id'] ?>" class="kanban-cards done-tasks" data-team-id="<?= $team['Id'] ?>">
+                                <?php 
+                                $teamHiddenProjects = array_filter($hiddenProjects, function($project) use ($team) {
+                                    return $project['teamId'] == $team['Id'];
+                                });
+                                
+                                if (!empty($teamHiddenProjects)): 
+                                    foreach ($teamHiddenProjects as $project): ?>
+                                        <div class="card mb-2 done-card task-card"
+                                            data-project-id="<?= $project['projectId'] ?>"
+                                            data-team-id="<?= $project['teamId'] ?>"
+                                            data-status="5">
+                                            <div class="card-body">
+                                                <small><strong><?= htmlspecialchars($project['projectName']) ?></strong></small>
                                             </div>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
-                        <!-- </div> -->
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -167,74 +238,63 @@ foreach ($rows as $row) {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script>
-    const users = <?= json_encode($users) ?>;
+    const teams = <?= json_encode($teams) ?>;
 
-    // Helper function to update task status
-    function updateTaskStatus(data) {
-        console.log("Updating status:", data);
-        return fetch('update_task_status.php', {
+    // Helper function to update project status for all activities in a project
+    function updateProjectStatus(data) {
+        console.log("Updating project status:", data);
+        return fetch('update_team_project_status.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
         }).then(res => res.json()).then(response => {
-            console.log('Status updated', response);
+            console.log('Project status updated', response);
             return response;
         }).catch(error => {
-            console.error('Error updating status', error);
+            console.error('Error updating project status', error);
+            alert('Error updating project status');
             throw error;
         });
     }
 
-    // Initialize Sortable for all active, done, and hidden task containers
-    users.forEach(user => {
-        // Active tasks sortable
-        const activeContainer = document.getElementById('person-' + user.Id);
+    // Initialize Sortable for all active, done, and hidden project containers
+    teams.forEach(team => {
+        // Active projects sortable
+        const activeContainer = document.getElementById('team-' + team.Id);
         new Sortable(activeContainer, {
-            group: 'tasks-' + user.Id, // Simple group name to allow cross-container dragging
+            group: 'projects-' + team.Id,
             animation: 150,
             onAdd: function(evt) {
-                // Task moved from Done/Hidden to Active
+                // Project moved from Done/Hidden to Active
                 const card = evt.item;
                 const projectId = card.dataset.projectId;
-                const activityId = card.dataset.activityId;
-                const personId = card.dataset.personId;
+                const teamId = card.dataset.teamId;
                                 
-                // Collect activity IDs in new order
+                // Collect project IDs in new order
                 const cards = evt.to.querySelectorAll('.task-card');
-                const activityIds = [];
+                const projectIds = [];
                 cards.forEach((cardx, index) => {
-                    activityIds.push({
-                        activityId: cardx.dataset.activityId,
+                    projectIds.push({
                         projectId: cardx.dataset.projectId,
-                        personId: cardx.dataset.personId,
+                        teamId: cardx.dataset.teamId,
                         priority: index + 1
                     });
                 });
 
                 // First update status in database
-                updateTaskStatus({
+                updateProjectStatus({
                     projectId: projectId,
-                    activityId: activityId,
-                    personId: personId,
-                    status: 2 // Set to todo
+                    teamId: teamId,
+                    status: 2 // Set to active
                 }).then(() => {
                     // Then update priority
                     return fetch('update_priority.php', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(activityIds)
+                        body: JSON.stringify(projectIds)
                     });
                 }).then(res => res.json()).then(data => {
                     console.log('Priorities updated', data);
-                });
-
-                // update status in database
-                updateTaskStatus({
-                    projectId: projectId,
-                    activityId: activityId,
-                    personId: personId,
-                    status: 2 // Set to todo
-                }).then(() => {
                     // Reload page to refresh card UI
                     window.location.reload();
                 });
@@ -245,13 +305,12 @@ foreach ($rows as $row) {
                     const container = evt.to;
                     const cards = container.querySelectorAll('.task-card');
 
-                    // Collect activity IDs in new order
-                    const activityIds = [];
+                    // Collect project IDs in new order
+                    const projectIds = [];
                     cards.forEach((card, index) => {
-                        activityIds.push({
-                            activityId: card.dataset.activityId,
+                        projectIds.push({
                             projectId: card.dataset.projectId,
-                            personId: card.dataset.personId,
+                            teamId: card.dataset.teamId,
                             priority: index + 1
                         });
                     });
@@ -260,7 +319,7 @@ foreach ($rows as $row) {
                     fetch('update_priority.php', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(activityIds)
+                        body: JSON.stringify(projectIds)
                     }).then(res => res.json()).then(data => {
                         console.log('Priorities updated', data);
                     });
@@ -268,23 +327,21 @@ foreach ($rows as $row) {
             }
         });
 
-        // Done tasks sortable
-        const doneContainer = document.getElementById('person-done-' + user.Id);
+        // Done projects sortable
+        const doneContainer = document.getElementById('team-done-' + team.Id);
         new Sortable(doneContainer, {
-            group: 'tasks-' + user.Id, // Same group name to allow cross-container dragging
+            group: 'projects-' + team.Id,
             animation: 150,
             onAdd: function(evt) {
-                // Task moved to Done
+                // Project moved to Done
                 const card = evt.item;
                 const projectId = card.dataset.projectId;
-                const activityId = card.dataset.activityId;
-                const personId = card.dataset.personId;
+                const teamId = card.dataset.teamId;
                 
                 // Update status in database
-                updateTaskStatus({
+                updateProjectStatus({
                     projectId: projectId,
-                    activityId: activityId,
-                    personId: personId,
+                    teamId: teamId,
                     status: 4 // Set to done
                 }).then(() => {
                     // Reload page to refresh card UI
@@ -293,23 +350,21 @@ foreach ($rows as $row) {
             }
         });
         
-        // Hidden tasks sortable
-        const hiddenContainer = document.getElementById('person-hidden-' + user.Id);
+        // Hidden projects sortable
+        const hiddenContainer = document.getElementById('team-hidden-' + team.Id);
         new Sortable(hiddenContainer, {
-            group: 'tasks-' + user.Id, // Same group name to allow cross-container dragging
+            group: 'projects-' + team.Id,
             animation: 150,
             onAdd: function(evt) {
-                // Task moved to Hidden
+                // Project moved to Hidden
                 const card = evt.item;
                 const projectId = card.dataset.projectId;
-                const activityId = card.dataset.activityId;
-                const personId = card.dataset.personId;
+                const teamId = card.dataset.teamId;
                 
                 // Update status in database
-                updateTaskStatus({
+                updateProjectStatus({
                     projectId: projectId,
-                    activityId: activityId,
-                    personId: personId,
+                    teamId: teamId,
                     status: 5 // Set to hidden
                 }).then(() => {
                     // Reload page to refresh card UI

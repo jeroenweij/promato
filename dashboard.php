@@ -17,10 +17,7 @@ $userStmt = $pdo->prepare("
 $userStmt->execute([':userid' => $userId]);
 $userInfo = $userStmt->fetch(PDO::FETCH_ASSOC);
 
-// Calculate days since joined
-$startDate = new DateTime($userInfo['StartDate']);
 $currentDate = new DateTime();
-$daysSinceJoined = $currentDate->diff($startDate)->days;
 
 // Get total planned vs logged hours for the year
 $totalHoursStmt = $pdo->prepare("SELECT 
@@ -43,7 +40,7 @@ $tasksStmt = $pdo->prepare("
     SELECT 
         h.Plan AS PlannedHours, 
         h.Hours AS LoggedHours,
-        h.Prio AS Priority,
+        COALESCE(th.Prio, 0) AS Priority,
         h.Status AS StatusId,
         h.Person AS PersonId,
         a.Name AS ActivityName, 
@@ -56,11 +53,13 @@ $tasksStmt = $pdo->prepare("
     FROM Hours h 
     JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
     JOIN Projects p ON a.Project = p.Id AND p.Status = 3
+    JOIN TeamHours th ON th.Activity = h.Activity AND h.Project = th.Project AND h.Year = th.Year AND th.Team = :team
     LEFT JOIN HourStatus s ON h.Status = s.Id
-    WHERE h.Person = :userid AND h.Plan > 0 AND a.IsTask = 1 AND h.Year = :selectedYear
-    ORDER BY h.Prio, h.Status
+    WHERE h.Person = :userid AND h.Plan > 0 AND a.IsTask = 1 AND h.Status < 5 AND h.Year = :selectedYear
+    ORDER BY Priority, h.Status
 ");
 $tasksStmt->execute([
+    ':team' => $userInfo['Team'],
     ':selectedYear' => $selectedYear,
     ':userid' => $userId,
 ]);
@@ -106,7 +105,7 @@ $tasksByStatusStmt = $pdo->prepare("
     JOIN HourStatus s ON h.Status = s.Id
     JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
     JOIN Projects p on a.Project = p.Id AND p.Status = 3
-    WHERE h.Person = :userid AND h.Plan>0 AND h.Year = :selectedYear AND a.IsTask = 1
+    WHERE h.Person = :userid AND h.Plan>0 AND h.Year = :selectedYear AND h.Status < 5 AND a.IsTask = 1
     GROUP BY s.Name
     ORDER BY s.Id
 ");
@@ -193,9 +192,9 @@ $upcomingDeadlines = $upcomingDeadlinesStmt->fetchAll(PDO::FETCH_ASSOC);
                                     <div class="progress-container">
                                         <div class="progress mb-2">
                                             <div class="progress-bar bg-success" role="progressbar" 
-                                                style="width: <?= min(100, ($totalLogged / $totalPlanned) * 100) ?>%;" 
+                                                style="width: <?= min(100, ($totalLogged / max($totalPlanned, 1)) * 100) ?>%;" 
                                                 aria-valuenow="<?= $totalLogged ?>" aria-valuemin="0" aria-valuemax="<?= $totalPlanned ?>">
-                                                <?= round(($totalLogged / $totalPlanned) * 100) ?>%
+                                                <?= round(($totalLogged / max($totalPlanned, 1)) * 100) ?>%
                                             </div>
                                         </div>
                                         <div class="text-center"><?= number_format($totalLogged, 1) ?> / <?= number_format($totalPlanned, 1) ?> hours</div>

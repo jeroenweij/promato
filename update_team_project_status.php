@@ -11,8 +11,7 @@ error_log("Received data: " . print_r($data, true));
 // Validate required fields
 if (
     !isset($data['projectId']) || 
-    !isset($data['activityId']) || 
-    !isset($data['personId']) || 
+    !isset($data['teamId']) || 
     !isset($data['status'])
 ) {
     http_response_code(400);
@@ -22,26 +21,24 @@ if (
 
 // Extract data
 $projectId = $data['projectId'];
-$activityId = $data['activityId'];
-$personId = $data['personId'];
+$teamId = $data['teamId'];
 $status = $data['status'];
 $changePrio = $status > 3 ? ', Prio=250' : '';
 
 try {
     // Update the status in Hours table
     $stmt = $pdo->prepare("
-        UPDATE Hours 
+        UPDATE TeamHours 
         SET Status = :status $changePrio
-        WHERE Person = :personId 
+        WHERE Team = :teamId 
         AND Project = :projectId 
-        AND Activity = :activityId
+        AND Year = 2025
     ");
     
     $params = [
         ':status' => $status,
-        ':personId' => $personId,
-        ':projectId' => $projectId,
-        ':activityId' => $activityId
+        ':teamId' => $teamId,
+        ':projectId' => $projectId
     ];
     
     error_log("Executing query with params: " . print_r($params, true));
@@ -55,8 +52,7 @@ try {
             'message' => 'Task status updated successfully',
             'data' => [
                 'projectId' => $projectId,
-                'activityId' => $activityId,
-                'personId' => $personId,
+                'teamId' => $teamId,
                 'status' => $status
             ]
         ];

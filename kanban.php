@@ -5,6 +5,7 @@ require 'includes/header.php';
 require 'includes/db.php';
 
 $userId = $_SESSION['user_id'] ?? null;
+$teamId = $_SESSION['user_team'] ?? null;
 
 // Fetch activities per project and status from joined status table
 $stmt = $pdo->prepare("
@@ -13,7 +14,7 @@ SELECT
     h.Hours AS LoggedHours,
     hs.Name AS Status,
     h.Status AS StatusId,
-    h.Prio AS Priority,
+    COALESCE(th.Prio, 0) AS Priority,
     a.Name AS ActivityName, 
     a.Key AS ActivityId, 
     p.Id AS ProjectId, 
@@ -21,11 +22,12 @@ SELECT
 FROM Hours h 
 JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
 JOIN Projects p ON a.Project = p.Id AND p.Status = 3
+JOIN TeamHours th ON th.Activity = h.Activity AND h.Project = th.Project AND h.Year = th.Year AND th.Team = ?
 LEFT JOIN HourStatus hs ON h.Status = hs.Id
 WHERE h.Person = ? AND h.Plan>0 AND a.IsTask=1 AND h.`Year`= ?
-ORDER BY h.Prio, hs.Name
+ORDER BY th.Prio, hs.Name
 ");
-$stmt->execute([$userId, $selectedYear]);
+$stmt->execute([$teamId, $userId, $selectedYear]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Group by status
