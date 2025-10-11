@@ -13,61 +13,74 @@ foreach ($teams as $dept) {
     $teamById[$dept['Id']] = $dept;
 }
 
-// Fetch personnel with available hours - doing a more efficient query with proper joins
+// Fetch personnel with available hours - for calculating team available capacity
 $stmt = $pdo->prepare("
     SELECT 
-        p.Shortname AS Name, 
-        p.Id AS Number, 
-        p.Fultime, 
         p.Team,
         COALESCE(h.Plan, 0) AS AvailableHours,
-        d.Ord AS DeptOrder,
-        p.Ord AS PersonOrder
+        p.Fultime
     FROM Personel p 
-    LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND `Year`= :selectedYear
-    LEFT JOIN Teams d ON p.Team = d.Id
+    LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND h.`Year` = :selectedYear
     WHERE p.plan = 1
     AND YEAR(p.StartDate) <= :selectedYear 
     AND (p.EndDate IS NULL OR YEAR(p.EndDate) >= :selectedYear)
-    ORDER BY d.Ord, p.Ord, p.Name
 ");
 
-// Execute the prepared statement
-$stmt->execute([
-    ':selectedYear' => $selectedYear
-]);
-
+$stmt->execute([':selectedYear' => $selectedYear]);
 $personnel = $stmt->fetchAll(PDO::FETCH_ASSOC);
-$personnelById = []; // For quicker lookup
-$teamTotals = []; // Team aggregated data
 
-// Initialize person summary - calculate available hours once
+// Initialize team totals
+$teamTotals = [];
 foreach ($personnel as $p) {
-    $id = $p['Number'];
-    $deptId = $p['Team'];
+    $teamId = $p['Team'];
     
     $available = $p['AvailableHours'] > 0
-        ? round($p['AvailableHours'] / 100)  // Stored as hundredths in DB
-        : round(($p['Fultime'] ?? 100) * 2080 / 100); // Fallback to estimate
-
-    $personnelById[$id] = $p;
-    $personnelById[$id]['available'] = $available;
-    $personnelById[$id]['planned'] = 0;
-    $personnelById[$id]['realised'] = 0;
+        ? round($p['AvailableHours'] / 100)
+        : round(($p['Fultime'] ?? 100) * 2080 / 100);
     
-    // Initialize team totals if not exists
-    if (!isset($teamTotals[$deptId])) {
-        $teamTotals[$deptId] = [
-            'id' => $deptId,
-            'name' => $teamById[$deptId]['Name'] ?? 'Unknown',
+    if (!isset($teamTotals[$teamId])) {
+        $teamTotals[$teamId] = [
+            'id' => $teamId,
+            'name' => $teamById[$teamId]['Name'] ?? 'Unknown',
             'available' => 0,
             'planned' => 0,
             'realised' => 0
         ];
     }
     
-    // Add to team totals
-    $teamTotals[$deptId]['available'] += $available;
+    $teamTotals[$teamId]['available'] += $available;
+}
+
+// Fetch planned and realised hours from TeamHours table
+$stmtTeamHours = $pdo->prepare("
+    SELECT 
+        Team,
+        SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END) AS TotalPlanned,
+        SUM(CASE WHEN Project > 0 THEN Hours ELSE 0 END) - 
+        SUM(CASE WHEN Project = 10 AND Activity = 7 THEN Hours ELSE 0 END) AS TotalRealised
+    FROM TeamHours 
+    WHERE `Year` = :selectedYear
+    GROUP BY Team
+");
+
+$stmtTeamHours->execute([':selectedYear' => $selectedYear]);
+
+// Update team totals with planned and realised hours
+while ($row = $stmtTeamHours->fetch(PDO::FETCH_ASSOC)) {
+    $teamId = $row['Team'];
+    
+    if (!isset($teamTotals[$teamId])) {
+        $teamTotals[$teamId] = [
+            'id' => $teamId,
+            'name' => $teamById[$teamId]['Name'] ?? 'Unknown',
+            'available' => 0,
+            'planned' => 0,
+            'realised' => 0
+        ];
+    }
+    
+    $teamTotals[$teamId]['planned'] = $row['TotalPlanned'] / 100;
+    $teamTotals[$teamId]['realised'] = $row['TotalRealised'] / 100;
 }
 
 // Filter out teams with no active personnel
@@ -75,37 +88,7 @@ $teams = array_filter($teams, function($dept) use ($teamTotals) {
     return isset($teamTotals[$dept['Id']]) && $teamTotals[$dept['Id']]['available'] > 0;
 });
 
-// Single query to fetch all hours data grouped by person
-$stmtPersonHours = $pdo->query(
-    "SELECT 
-        Person,
-        SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END) AS TotalPlanned,
-        SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END) - 
-        SUM(CASE WHEN Project = 10 AND Activity = 7 THEN Hours ELSE 0 END) AS TotalRealised
-    FROM Hours WHERE `Year` = $selectedYear
-    GROUP BY Person"
-);
-
-// Update person summaries with planned and realized hours
-while ($row = $stmtPersonHours->fetch(PDO::FETCH_ASSOC)) {
-    $pid = $row['Person'];
-    if (!isset($personnelById[$pid])) continue;
-
-    $plannedHours = $row['TotalPlanned'] / 100;
-    $realisedHours = $row['TotalRealised'] / 100;
-    
-    $personnelById[$pid]['planned'] = $plannedHours;
-    $personnelById[$pid]['realised'] = $realisedHours;
-    
-    // Add to team totals
-    $deptId = $personnelById[$pid]['Team'];
-    if (isset($teamTotals[$deptId])) {
-        $teamTotals[$deptId]['planned'] += $plannedHours;
-        $teamTotals[$deptId]['realised'] += $realisedHours;
-    }
-}
-
-// Fetch all projects and activities in a single query with JOINs
+// Fetch all projects and activities
 $activitiesQuery = $pdo->prepare("
     SELECT 
         a.Project, 
@@ -127,14 +110,10 @@ $activitiesQuery = $pdo->prepare("
     ORDER BY p.Status, p.Id, a.Key
 ");
 
-// Execute the prepared statement
-$activitiesQuery->execute([
-    ':selectedYear' => $selectedYear
-]);
-
+$activitiesQuery->execute([':selectedYear' => $selectedYear]);
 $activities = $activitiesQuery->fetchAll(PDO::FETCH_ASSOC);
 
-// Efficiently fetch all hours data for all activities at once
+// Build list of activity keys for efficient query
 $projectActivities = [];
 foreach ($activities as $a) {
     $key = $a['Project'] . '-' . $a['Key'];
@@ -144,55 +123,42 @@ foreach ($activities as $a) {
 $activityKeys = array_keys($projectActivities);
 $placeholders = implode(',', array_fill(0, count($activityKeys), '?'));
 if (empty($placeholders)){
-    $placeholders="''";
+    $placeholders = "''";
 }
 
-// Get both planned and actual hours for activities from real people
+// Fetch team hours directly from TeamHours table
 $allHoursQuery = $pdo->prepare("
     SELECT 
-        CONCAT(h.Project, '-', h.Activity) AS ProjectActivity,
-        h.Person, 
-        h.Hours, 
-        h.Plan,
-        COALESCE(p.Team, 0) AS Team
-    FROM Hours h
-    LEFT JOIN Personel p ON h.Person = p.Id
-    WHERE h.`Year` = $selectedYear 
-    AND CONCAT(h.Project, '-', h.Activity) IN ($placeholders)
-    AND h.Person > 0
+        CONCAT(Project, '-', Activity) AS ProjectActivity,
+        Team,
+        Hours,
+        Plan
+    FROM TeamHours
+    WHERE `Year` = ?
+    AND CONCAT(Project, '-', Activity) IN ($placeholders)
 ");
 
-// We need to execute with flattened array values
-$params = [];
-foreach ($activities as $a) {
-    $params[] = $a['Project'] . '-' . $a['Key'];
-}
-$allHoursQuery->execute(array_unique($params));
+// Build params array with year first, then activity keys
+$params = array_merge([$selectedYear], array_unique($activityKeys));
+$allHoursQuery->execute($params);
 
-// Organize hours data for quick access grouped by team
+// Organize hours data by team
 $teamHoursData = [];
-
-// Process both planned and actual hours by team
 while ($row = $allHoursQuery->fetch(PDO::FETCH_ASSOC)) {
     $key = $row['ProjectActivity'];
-    $personId = $row['Person'];
-    $deptId = $row['Team'];
+    $teamId = $row['Team'];
     
-    // Aggregate both planned and actual hours by team
     if (!isset($teamHoursData[$key])) {
         $teamHoursData[$key] = [];
     }
-    if (!isset($teamHoursData[$key][$deptId])) {
-        $teamHoursData[$key][$deptId] = [
-            'Plan' => 0,
-            'Hours' => 0
-        ];
-    }
-    $teamHoursData[$key][$deptId]['Plan'] += $row['Plan'];
-    $teamHoursData[$key][$deptId]['Hours'] += $row['Hours'];
+    
+    $teamHoursData[$key][$teamId] = [
+        'Plan' => $row['Plan'],
+        'Hours' => $row['Hours']
+    ];
 }
 
-// Additional preparation for project grouping
+// Group activities by project
 $projectGroups = [];
 foreach ($activities as $activity) {
     $projectId = $activity['Project'];
@@ -210,14 +176,11 @@ foreach ($activities as $activity) {
 }
 
 $currentStatus = 3;
-
-// Start output with CSS optimization
 ?>
 <section class="white">
     <div class="container" style="max-width: 20000px;">
         <div class="autoheight">
             <div class="budget-table-wrapper">
-                <!-- Scrollable area with fixed and scrollable columns -->
                 <div class="scrollable-area verticalscrol">
                 <!-- Fixed left columns -->
                 <div class="fixed-columns">
@@ -279,7 +242,7 @@ $currentStatus = 3;
                                 $realised = 0;
                                 
                                 if (isset($teamHoursData[$activityKey])) {
-                                    foreach ($teamHoursData[$activityKey] as $deptId => $data) {
+                                    foreach ($teamHoursData[$activityKey] as $teamId => $data) {
                                         $planned += $data['Plan'] / 100;
                                         $realised += $data['Hours'] / 100;
                                     }
@@ -322,18 +285,18 @@ $currentStatus = 3;
                         </tr>
                         <tr>
                             <?php foreach ($teams as $dept): 
-                                $deptId = $dept['Id'];
-                                $planned = $teamTotals[$deptId]['planned'] ?? 0;
-                                $realised = $teamTotals[$deptId]['realised'] ?? 0;
-                                $available = $teamTotals[$deptId]['available'] ?? 0;
+                                $teamId = $dept['Id'];
+                                $planned = $teamTotals[$teamId]['planned'] ?? 0;
+                                $realised = $teamTotals[$teamId]['realised'] ?? 0;
+                                $available = $teamTotals[$teamId]['available'] ?? 0;
                                 
                                 $plannedClass = $planned > $available ? 'overbudget' : '';
                                 $realisedClass = $realised > $planned ? 'overbudget' : '';
                             ?>
-                                <td class="totals fixedheigth planned-total <?= $plannedClass ?>" data-team="<?= $deptId ?>">
+                                <td class="totals fixedheigth planned-total <?= $plannedClass ?>" data-team="<?= $teamId ?>">
                                     <?= round($planned, 2) ?>
                                 </td>
-                                <td class="totals fixedheigth realised-total <?= $realisedClass ?>" data-team="<?= $deptId ?>">
+                                <td class="totals fixedheigth realised-total <?= $realisedClass ?>" data-team="<?= $teamId ?>">
                                     <?= round($realised, 2) ?>
                                 </td>
                             <?php endforeach; ?>
@@ -374,13 +337,13 @@ $currentStatus = 3;
                                 <?php $activityKey = $activity['Project'] . '-' . $activity['Key']; ?>
                                 <tr>
                                     <?php foreach ($teams as $dept): 
-                                        $deptId = $dept['Id'];
+                                        $teamId = $dept['Id'];
                                         $plan = '';
                                         $hours = '&nbsp;';
                                         
                                         // Get both planned and actual hours for this team
-                                        if (isset($teamHoursData[$activityKey][$deptId])) {
-                                            $entry = $teamHoursData[$activityKey][$deptId];
+                                        if (isset($teamHoursData[$activityKey][$teamId])) {
+                                            $entry = $teamHoursData[$activityKey][$teamId];
                                             $planVal = $entry['Plan'] / 100;
                                             $hoursVal = $entry['Hours'] / 100;
                                             
@@ -389,9 +352,21 @@ $currentStatus = 3;
                                         }
                                         
                                         $overbudget = ($hours != '&nbsp;' && $plan > 0 && $hours > $plan) ? 'overbudget' : '';
-                                        $isEditable = false; // Team view is read-only for now
-                                    ?>
-                                        <td class="editbudget fixedheigth"><?= $plan ?></td>
+                                        $isEditable = $userAuthLevel >= 4 || ($_SESSION['user_id'] ?? 0) == $activity['ManagerId'];
+                                        ?>
+                                            <?php if ($isEditable): ?>
+                                                <td class="editbudget fixedheigth">
+                                                    <input type="text" 
+                                                          name="<?= $activity['Project'] ?>#<?= $activity['Key'] ?>#<?= $teamId ?>" 
+                                                          value="<?= $plan ?>" 
+                                                          maxlength="10" 
+                                                          size="5" 
+                                                          class="hiddentext editbudget" 
+                                                          onchange="UpdateValue(this)">
+                                                </td>
+                                            <?php else: ?>
+                                                <td class="editbudget fixedheigth"><?= $plan ?></td>
+                                            <?php endif; ?>
                                         <td class="budget <?= $overbudget ?> fixedheigth"><?= $hours ?></td>
                                     <?php endforeach; ?>
                                 </tr>
@@ -469,6 +444,117 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial setup
     window.addEventListener('DOMContentLoaded', setElementHeight);
     window.addEventListener('resize', debounce(setElementHeight, 100));
+
+    // Handle updating values
+    window.UpdateValue = function(input) {
+        const [project, activity, team] = input.name.split('#');
+        const value = parseFloat(input.value) || 0;
+
+        // Update UI immediately for better UX
+        updateUIForChangedValue(input);
+
+        // Send data to server
+        fetch('update_team_plan.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `project=${project}&activity=${activity}&team=${team}&year=<?= $selectedYear ?>&plan=${value}`
+        }).then(async res => {
+        const text = await res.text(); // 🔹 read response body as text
+            if (!res.ok) {
+                alert(`Failed to save: project=${project}, activity=${activity}, team=${team}, plan=${value}`);
+                alert(`${text}`);
+                return;
+            }
+        }).catch(err => {
+            console.error('Error saving data:', err);
+            alert('Failed to save data. Please try again.');
+        });
+    }
+
+    // Update UI without waiting for server response
+    function updateUIForChangedValue(input) {
+        const [project, activity, team] = input.name.split('#');
+        const value = parseFloat(input.value) || 0;
+        const row = input.closest('tr');
+        
+        // 1. Update row totals
+        let totalPlanned = 0;
+        row.querySelectorAll('input').forEach(inp => {
+            const v = parseFloat(inp.value);
+            if (!isNaN(v)) totalPlanned += v;
+        });
+
+        // 2. Check overbudget statuses for each cell in row
+        row.querySelectorAll('input').forEach(inp => {
+            const planVal = parseFloat(inp.value) || 0;
+            const tdInput = inp.closest('td');
+            const tdBudget = tdInput.nextElementSibling;
+
+            if (tdBudget && tdBudget.classList.contains('budget')) {
+                const loggedVal = parseFloat(tdBudget.innerText) || 0;
+                tdBudget.classList.toggle('overbudget', loggedVal > 0 && loggedVal > planVal);
+            }
+        });
+        
+        // 3. Find and update the corresponding row in the fixed left table
+        const taskCode = `${project}-${activity.padStart(3, '0')}`;
+        const fixedTable = document.querySelector('.fixed-columns table');
+        const fixedRows = fixedTable.querySelectorAll('tr');
+        
+        for (let i = 0; i < fixedRows.length; i++) {
+            const cells = fixedRows[i].querySelectorAll('td');
+            // Find the row with the matching task code (first column)
+            if (cells.length > 0 && cells[0].textContent === taskCode) {
+                // Get the relevant cells from the fixed table
+                const budgetCell = cells[2];    // Available hours
+                const plannedCell = cells[3];   // Planned hours
+                const loggedCell = cells[4];    // Realized hours
+                
+                if (plannedCell && budgetCell) {
+                    // Update the planned hours cell
+                    plannedCell.textContent = totalPlanned;
+                    
+                    // Check if planned is over budget
+                    const budget = parseFloat(budgetCell.textContent) || 0;
+                    plannedCell.classList.toggle('overbudget', totalPlanned > budget);
+                    
+                    // Check if logged is over planned
+                    if (loggedCell) {
+                        const logged = parseFloat(loggedCell.textContent) || 0;
+                        loggedCell.classList.toggle('overbudget', logged > totalPlanned);
+                    }
+                }
+                break;
+            }
+        }
+
+        // 4. Update team total planned hours
+        let teamPlanned = 0;
+        document.querySelectorAll(`input[name$="#${team}"]`).forEach(inp => {
+            const v = parseFloat(inp.value);
+            if (!isNaN(v)) teamPlanned += v;
+        });
+
+        const teamPlannedCell = document.querySelector(`.planned-total[data-team="${team}"]`);
+        const availableCell = document.querySelector(`.available-total[data-team="${team}"]`);
+        const realisedCell = document.querySelector(`.realised-total[data-team="${team}"]`);
+        
+        if (teamPlannedCell) {
+            teamPlannedCell.innerText = teamPlanned;
+            
+            // Check against available hours
+            if (availableCell) {
+                const available = parseFloat(availableCell.innerText) || 0;
+                teamPlannedCell.classList.toggle('overbudget', teamPlanned > available);
+            }
+            
+            // Check realised vs planned
+            if (realisedCell) {
+                const realised = parseFloat(realisedCell.innerText) || 0;
+                realisedCell.classList.toggle('overbudget', realised > teamPlanned);
+            }
+        }
+    }
 })();
 </script>
 

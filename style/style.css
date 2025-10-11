@@ -65,6 +65,8 @@
 	background-color: #ebf2ff;
 	border: 0;
 	text-align: right;
+	width: 100%; 
+	box-sizing: border-box;
 }
 
 .center {

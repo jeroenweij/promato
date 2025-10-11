@@ -42,6 +42,12 @@ $pages = [
         'menu' => null,
         'inhead' => false
     ],
+    'update_team_plan.php' => [
+        'title' => 'Update Team Plan',
+        'auth_level' => 3,
+        'menu' => null,
+        'inhead' => false
+    ],
     'update_priority.php' => [
         'title' => 'Update Priority',
         'auth_level' => 3,

@@ -65,13 +65,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
       if (empty($row[0]) && empty($row[1]) && empty($row[2])) continue;
       if (!empty($row[0])) {
           $currentProject = (int)$row[0];
-          if (strtolower(trim($row[0])) === 'eindtotaal') {
+          if (strtolower(trim($row[0])) === 'eindtotaal' || strtolower(trim($row[0])) === 'grand total') {
               $currentProject = 0;
               $currentProjectName = 'Totals';
               $row[2]=0;
           }
       }
       if (!empty($row[1])) $currentProjectName = $row[1];
+      logmsg("Start Import hours for {$currentProjectName} {$row[3]}.");
       if (!isset($row[2])) continue;
       $activity = (int)$row[2];
 
@@ -93,17 +94,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
             ':year' => $selectedYear
           ]);
       
-          $stmt = $pdo->prepare("INSERT INTO TeamHours (Project, Activity, Team, Hours, `Year`)
-            VALUES (:project, :activity, :team, :hours, :year)
-            ON DUPLICATE KEY UPDATE Hours = Hours + :hours");
-          $stmt->execute([
-            ':project' => $currentProject,
-            ':activity' => $activity,
-            ':team' => $team,
-            ':hours' => round($hours * 100),
-            ':year' => $selectedYear
-          ]);
-          
+          if ($currentProject > 0){
+            $stmt = $pdo->prepare("INSERT INTO TeamHours (Project, Activity, Team, Hours, `Year`)
+              VALUES (:project, :activity, :team, :hours, :year)
+              ON DUPLICATE KEY UPDATE Hours = Hours + :hours");
+            $stmt->execute([
+              ':project' => $currentProject,
+              ':activity' => $activity,
+              ':team' => $team,
+              ':hours' => round($hours * 100),
+              ':year' => $selectedYear
+            ]);
+          }
           $count++;
         }
       }

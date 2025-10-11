@@ -7,6 +7,21 @@ require 'includes/db.php';
 // Get team filter from URL parameter
 $teamFilter = isset($_GET['team']) ? (int)$_GET['team'] : null;
 
+// Fetch all teams for the filter buttons
+$teamsQuery = $pdo->query("
+    SELECT Id, Name, Ord 
+    FROM Teams 
+    WHERE Id IN (
+        SELECT DISTINCT Team 
+        FROM Personel 
+        WHERE plan = 1 
+        AND YEAR(StartDate) <= $selectedYear 
+        AND (EndDate IS NULL OR YEAR(EndDate) >= $selectedYear)
+    )
+    ORDER BY Ord, Name
+");
+$teams = $teamsQuery->fetchAll(PDO::FETCH_ASSOC);
+
 // Fetch personnel with available hours - doing a more efficient query with proper joins
 $whereClause = "WHERE p.plan = 1
     AND YEAR(p.StartDate) <= :selectedYear 
@@ -60,7 +75,7 @@ $stmtPersonHours = $pdo->query(
     "SELECT 
         Person,
         SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END) AS TotalPlanned,
-        SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END) - 
+        SUM(CASE WHEN Project > 0 THEN Hours ELSE 0 END) - 
         SUM(CASE WHEN Project = 10 AND Activity = 7 THEN Hours ELSE 0 END) AS TotalRealised
     FROM Hours WHERE `Year` = $selectedYear
     GROUP BY Person"
@@ -103,6 +118,29 @@ $activitiesQuery->execute([
 ]);
 
 $activities = $activitiesQuery->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch TeamHours data if a team filter is active
+$teamHoursData = [];
+if ($teamFilter) {
+    $teamHoursQuery = $pdo->prepare("
+        SELECT 
+            Project,
+            Activity,
+            Plan
+        FROM TeamHours
+        WHERE Team = :teamFilter
+        AND `Year` = :selectedYear
+    ");
+    $teamHoursQuery->execute([
+        ':teamFilter' => $teamFilter,
+        ':selectedYear' => $selectedYear
+    ]);
+    
+    while ($row = $teamHoursQuery->fetch(PDO::FETCH_ASSOC)) {
+        $key = $row['Project'] . '-' . $row['Activity'];
+        $teamHoursData[$key] = $row['Plan'] / 100;
+    }
+}
 
 // Efficiently fetch all hours data for all activities at once
 $projectActivities = [];
@@ -175,6 +213,20 @@ if ($teamFilter && !empty($personnel)) {
 ?>
 <section class="white">
     <div class="container" style="max-width: 20000px;">
+        <?php if (!$teamFilter && count($teams) > 0): ?>
+            <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #d0d0d0; border-radius: 5px;">
+                <h3 style="margin: 0 0 10px 0;">Filter by Team:</h3>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <?php foreach ($teams as $team): ?>
+                        <a href="?team=<?= $team['Id'] ?>" 
+                           style="padding: 8px 16px; background-color: #0066cc; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
+                            <?= htmlspecialchars($team['Name']) ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+        
         <?php if ($teamFilter): ?>
             <div style="margin-bottom: 20px; padding: 10px; background-color: #f0f8ff; border: 1px solid #d0d0d0; border-radius: 5px;">
                 <h3 style="margin: 0; display: inline-block;">
@@ -246,6 +298,19 @@ if ($teamFilter && !empty($personnel)) {
                                 $taskCode = $activity['Project'] . '-' . str_pad($activity['Key'], 3, '0', STR_PAD_LEFT);
                                 $activityKey = $activity['Project'] . '-' . $activity['Key'];
                                 
+                                // Determine available hours based on team filter
+                                $availableHours = '';
+                                if ($teamFilter) {
+                                    // Use TeamHours.Plan if team filter is active
+                                    // TeamHours uses Project + Activity (Key) as composite key
+                                    if (isset($teamHoursData[$activityKey])) {
+                                        $availableHours = $teamHoursData[$activityKey];
+                                    }
+                                } else {
+                                    // Use budget hours when no team filter
+                                    $availableHours = $activity['BudgetHours'];
+                                }
+                                
                                 // Calculate totals for this activity (only for filtered personnel if applicable)
                                 $planned = 0;
                                 $realised = 0;
@@ -271,13 +336,13 @@ if ($teamFilter && !empty($personnel)) {
                                     }
                                 }
                                 
-                                $plannedClass = ($activity['BudgetHours'] && $planned > $activity['BudgetHours']) ? 'overbudget' : '';
+                                $plannedClass = ($availableHours !== '' && $planned > $availableHours) ? 'overbudget' : '';
                                 $realisedClass = ($planned > 0 && $realised > $planned) ? 'overbudget' : '';
                                 ?>
                                 <tr>
                                     <td class="text fixedheigth"><?= $taskCode ?></td>
                                     <td class="text fixedheigth"><?= htmlspecialchars($activity['ActivityName']) ?></td>
-                                    <td class="totals fixedheigth"><?= $activity['BudgetHours'] ?></td>
+                                    <td class="totals fixedheigth"><?= $availableHours ?></td>
                                     <td class="totals <?= $plannedClass ?> fixedheigth"><?= $planned ?></td>
                                     <td class="totals <?= $realisedClass ?>"><?= $realised ?></td>
                                 </tr>
@@ -373,7 +438,7 @@ if ($teamFilter && !empty($personnel)) {
                                                       name="<?= $activity['Project'] ?>#<?= $activity['Key'] ?>#<?= $personId ?>" 
                                                       value="<?= $plan ?>" 
                                                       maxlength="5" 
-                                                      size="3" 
+                                                      size="4" 
                                                       class="hiddentext editbudget" 
                                                       onchange="UpdateValue(this)">
                                             </td>
@@ -525,9 +590,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update the planned hours cell
                     plannedCell.textContent = totalPlanned;
                     
-                    // Check if planned is over budget
-                    const budget = parseFloat(budgetCell.textContent) || 0;
-                    plannedCell.classList.toggle('overbudget', totalPlanned > budget);
+                    // Check if planned is over budget (only if budget exists)
+                    const budgetText = budgetCell.textContent.trim();
+                    if (budgetText !== '') {
+                        const budget = parseFloat(budgetText) || 0;
+                        plannedCell.classList.toggle('overbudget', totalPlanned > budget);
+                    } else {
+                        plannedCell.classList.remove('overbudget');
+                    }
                     
                     // Check if logged is over planned
                     if (loggedCell) {
