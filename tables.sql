@@ -8,6 +8,7 @@ CREATE TABLE `Activities` (
   `Visible` tinyint(1) DEFAULT '1',
   `IsTask` tinyint(1) NOT NULL DEFAULT '1',
   `Export` tinyint(1) DEFAULT '1',
+  `IsExported` tinyint(1) NOT NULL DEFAULT '0',
   `Wbso` smallint DEFAULT NULL,
   `Active` tinyint(1) NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -87,8 +88,8 @@ INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VAL
 (46, 'Team task status', 'update_team_project_status.php', 3, NULL, 0, NULL),
 (47, 'Upload Handler', 'tmp_handler.php', 5, NULL, 0, NULL),
 (48, 'Export generator', 'export_generate.php', 5, NULL, 0, NULL),
-(49, 'Kroketto', 'kroketto.php', 2, 3, 0, NULL),
-(50, 'Kroketto Admin', 'kroketto_admin.php', 5, 3, 0, NULL),
+(49, 'Kroketto', 'kroketto.php', 2, 3, 0, 'croissant'),
+(50, 'Kroketto Admin', 'kroketto_admin.php', 5, 3, 0, 'utensils'),
 (51, 'Dashboard', 'dashboard.php', 2, 1, 0, 'home'),
 (52, 'Projects', 'projects.php', 2, 1, 1, 'briefcase'),
 (53, 'Kanban', 'kanban.php', 2, 1, 1, 'trello'),
@@ -179,13 +180,6 @@ CREATE TABLE `Teams` (
   `Ord` tinyint NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO `Teams` (`Id`, `Name`, `Ord`) VALUES
-(1, 'Software 1', 1),
-(2, 'Hardware', 3),
-(3, 'Management + Sup', 4),
-(4, 'Production', 5),
-(5, 'Software 2', 2);
-
 CREATE TABLE `Types` (
   `Id` tinyint NOT NULL,
   `Name` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL
@@ -207,6 +201,7 @@ CREATE TABLE `Wbso` (
   `Hours` smallint DEFAULT NULL,
   `Date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 ALTER TABLE `Activities`
   ADD PRIMARY KEY (`Id`),
@@ -317,6 +312,7 @@ ALTER TABLE `Types`
 
 ALTER TABLE `Wbso`
   MODIFY `Id` smallint NOT NULL AUTO_INCREMENT;
+
 
 ALTER TABLE `Activities`
   ADD CONSTRAINT `Activities_ibfk_1` FOREIGN KEY (`Project`) REFERENCES `Projects` (`Id`),

@@ -30,7 +30,7 @@ $stmt->execute([
 ]);
 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Group results by menu (single pass through data)
+// Group results by menu
 $menuData = [];
 foreach ($results as $row) {
     $menuId = $row['menu_id'];
@@ -54,7 +54,7 @@ foreach ($results as $row) {
 }
 ?>
 
-<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
 <section id="personal-dashboard">
     <div class="container py-5">
@@ -62,7 +62,7 @@ foreach ($results as $row) {
             <div class="card mb-5">
                 <div class="card-header <?= htmlspecialchars($menu['class']) ?> text-white">
                     <h2 class="mb-0">
-                        <i class="feather-icon" data-feather="<?= htmlspecialchars($menu['icon']) ?>"></i>
+                        <i class="lucide-icon" data-lucide="<?= htmlspecialchars($menu['icon']) ?>"></i>
                         <?= htmlspecialchars($menu['name']) ?>
                     </h2>
                 </div>
@@ -74,7 +74,7 @@ foreach ($results as $row) {
                                     <div class="card menu-card h-100 text-center">
                                         <div class="card-body d-flex flex-column justify-content-center align-items-center">
                                             <div class="icon-container mb-3 <?= htmlspecialchars($menu['class']) ?>">
-                                                <i class="feather-icon" data-feather="<?= htmlspecialchars($page['icon']) ?>"></i>
+                                                <i class="lucide-icon" data-lucide="<?= htmlspecialchars($page['icon'] ?? 'box') ?>"></i>
                                             </div>
                                             <h5 class="card-title"><?= htmlspecialchars($page['name']) ?></h5>
                                         </div>
@@ -91,7 +91,7 @@ foreach ($results as $row) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof feather !== 'undefined') feather.replace();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 });
 </script>
 

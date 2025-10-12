@@ -85,7 +85,7 @@ try {
     $writer = new Xls($spreadsheet);
     $writer->save($filename);
 
-    $pdo->exec("UPDATE Activities SET Export = 0");
+    $pdo->exec("UPDATE Activities SET Export = 0, IsExported = 1");
     header("Location: export.php");
     if (ob_get_length() === 0) {
         header("Location: export.php");
