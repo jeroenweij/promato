@@ -8,7 +8,7 @@ if (!isset($_GET['project_id']) || !is_numeric($_GET['project_id'])) {
     exit;
 }
 
-$pageSpecificCSS = ['page-project-edit.css'];
+$pageSpecificCSS = ['projects.css', 'page-project-edit.css'];
 require 'includes/header.php';
 
 // Initialize variables
@@ -385,7 +385,7 @@ if ($redirectNeeded && ob_get_length() === 0) {
                 </div>
 
                 <div style="display: flex; align-items: center; margin-top: 1rem;">
-                    <button type="submit" name="bulk_update_activities" class="btn-save-all" id="saveActivitiesBtn" disabled>
+                    <button type="submit" name="bulk_update_activities" class="btn btn-primary" id="saveActivitiesBtn" disabled>
                         Save All Activities
                     </button>
                     <span class="save-indicator" id="activityIndicator">
@@ -411,6 +411,7 @@ if ($redirectNeeded && ob_get_length() === 0) {
                             <th style="min-width: 120px;">OOP Spend (€)</th>
                             <th style="min-width: 120px;">Rate (€/h)</th>
                             <th style="min-width: 120px;">Hours</th>
+                            <th style="min-width: 120px;">Auto</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -423,25 +424,28 @@ if ($redirectNeeded && ob_get_length() === 0) {
                                     <input type="number" name="budget[]" 
                                            value="<?= $activity['Budget'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           onchange="calculateBudget(this, 'budget'); markRowModified(this, 'budget');">
+                                           onchange="markRowModified(this, 'budget');">
                                 </td>
                                 <td>
                                     <input type="number" name="oop_spend[]" 
                                            value="<?= $activity['OopSpend'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           onchange="calculateBudget(this, 'oop'); markRowModified(this, 'budget');">
+                                           onchange="markRowModified(this, 'budget');">
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" 
                                            value="<?= $activity['Rate'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           onchange="calculateBudget(this, 'rate'); markRowModified(this, 'budget');">
+                                           onchange="markRowModified(this, 'budget');">
                                 </td>
                                 <td>
                                     <input type="number" name="hours[]" 
                                            value="<?= $activity['BudgetHours'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           onchange="calculateBudget(this, 'hours'); markRowModified(this, 'budget');">
+                                           onchange="markRowModified(this, 'budget');">
+                                </td>
+                                <td>
+                                    <button type="button" onclick="calculateBudget(this);" class="btn btn-primary">Calc</button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -450,7 +454,7 @@ if ($redirectNeeded && ob_get_length() === 0) {
                 </div>
 
                 <div style="display: flex; align-items: center; margin-top: 1rem;">
-                    <button type="submit" name="bulk_update_budgets" class="btn-save-all" id="saveBudgetsBtn" disabled>
+                    <button type="submit" name="bulk_update_budgets" class="btn btn-primary" id="saveBudgetsBtn" disabled>
                         Save All Budgets
                     </button>
                     <span class="save-indicator" id="budgetIndicator">
@@ -513,24 +517,28 @@ if ($redirectNeeded && ob_get_length() === 0) {
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="budget">Budget (€)</label>
-                                <input type="number" id="budget" name="budget" class="form-control" onchange="calculateNewBudget('budget')">
+                                <input type="number" id="budget" name="budget" class="form-control">
                             </div>
                             <div class="form-group">
                                 <label for="oop_spend">Operational Spending (€)</label>
-                                <input type="number" id="oop_spend" name="oop_spend" class="form-control" onchange="calculateNewBudget('oop')">
+                                <input type="number" id="oop_spend" name="oop_spend" class="form-control">
                             </div>
                             <div class="form-group">
                                 <label for="rate">Hour Rate (€)</label>
-                                <input type="number" id="rate" name="rate" class="form-control" onchange="calculateNewBudget('rate')">
+                                <input type="number" id="rate" name="rate" class="form-control">
                             </div>
                             <div class="form-group">
                                 <label for="hours">Budget Hours</label>
-                                <input type="number" id="hours" name="hours" class="form-control" onchange="calculateNewBudget('hours')">
+                                <input type="number" id="hours" name="hours" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="hours">Auto</label>
+                                <button type="button" onclick="calculateNewBudget(this);" class="btn btn-primary">Calc missing</button>
                             </div>
                         </div>
                     </div>
                     
-                    <button type="submit" name="add_activity" class="btn-add-activity" style="margin-top: 1rem;">
+                    <button type="submit" name="add_activity" class="btn btn-primary" style="margin-top: 1rem;">
                         Add Activity
                     </button>
                 </form>
@@ -613,14 +621,13 @@ function toggleBudgetSection() {
     }
 }
 
-function calculateBudget(element, changedField) {
+function calculateBudget(element) {
     const row = element.closest('tr');
-    const rowIndex = element.getAttribute('data-row-index');
-    
+
     // Get all inputs in this row
     const inputs = row.querySelectorAll('input[type="number"]');
     let budget, oopSpend, rate, hours;
-    
+
     inputs.forEach(input => {
         const name = input.name;
         if (name === 'budget[]') budget = input;
@@ -628,41 +635,55 @@ function calculateBudget(element, changedField) {
         else if (name === 'rate[]') rate = input;
         else if (name === 'hours[]') hours = input;
     });
-    
+
+    // Parse numbers safely
     const budgetValue = parseFloat(budget.value) || 0;
     const oopValue = parseFloat(oopSpend.value) || 0;
     const rateValue = parseFloat(rate.value) || 0;
     const hoursValue = parseFloat(hours.value) || 0;
-    
-    switch(changedField) {
-        case 'budget':
-            if (budgetValue > 0) {
-                if (rateValue > 0) {
-                    hours.value = Math.round((budgetValue - oopValue) / rateValue);
-                } else if (hoursValue > 0) {
-                    rate.value = Math.round((budgetValue - oopValue) / hoursValue);
-                }
-            }
-            break;
-        case 'oop':
-            if (rateValue > 0 && budgetValue > 0) {
-                hours.value = Math.round((budgetValue - oopValue) / rateValue);
-            }
-            break;
-        case 'rate':
-            if (rateValue > 0 && budgetValue > 0) {
-                hours.value = Math.round((budgetValue - oopValue) / rateValue);
-            }
-            break;
-        case 'hours':
-            if (hoursValue > 0 && budgetValue > 0) {
-                rate.value = Math.round((budgetValue - oopValue) / hoursValue);
-            }
-            break;
+
+    // Count how many are missing or zero
+    const missing = [
+    { name: 'budget', input: budget, value: budgetValue },
+    { name: 'rate', input: rate, value: rateValue },
+    { name: 'hours', input: hours, value: hoursValue },
+    ].filter(f => f.value === 0);
+
+    missingField = '';
+    if (missing.length == 1) {
+        missingField = missing[0].name;
+    } else if (missing.length == 0 && oopValue == 0) {
+        missingField = 'oop';
+    } else {
+        // Only calculate if exactly one field is missing
+        return;
+    } 
+
+    // Calculate the missing one
+    switch (missingField) {
+    case 'budget':
+        budget.value = Math.round((rateValue * hoursValue) + oopValue);
+        break;
+
+    case 'oop':
+        oopSpend.value = Math.max(0, Math.round(budgetValue - (rateValue * hoursValue)));
+        break;
+
+    case 'rate':
+        if (hoursValue > 0) {
+        rate.value = Math.max(0, Math.round((budgetValue - oopValue) / hoursValue));
+        }
+        break;
+
+    case 'hours':
+        if (rateValue > 0) {
+        hours.value = Math.max(0, Math.round((budgetValue - oopValue) / rateValue));
+        }
+        break;
     }
 }
 
-function calculateNewBudget(changedField) {
+function calculateNewBudget() {
     const budget = document.getElementById('budget');
     const oopSpend = document.getElementById('oop_spend');
     const rate = document.getElementById('rate');
@@ -672,32 +693,46 @@ function calculateNewBudget(changedField) {
     const oopValue = parseFloat(oopSpend.value) || 0;
     const rateValue = parseFloat(rate.value) || 0;
     const hoursValue = parseFloat(hours.value) || 0;
-    
-    switch(changedField) {
-        case 'budget':
-            if (budgetValue > 0) {
-                if (rateValue > 0) {
-                    hours.value = Math.round((budgetValue - oopValue) / rateValue);
-                } else if (hoursValue > 0) {
-                    rate.value = Math.round((budgetValue - oopValue) / hoursValue);
-                }
-            }
-            break;
-        case 'oop':
-            if (rateValue > 0 && budgetValue > 0) {
-                hours.value = Math.round((budgetValue - oopValue) / rateValue);
-            }
-            break;
-        case 'rate':
-            if (rateValue > 0 && budgetValue > 0) {
-                hours.value = Math.round((budgetValue - oopValue) / rateValue);
-            }
-            break;
-        case 'hours':
-            if (hoursValue > 0 && budgetValue > 0) {
-                rate.value = Math.round((budgetValue - oopValue) / hoursValue);
-            }
-            break;
+
+    // Count how many are missing or zero
+    const missing = [
+    { name: 'budget', input: budget, value: budgetValue },
+    { name: 'rate', input: rate, value: rateValue },
+    { name: 'hours', input: hours, value: hoursValue },
+    ].filter(f => f.value === 0);
+
+    missingField = '';
+    if (missing.length == 1) {
+        missingField = missing[0].name;
+    } else if (missing.length == 0 && oopValue == 0) {
+        missingField = 'oop';
+    } else {
+    alert('er');
+        // Only calculate if exactly one field is missing
+        return;
+    } 
+
+    // Calculate the missing one
+    switch (missingField) {
+    case 'budget':
+        budget.value = Math.round((rateValue * hoursValue) + oopValue);
+        break;
+
+    case 'oop':
+        oopSpend.value = Math.max(0, Math.round(budgetValue - (rateValue * hoursValue)));
+        break;
+
+    case 'rate':
+        if (hoursValue > 0) {
+        rate.value = Math.max(0, Math.round((budgetValue - oopValue) / hoursValue));
+        }
+        break;
+
+    case 'hours':
+        if (rateValue > 0) {
+        hours.value = Math.max(0, Math.round((budgetValue - oopValue) / rateValue));
+        }
+        break;
     }
 }
 </script>

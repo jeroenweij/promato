@@ -14,7 +14,6 @@ $selectedYear = 0;
 // Check if a year is set in the session
 if (isset($_SESSION['selectedYear']) && is_numeric($_SESSION['selectedYear'])) {
     $selectedYear = (int)$_SESSION['selectedYear'];
-    echo("selectedYear = $selectedYear - SESSION=" . $_SESSION['selectedYear']);
 }
 
 // If no year is selected, use the current year

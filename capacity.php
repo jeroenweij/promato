@@ -3,7 +3,6 @@ $pageSpecificCSS = ['progress-chart.css'];
 $pageTitle = 'Capacity Overview';
 
 require 'includes/header.php';
-require_once 'includes/db.php';
 
 // 1️⃣ Fetch project total budget
 $budgetStmt = $pdo->prepare("SELECT COALESCE(SUM(Budgets.Hours),0) AS Budget FROM Activities LEFT JOIN Budgets ON Activities.Id = Budgets.Activity AND Budgets.`Year`= :selectedYear WHERE Project > 0
