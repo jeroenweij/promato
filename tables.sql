@@ -109,7 +109,8 @@ INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VAL
 (67, 'Financial dashboard', 'finance.php', 5, 5, 0, NULL),
 (68, 'Project finance', 'project_finance.php', 5, 5, 0, NULL),
 (69, 'Update page access', 'update_page_access.php', 6, NULL, 0, NULL),
-(70, 'Page access', 'access_admin.php', 6, 4, 0, 'shield-user');
+(70, 'Page access', 'access_admin.php', 6, 4, 0, 'shield-user'),
+(71, 'Team Admin', 'team_admin.php', 6, 4, 0, 'group');
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,
@@ -177,6 +178,7 @@ CREATE TABLE `TeamHours` (
 CREATE TABLE `Teams` (
   `Id` tinyint NOT NULL,
   `Name` varchar(16) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `Planable` tinyint(1) NOT NULL DEFAULT '1',
   `Ord` tinyint NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -234,7 +236,7 @@ ALTER TABLE `Pages`
   ADD PRIMARY KEY (`Id`),
   ADD UNIQUE KEY `Path` (`Path`),
   ADD KEY `fk_pages_types` (`Auth`),
-  ADD KEY `fk_pages_menus` (`Menu`);
+  ADD KEY `fk_pages_menus` (`Menu`) USING BTREE;
 
 ALTER TABLE `Personel`
   ADD PRIMARY KEY (`Id`),

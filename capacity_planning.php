@@ -43,7 +43,8 @@ $stmt = $pdo->prepare("
         COALESCE(h.Plan, 0) AS AvailableHours,
         d.Ord AS DeptOrder,
         d.Name AS TeamName,
-        p.Ord AS PersonOrder
+        p.Ord AS PersonOrder,
+        d.Planable
     FROM Personel p 
     LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND `Year`= :selectedYear
     LEFT JOIN Teams d ON p.Team = d.Id
@@ -431,7 +432,7 @@ if ($teamFilter && !empty($personnel)) {
                                         $overbudget = ($hours != '&nbsp;' && $hours > $plan) ? 'overbudget' : '';
                                         $isEditable = $userAuthLevel >= 4 || ($_SESSION['user_id'] ?? 0) == $activity['ManagerId'];
                                     ?>
-                                        <?php if ($isEditable): ?>
+                                        <?php if ($isEditable && $p['Planable']): ?>
                                             <td class="editbudget fixedheigth">
                                                 <input type="text" 
                                                       name="<?= $activity['Project'] ?>#<?= $activity['Key'] ?>#<?= $personId ?>" 
@@ -442,7 +443,7 @@ if ($teamFilter && !empty($personnel)) {
                                                       onchange="UpdateValue(this)">
                                             </td>
                                         <?php else: ?>
-                                            <td class="editbudget fixedheigth"><?= $plan ?></td>
+                                            <td class="fixedbudget fixedheigth"><?= $plan ?></td>
                                         <?php endif; ?>
                                         <td class="budget <?= $overbudget ?> fixedheigth"><?= $hours ?></td>
                                     <?php endforeach; ?>

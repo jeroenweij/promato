@@ -9,7 +9,7 @@ $teamStmt = $pdo->query("
     SELECT DISTINCT t.Id, t.Name, t.Ord
     FROM Teams t 
     JOIN TeamHours th ON th.Team = t.Id
-    WHERE th.Plan > 0 AND th.`Year` = $selectedYear
+    WHERE t.Planable AND th.Plan > 0 AND th.`Year` = $selectedYear
     ORDER BY t.Ord, t.Name
 ");
 $teams = $teamStmt->fetchAll(PDO::FETCH_ASSOC);

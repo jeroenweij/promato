@@ -136,6 +136,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
     ]);
     logmsg("📆 Set planned hours for holidays.");
 
+    $stmt = $pdo->prepare("UPDATE TeamHours AS th JOIN Teams AS t ON th.Team = t.Id SET th.Plan = th.Hours WHERE t.Planable = 0 AND th.`Year` = :year");
+    $stmt->execute([
+        ':year' => $selectedYear
+    ]);
+    
+    $stmt = $pdo->prepare("UPDATE Hours AS h JOIN Personel AS p ON h.Person = p.Id JOIN Teams AS t ON p.Team = t.Id SET h.Plan = h.Hours WHERE t.Planable = 0 AND h.`Year` = :year");
+    $stmt->execute([
+        ':year' => $selectedYear
+    ]);
+
   } else {
     logmsg("❌ Failed to open uploaded file.");
   }

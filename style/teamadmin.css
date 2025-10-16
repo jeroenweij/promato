@@ -1,0 +1,31 @@
+.team-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #007bff;
+}
+
+.team-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.team-card.inactive {
+    border-left-color: #6c757d;
+    opacity: 0.8;
+}
+
+.badge-planable {
+    background-color: #28a745;
+}
+
+.badge-not-planable {
+    background-color: #6c757d;
+}
+
+.team-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}

@@ -5,12 +5,12 @@ require_once 'includes/db.php';
 
 // ---- DATA PREPARATION ----
 // Fetch teams first
-$deptStmt = $pdo->prepare("SELECT Id, Name, Ord FROM Teams ORDER BY Ord");
-$deptStmt->execute();
-$teams = $deptStmt->fetchAll(PDO::FETCH_ASSOC);
+$teamStmt = $pdo->prepare("SELECT Id, Name, Planable, Ord FROM Teams ORDER BY Ord");
+$teamStmt->execute();
+$teams = $teamStmt->fetchAll(PDO::FETCH_ASSOC);
 $teamById = [];
-foreach ($teams as $dept) {
-    $teamById[$dept['Id']] = $dept;
+foreach ($teams as $team) {
+    $teamById[$team['Id']] = $team;
 }
 
 // Fetch personnel with available hours - for calculating team available capacity
@@ -84,8 +84,8 @@ while ($row = $stmtTeamHours->fetch(PDO::FETCH_ASSOC)) {
 }
 
 // Filter out teams with no active personnel
-$teams = array_filter($teams, function($dept) use ($teamTotals) {
-    return isset($teamTotals[$dept['Id']]) && $teamTotals[$dept['Id']]['available'] > 0;
+$teams = array_filter($teams, function($team) use ($teamTotals) {
+    return isset($teamTotals[$team['Id']]) && $teamTotals[$team['Id']]['available'] > 0;
 });
 
 // Fetch all projects and activities
@@ -268,24 +268,24 @@ $currentStatus = 3;
                 <div class="scrollable-columns">
                     <table class="plantable">
                         <tr>
-                            <?php foreach ($teams as $dept): ?>
+                            <?php foreach ($teams as $team): ?>
                                 <th colspan="2" class="name fixedheigth">
-                                    <a href="capacity_planning.php?team=<?= urlencode($dept['Id']) ?>" style="color: inherit; text-decoration: none;">
-                                        <?= htmlspecialchars($dept['Name']) ?>
+                                    <a href="capacity_planning.php?team=<?= urlencode($team['Id']) ?>" style="color: inherit; text-decoration: none;">
+                                        <?= htmlspecialchars($team['Name']) ?>
                                     </a>
                                 </th>
                             <?php endforeach; ?>
                         </tr>
                         <tr>
-                            <?php foreach ($teams as $dept): ?>
-                                <td colspan="2" class="totals available-total fixedheigth" data-team="<?= $dept['Id'] ?>">
-                                    <?= $teamTotals[$dept['Id']]['available'] ?? 0 ?>
+                            <?php foreach ($teams as $team): ?>
+                                <td colspan="2" class="totals available-total fixedheigth" data-team="<?= $team['Id'] ?>">
+                                    <?= $teamTotals[$team['Id']]['available'] ?? 0 ?>
                                 </td>
                             <?php endforeach; ?>
                         </tr>
                         <tr>
-                            <?php foreach ($teams as $dept): 
-                                $teamId = $dept['Id'];
+                            <?php foreach ($teams as $team): 
+                                $teamId = $team['Id'];
                                 $planned = $teamTotals[$teamId]['planned'] ?? 0;
                                 $realised = $teamTotals[$teamId]['realised'] ?? 0;
                                 $available = $teamTotals[$teamId]['available'] ?? 0;
@@ -324,10 +324,10 @@ $currentStatus = 3;
                                 <td colspan="100%" class="headerspacer">&nbsp;</td>
                             </tr>
                             <tr>
-                                <?php foreach ($teams as $dept): ?>
+                                <?php foreach ($teams as $team): ?>
                                     <th colspan="2" class="name fixedheigth">
-                                        <a href="capacity_planning.php?team=<?= urlencode($dept['Id']) ?>" style="color: inherit; text-decoration: none;">
-                                            <?= htmlspecialchars($dept['Name']) ?>
+                                        <a href="capacity_planning.php?team=<?= urlencode($team['Id']) ?>" style="color: inherit; text-decoration: none;">
+                                            <?= htmlspecialchars($team['Name']) ?>
                                         </a>
                                     </th>
                                 <?php endforeach; ?>
@@ -336,8 +336,8 @@ $currentStatus = 3;
                             <?php foreach ($project['activities'] as $activity): ?>
                                 <?php $activityKey = $activity['Project'] . '-' . $activity['Key']; ?>
                                 <tr>
-                                    <?php foreach ($teams as $dept): 
-                                        $teamId = $dept['Id'];
+                                    <?php foreach ($teams as $team): 
+                                        $teamId = $team['Id'];
                                         $plan = '';
                                         $hours = '&nbsp;';
                                         
@@ -354,7 +354,7 @@ $currentStatus = 3;
                                         $overbudget = ($hours != '&nbsp;' && $plan > 0 && $hours > $plan) ? 'overbudget' : '';
                                         $isEditable = $userAuthLevel >= 4 || ($_SESSION['user_id'] ?? 0) == $activity['ManagerId'];
                                         ?>
-                                            <?php if ($isEditable): ?>
+                                            <?php if ($isEditable && $team['Planable']): ?>
                                                 <td class="editbudget fixedheigth">
                                                     <input type="text" 
                                                           name="<?= $activity['Project'] ?>#<?= $activity['Key'] ?>#<?= $teamId ?>" 
@@ -365,7 +365,7 @@ $currentStatus = 3;
                                                           onchange="UpdateValue(this)">
                                                 </td>
                                             <?php else: ?>
-                                                <td class="editbudget fixedheigth"><?= $plan ?></td>
+                                                <td class="fixedbudget fixedheigth"><?= $plan ?></td>
                                             <?php endif; ?>
                                         <td class="budget <?= $overbudget ?> fixedheigth"><?= $hours ?></td>
                                     <?php endforeach; ?>
