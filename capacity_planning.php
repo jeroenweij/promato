@@ -342,9 +342,9 @@ if ($teamFilter && !empty($personnel)) {
                                 <tr>
                                     <td class="text fixedheigth"><?= $taskCode ?></td>
                                     <td class="text fixedheigth"><?= htmlspecialchars($activity['ActivityName']) ?></td>
-                                    <td class="totals fixedheigth"><?= $availableHours ?></td>
-                                    <td class="totals <?= $plannedClass ?> fixedheigth"><?= $planned ?></td>
-                                    <td class="totals <?= $realisedClass ?>"><?= $realised ?></td>
+                                    <td class="totals fixedheigth"><?= $availableHours ? number_form($availableHours) : '' ?></td>
+                                    <td class="totals <?= $plannedClass ?> fixedheigth"><?= number_form($planned) ?></td>
+                                    <td class="totals <?= $realisedClass ?>"><?= number_form($realised) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endforeach; ?>
@@ -363,7 +363,7 @@ if ($teamFilter && !empty($personnel)) {
                         <tr>
                             <?php foreach ($personnel as $p): ?>
                                 <td colspan="2" class="totals available-total fixedheigth" data-person="<?= $p['Number'] ?>">
-                                    <?= $personnelById[$p['Number']]['available'] ?>
+                                    <?= number_form($personnelById[$p['Number']]['available']) ?>
                                 </td>
                             <?php endforeach; ?>
                         </tr>
@@ -378,10 +378,10 @@ if ($teamFilter && !empty($personnel)) {
                                 $realisedClass = $realised > $planned ? 'overbudget' : '';
                             ?>
                                 <td class="totals fixedheigth planned-total <?= $plannedClass ?>" data-person="<?= $pid ?>">
-                                    <?= round($planned, 2) ?>
+                                    <?= number_form($planned) ?>
                                 </td>
                                 <td class="totals fixedheigth realised-total <?= $realisedClass ?>" data-person="<?= $pid ?>">
-                                    <?= round($realised, 2) ?>
+                                    <?= number_form($realised) ?>
                                 </td>
                             <?php endforeach; ?>
                         </tr>

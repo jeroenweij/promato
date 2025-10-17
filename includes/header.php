@@ -1,6 +1,13 @@
 <?php
 require_once 'auth.php';
 
+function number_form($number, $decimals=-1) {
+  if ($decimals == -1){
+    $decimals = fmod($number, 1)? 1 : 0;
+  }
+  return number_format($number,$decimals, ',','.');
+}
+
 // Check if a new year is being selected
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newYear'])) {
     $newYear = $_POST['newYear'];

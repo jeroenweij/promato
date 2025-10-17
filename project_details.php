@@ -221,7 +221,7 @@ function isOverBudget($actual, $planned) {
                 <h4>Total Budget</h4>
                 <div class="stat-row">
                     <div class="stat-left">
-                        <span class="value"><?= number_format($totalBudget, 0) ?></span>
+                        <span class="value"><?= number_form($totalBudget, 0) ?></span>
                         <span class="unit">hours</span>
                     </div>
                 </div>
@@ -230,11 +230,11 @@ function isOverBudget($actual, $planned) {
                 <h4>Total Planned</h4>
                 <div class="stat-row">
                     <div class="stat-left">
-                        <span class="value"><?= number_format($totalPlanned, 0) ?></span>
+                        <span class="value"><?= number_form($totalPlanned, 0) ?></span>
                         <span class="unit">hours</span>
                     </div>
                     <div class="stat-right">
-                        <span class="value percentage"><?= number_format($totalPlanned / max($totalBudget, 1) * 100, 0) ?></span>
+                        <span class="value percentage"><?= number_form($totalPlanned / max($totalBudget, 1) * 100, 0) ?></span>
                         <span class="unit">%</span>
                     </div>
                 </div>
@@ -243,11 +243,11 @@ function isOverBudget($actual, $planned) {
                 <h4>Total Logged</h4>
                 <div class="stat-row">
                     <div class="stat-left">
-                        <span class="value"><?= number_format($totalSpent, 0) ?></span>
+                        <span class="value"><?= number_form($totalSpent, 0) ?></span>
                         <span class="unit">hours</span>
                     </div>
                     <div class="stat-right">
-                        <span class="value percentage"><?= number_format($totalSpent / max($totalBudget, 1) * 100, 0) ?></span>
+                        <span class="value percentage"><?= number_form($totalSpent / max($totalBudget, 1) * 100, 0) ?></span>
                         <span class="unit">%</span>
                     </div>
                 </div>

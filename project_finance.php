@@ -174,11 +174,11 @@ foreach ($personnel as $person) {
 
 // Format functions
 function formatCurrency($amount) {
-    return '€ ' . number_format($amount, 2, ',', '.');
+    return '€ ' . number_form($amount, 2);
 }
 
 function formatHours($hours) {
-    return number_format($hours, 1, ',', '.') . 'h';
+    return number_form($hours, 1) . 'h';
 }
 
 function getStatusColor($statusId) {
@@ -247,7 +247,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                             <h3 class="<?= $totals['remaining'] >= 0 ? 'text-success' : 'text-danger' ?>">
                                 <?= formatCurrency($totals['remaining']) ?>
                             </h3>
-                            <small class="text-muted"><?= number_format($totals['utilization'], 1) ?>% utilized</small>
+                            <small class="text-muted"><?= number_form($totals['utilization'], 1) ?>% utilized</small>
                         </div>
                         <div class="col-md-3">
                             <h6 class="text-muted">Financial Health</h6>
@@ -264,7 +264,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                                 <div class="progress-bar bg-<?= $health['class'] ?>" 
                                      role="progressbar" 
                                      style="width: <?= min($totals['utilization'], 100) ?>%">
-                                    <?= number_format($totals['utilization'], 1) ?>%
+                                    <?= number_form($totals['utilization'], 1) ?>%
                                 </div>
                             </div>
                         </div>
@@ -298,7 +298,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                         <tr class="table-secondary">
                             <td><strong>Hour Utilization:</strong></td>
                             <td class="text-end">
-                                <strong><?= number_format($totals['hour_utilization'], 1) ?>%</strong>
+                                <strong><?= number_form($totals['hour_utilization'], 1) ?>%</strong>
                             </td>
                         </tr>
                         <tr>
@@ -320,7 +320,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                     <table class="table table-sm">
                         <tr>
                             <td><strong>Actual Average Rate:</strong></td>
-                            <td class="text-end">€<?= number_format($avgHourlyRate, 2) ?>/h</td>
+                            <td class="text-end">€<?= number_form($avgHourlyRate, 2) ?>/h</td>
                         </tr>
                         <tr>
                             <td><small class="text-muted">Total budget ÷ actual hours worked</small></td>
@@ -328,7 +328,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                         </tr>
                         <tr>
                             <td><strong>Budgeted Rate:</strong></td>
-                            <td class="text-end">€<?= number_format($budgetedRate, 2) ?>/h</td>
+                            <td class="text-end">€<?= number_form($budgetedRate, 2) ?>/h</td>
                         </tr>
                         <tr>
                             <td><small class="text-muted">Total budget ÷ budgeted hours</small></td>
@@ -336,11 +336,11 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                         </tr>
                         <tr>
                             <td><strong>Labor Cost %:</strong></td>
-                            <td class="text-end"><?= number_format($laborPct, 1) ?>%</td>
+                            <td class="text-end"><?= number_form($laborPct, 1) ?>%</td>
                         </tr>
                         <tr>
                             <td><strong>OOP Cost %:</strong></td>
-                            <td class="text-end"><?= number_format($oopPct, 1) ?>%</td>
+                            <td class="text-end"><?= number_form($oopPct, 1) ?>%</td>
                         </tr>
                         <tr>
                             <td><strong>Total Activities:</strong></td>
@@ -393,7 +393,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                                     <td class="text-end"><?= formatCurrency($activity['Budget']) ?></td>
                                     <td class="text-end">
                                         <?= formatCurrency($activity['LaborCost']) ?>
-                                        <br><small class="text-muted">@ €<?= number_format($activity['Rate'], 2) ?>/h</small>
+                                        <br><small class="text-muted">@ €<?= number_form($activity['Rate'], 2) ?>/h</small>
                                     </td>
                                     <td class="text-end"><?= formatCurrency($activity['OOPSpend']) ?></td>
                                     <td class="text-end"><strong><?= formatCurrency($activity['TotalCost']) ?></strong></td>
@@ -404,7 +404,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                                         <small>
                                             <?= formatHours($activity['ActualHours']) ?> / <?= formatHours($activity['BudgetedHours']) ?>
                                             <?php if ($activity['BudgetedHours'] > 0): ?>
-                                                <br>(<?= number_format($activity['HourUtilization'], 1) ?>%)
+                                                <br>(<?= number_form($activity['HourUtilization'], 1) ?>%)
                                             <?php endif; ?>
                                         </small>
                                     </td>
@@ -413,7 +413,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                                             <div class="progress-bar <?= $activity['Utilization'] > 100 ? 'bg-danger' : ($activity['Utilization'] > 85 ? 'bg-warning' : 'bg-success') ?>" 
                                                  role="progressbar" 
                                                  style="width: <?= min($activity['Utilization'], 100) ?>%">
-                                                <?= number_format($activity['Utilization'], 1) ?>%
+                                                <?= number_form($activity['Utilization'], 1) ?>%
                                             </div>
                                         </div>
                                     </td>
@@ -433,7 +433,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                                     <th class="text-center">
                                         <?= formatHours($totals['actual_hours']) ?> / <?= formatHours($totals['budgeted_hours']) ?>
                                     </th>
-                                    <th class="text-end"><?= number_format($totals['utilization'], 1) ?>%</th>
+                                    <th class="text-end"><?= number_form($totals['utilization'], 1) ?>%</th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -474,12 +474,12 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                                     <td><?= htmlspecialchars($person['Team'] ?? '-') ?></td>
                                     <td class="text-end"><?= formatHours($person['ActualHours']) ?></td>
                                     <td class="text-end"><?= formatHours($person['PlannedHours']) ?></td>
-                                    <td class="text-end">€<?= number_format($person['AvgRate'], 2) ?></td>
+                                    <td class="text-end">€<?= number_form($person['AvgRate'], 2) ?></td>
                                     <td class="text-end"><?= formatCurrency($person['LaborCost']) ?></td>
                                     <td class="text-end">
                                         <?php 
                                         $pct = $personnel_totals['actual_hours'] > 0 ? ($person['ActualHours'] / $personnel_totals['actual_hours']) * 100 : 0;
-                                        echo number_format($pct, 1) . '%';
+                                        echo number_form($pct, 1) . '%';
                                         ?>
                                     </td>
                                 </tr>
@@ -514,15 +514,15 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                         <?php if ($totals['utilization'] > 100): ?>
                             <li class="text-danger"><strong>CRITICAL:</strong> Project is over budget by <?= formatCurrency(abs($totals['remaining'])) ?>. Immediate action required.</li>
                         <?php elseif ($totals['utilization'] > 85): ?>
-                            <li class="text-warning"><strong>WARNING:</strong> Project is at <?= number_format($totals['utilization'], 1) ?>% budget utilization. Only <?= formatCurrency($totals['remaining']) ?> remaining.</li>
+                            <li class="text-warning"><strong>WARNING:</strong> Project is at <?= number_form($totals['utilization'], 1) ?>% budget utilization. Only <?= formatCurrency($totals['remaining']) ?> remaining.</li>
                         <?php else: ?>
-                            <li class="text-success"><strong>HEALTHY:</strong> Project is within budget with <?= formatCurrency($totals['remaining']) ?> remaining (<?= number_format(100 - $totals['utilization'], 1) ?>% of budget).</li>
+                            <li class="text-success"><strong>HEALTHY:</strong> Project is within budget with <?= formatCurrency($totals['remaining']) ?> remaining (<?= number_form(100 - $totals['utilization'], 1) ?>% of budget).</li>
                         <?php endif; ?>
                         
                         <?php if ($totals['hour_utilization'] > 100): ?>
-                            <li class="text-danger">Hours exceeded budget by <?= formatHours($totals['actual_hours'] - $totals['budgeted_hours']) ?> (<?= number_format($totals['hour_utilization'] - 100, 1) ?>% over).</li>
+                            <li class="text-danger">Hours exceeded budget by <?= formatHours($totals['actual_hours'] - $totals['budgeted_hours']) ?> (<?= number_form($totals['hour_utilization'] - 100, 1) ?>% over).</li>
                         <?php elseif ($totals['hour_utilization'] > 85): ?>
-                            <li class="text-warning">Hour utilization at <?= number_format($totals['hour_utilization'], 1) ?>%. Only <?= formatHours($totals['budgeted_hours'] - $totals['actual_hours']) ?> hours remaining.</li>
+                            <li class="text-warning">Hour utilization at <?= number_form($totals['hour_utilization'], 1) ?>%. Only <?= formatHours($totals['budgeted_hours'] - $totals['actual_hours']) ?> hours remaining.</li>
                         <?php endif; ?>
                         
                         <?php if ($totals['planned_hours'] > $totals['budgeted_hours']): ?>
@@ -530,7 +530,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                         <?php endif; ?>
                         
                         <?php if ($laborPct > 80): ?>
-                            <li>Labor costs represent <?= number_format($laborPct, 1) ?>% of total spending. Project is labor-intensive.</li>
+                            <li>Labor costs represent <?= number_form($laborPct, 1) ?>% of total spending. Project is labor-intensive.</li>
                         <?php endif; ?>
                         
                         <?php if ($totals['actual_hours'] == 0 && $totals['budget'] > 0): ?>
@@ -538,7 +538,7 @@ $oopPct = $totals['total_cost'] > 0 ? ($totals['oop'] / $totals['total_cost']) *
                         <?php endif; ?>
                         
                         <?php if ($avgHourlyRate > $budgetedRate * 1.1): ?>
-                            <li class="text-warning">Actual hourly rate (€<?= number_format($avgHourlyRate, 2) ?>) is significantly higher than budgeted rate (€<?= number_format($budgetedRate, 2) ?>). Consider reviewing resource allocation.</li>
+                            <li class="text-warning">Actual hourly rate (€<?= number_form($avgHourlyRate, 2) ?>) is significantly higher than budgeted rate (€<?= number_form($budgetedRate, 2) ?>). Consider reviewing resource allocation.</li>
                         <?php endif; ?>
                     </ul>
                 </div>

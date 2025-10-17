@@ -155,13 +155,13 @@ function getProgressBar($current, $total) {
         </div>
         <div class="col-md-3">
             <div class="stat-card">
-                <div class="stat-number"><?php echo number_format($totalLoggedHours, 0, ',', '.'); ?></div>
+                <div class="stat-number"><?php echo number_form($totalLoggedHours, 0); ?></div>
                 <div class="stat-label">Hours Logged</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stat-card">
-                <div class="stat-number"><?php echo number_format($totalBudget, 0, ',', '.'); ?></div>
+                <div class="stat-number"><?php echo number_form($totalBudget, 0); ?></div>
                 <div class="stat-label">Total Budget Hours</div>
             </div>
         </div>
@@ -204,7 +204,7 @@ function getProgressBar($current, $total) {
                             <div class="project-meta">
                                 Manager: <strong><?php echo htmlspecialchars($project['ManagerName'] ?? 'Unassigned'); ?></strong> | 
                                 Activities: <strong><?php echo $project['ActivityCount']; ?></strong> |
-                                Budget: <strong><?php echo number_format($project['BudgetHours'], 0, ",", "."); ?></strong>
+                                Budget: <strong><?php echo number_form($project['BudgetHours'], 0); ?></strong>
                             </div>
                         </div>
                         <div class="col-md-4 text-right">

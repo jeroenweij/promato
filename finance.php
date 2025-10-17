@@ -143,12 +143,12 @@ $statusList = $pdo->query("SELECT Id, Status FROM Status ORDER BY Id")->fetchAll
 
 // Format currency
 function formatCurrency($amount) {
-    return '€ ' . number_format($amount, 2, ',', '.');
+    return '€ ' . number_form($amount, 2);
 }
 
 // Format hours
 function formatHours($hours) {
-    return number_format($hours, 1, ',', '.') . 'h';
+    return number_form($hours, 1) . 'h';
 }
 
 // Get status badge class
@@ -232,7 +232,7 @@ function getStatusBadge($status, $statusName) {
                 <div class="card-body">
                     <h5 class="card-title">Remaining</h5>
                     <h3><?= formatCurrency($totals['remaining']) ?></h3>
-                    <small><?= number_format($totals['utilization'], 1) ?>% utilized</small>
+                    <small><?= number_form($totals['utilization'], 1) ?>% utilized</small>
                 </div>
             </div>
         </div>
@@ -261,7 +261,7 @@ function getStatusBadge($status, $statusName) {
                         <div class="col-md-4">
                             <strong>Actual Hours:</strong> <?= formatHours($totals['actual_hours']) ?>
                             <?php if ($totals['budgeted_hours'] > 0): ?>
-                                (<?= number_format(($totals['actual_hours'] / $totals['budgeted_hours']) * 100, 1) ?>%)
+                                (<?= number_form(($totals['actual_hours'] / $totals['budgeted_hours']) * 100, 1) ?>%)
                             <?php endif; ?>
                         </div>
                         <div class="col-md-4">
@@ -304,7 +304,7 @@ function getStatusBadge($status, $statusName) {
                     <td class="text-end"><?= formatCurrency($project['TotalBudget']) ?></td>
                     <td class="text-end">
                         <?= formatCurrency($project['LaborCost']) ?>
-                        <br><small class="text-muted"><?= formatHours($project['ActualHours']) ?> @ €<?= number_format($project['AvgRate'], 2) ?></small>
+                        <br><small class="text-muted"><?= formatHours($project['ActualHours']) ?> @ €<?= number_form($project['AvgRate'], 2) ?></small>
                     </td>
                     <td class="text-end"><?= formatCurrency($project['OOPSpend']) ?></td>
                     <td class="text-end"><strong><?= formatCurrency($project['TotalCost']) ?></strong></td>
@@ -319,7 +319,7 @@ function getStatusBadge($status, $statusName) {
                                  aria-valuenow="<?= $project['BudgetUtilization'] ?>" 
                                  aria-valuemin="0" 
                                  aria-valuemax="100">
-                                <?= number_format($project['BudgetUtilization'], 1) ?>%
+                                <?= number_form($project['BudgetUtilization'], 1) ?>%
                             </div>
                         </div>
                     </td>
@@ -327,7 +327,7 @@ function getStatusBadge($status, $statusName) {
                         <small>
                             <?= formatHours($project['ActualHours']) ?> / <?= formatHours($project['BudgetedHours']) ?>
                             <?php if ($project['BudgetedHours'] > 0): ?>
-                                <br>(<?= number_format($project['HourUtilization'], 1) ?>%)
+                                <br>(<?= number_form($project['HourUtilization'], 1) ?>%)
                             <?php endif; ?>
                         </small>
                     </td>
@@ -355,7 +355,7 @@ function getStatusBadge($status, $statusName) {
                     <th class="text-end <?= $totals['remaining'] < 0 ? 'text-danger' : 'text-success' ?>">
                         <?= formatCurrency($totals['remaining']) ?>
                     </th>
-                    <th class="text-end"><?= number_format($totals['utilization'], 1) ?>%</th>
+                    <th class="text-end"><?= number_form($totals['utilization'], 1) ?>%</th>
                     <th class="text-center">
                         <?= formatHours($totals['actual_hours']) ?> / <?= formatHours($totals['budgeted_hours']) ?>
                     </th>

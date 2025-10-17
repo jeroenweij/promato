@@ -135,7 +135,7 @@ $wbsoActivities = $wbsoStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Format for display
 $formatHours = function($hours) {
-    return number_format($hours / 100, 2);
+    return number_form($hours / 100, 2);
 };
 
 // Calculate percent complete
@@ -196,7 +196,7 @@ $upcomingDeadlines = $upcomingDeadlinesStmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <?= round(($totalLogged / max($totalPlanned, 1)) * 100) ?>%
                                             </div>
                                         </div>
-                                        <div class="text-center"><?= number_format($totalLogged, 1) ?> / <?= number_format($totalPlanned, 1) ?> hours</div>
+                                        <div class="text-center"><?= number_form($totalLogged, 1) ?> / <?= number_form($totalPlanned, 1) ?> hours</div>
                                     </div>
                                     <div class="mt-3">
                                         <p>Year progress: <?= $yearProgress ?>%</p>
@@ -251,7 +251,7 @@ $upcomingDeadlines = $upcomingDeadlinesStmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="project-name">
                                     <a href="/project_details.php?project_id=<?= $project['ProjectId'] ?>" class="hidden-link"><?= htmlspecialchars($project['ProjectName']) ?></a>
                                 </div>
-                                <div class="project-hours"><?= number_format($hours, 1) ?> hrs</div>
+                                <div class="project-hours"><?= number_form($hours, 1) ?> hrs</div>
                                 <div class="progress">
                                     <div class="progress-bar" role="progressbar" 
                                         style="width: <?= $percentage ?>%;" 
