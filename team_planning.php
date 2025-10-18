@@ -279,7 +279,7 @@ $currentStatus = 3;
                         <tr>
                             <?php foreach ($teams as $team): ?>
                                 <td colspan="2" class="totals available-total fixedheigth" data-team="<?= $team['Id'] ?>">
-                                    <?= $teamTotals[$team['Id']]['available'] ?? 0 ?>
+                                    <?= number_form($teamTotals[$team['Id']]['available'] ?? 0) ?>
                                 </td>
                             <?php endforeach; ?>
                         </tr>
@@ -294,10 +294,10 @@ $currentStatus = 3;
                                 $realisedClass = $realised > $planned ? 'overbudget' : '';
                             ?>
                                 <td class="totals fixedheigth planned-total <?= $plannedClass ?>" data-team="<?= $teamId ?>">
-                                    <?= round($planned, 2) ?>
+                                    <?= number_form($planned) ?>
                                 </td>
                                 <td class="totals fixedheigth realised-total <?= $realisedClass ?>" data-team="<?= $teamId ?>">
-                                    <?= round($realised, 2) ?>
+                                    <?= number_form($realised) ?>
                                 </td>
                             <?php endforeach; ?>
                         </tr>

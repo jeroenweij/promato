@@ -283,7 +283,7 @@ function getStatusBadge($status, $statusName) {
                     <h5 class="card-title">Hours Overview</h5>
                     <div class="row">
                         <div class="col-md-4">
-                        <strong>Actual Hours:</strong> <?= formatHours($totalHoursRealized) ?> <?= formatHours($totalHoursRealized) ?>
+                        <strong>Actual Hours:</strong> <?= formatHours($totalHoursRealized) ?>
                         </div>
                         <div class="col-md-4">
                             <strong>Hours VS budget:</strong>
