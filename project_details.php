@@ -83,7 +83,7 @@ try {
         SELECT DISTINCT p.Id, p.Shortname AS Name, p.Fultime, p.Ord
         FROM Hours h 
         JOIN Personel p ON h.Person = p.Id
-        WHERE h.`Year` = :selectedYear AND h.Project = :projectId AND h.Person > 0 AND (h.Plan > 0 OR h.Hours > 0)
+        WHERE h.`Year` = :selectedYear AND h.Project = :projectId AND (h.Plan > 0 OR h.Hours > 0)
         ORDER BY p.Ord, p.Shortname
     ");
     $personelStmt->execute([
@@ -135,12 +135,8 @@ try {
             if (!isset($spentMap[$activityKey])) $spentMap[$activityKey] = 0;
             if (!isset($planMap[$activityKey])) $planMap[$activityKey] = 0;
 
-            // Person = 0 means actual spent hours, otherwise it's planned
-            if ($personId == 0) {
-                $spentMap[$activityKey] += $logged;
-            } else {
-                $planMap[$activityKey] += $plan;
-            }
+            $spentMap[$activityKey] += $logged;
+            $planMap[$activityKey] += $plan;
         }
     }
 

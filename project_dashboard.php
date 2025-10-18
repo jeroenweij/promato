@@ -20,7 +20,7 @@ $upcomingDeadlinesStmt = $pdo->prepare("
         SUM(h.Hours) AS TotalLoggedHours
     FROM Activities a
     JOIN Projects p ON a.Project = p.Id
-    LEFT JOIN Hours h ON h.Activity = a.Key AND h.Project = a.Project AND h.Person > 0 AND h.`Year` = :selectedYear
+    LEFT JOIN Hours h ON h.Activity = a.Key AND h.Project = a.Project AND h.`Year` = :selectedYear
     WHERE a.EndDate BETWEEN :currentDate AND :thirtyDaysAhead
     AND a.IsTask = 1
     GROUP BY a.Key, a.Project
@@ -48,7 +48,7 @@ $overbudgetActivitiesStmt = $pdo->prepare("
     FROM Activities a
     JOIN Projects p ON a.Project = p.Id
     JOIN Budgets b ON b.Activity = a.Id AND b.Year = :selectedYear
-    JOIN Hours h ON h.Activity = a.Key AND h.Project = a.Project AND h.Person > 0 AND h.Year = :selectedYear
+    JOIN Hours h ON h.Activity = a.Key AND h.Project = a.Project AND h.Year = :selectedYear
     WHERE a.IsTask = 1
     GROUP BY a.Key, a.Project, b.Hours
     HAVING SUM(h.Hours) > (b.Hours * 100)
@@ -73,7 +73,7 @@ $stalledActivitiesStmt = $pdo->prepare("
         a.StartDate AS StartDate
     FROM Activities a
     JOIN Projects p ON a.Project = p.Id
-    JOIN Hours h ON h.Activity = a.Key AND h.Project = a.Project AND h.Person > 0 AND h.`Year` = :selectedYear
+    JOIN Hours h ON h.Activity = a.Key AND h.Project = a.Project AND h.`Year` = :selectedYear
     WHERE h.Status < 4 
     AND a.IsTask = 1
     AND h.Hours = 0

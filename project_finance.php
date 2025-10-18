@@ -40,12 +40,12 @@ $stmt = $pdo->prepare("
         COALESCE((
             SELECT SUM(h.Hours) / 100
             FROM Hours h
-            WHERE h.Project = a.Project AND h.Activity = a.Key AND h.Year = :year AND h.Person > 0
+            WHERE h.Project = a.Project AND h.Activity = a.Key AND h.Year = :year
         ), 0) as ActualHours,
         COALESCE((
             SELECT SUM(h.Plan) / 100
             FROM Hours h
-            WHERE h.Project = a.Project AND h.Activity = a.Key AND h.Year = :year AND h.Person > 0
+            WHERE h.Project = a.Project AND h.Activity = a.Key AND h.Year = :year
         ), 0) as PlannedHours
     FROM Activities a
     LEFT JOIN Budgets b ON b.Activity = a.Id AND b.Year = :year
@@ -68,7 +68,7 @@ $stmt = $pdo->prepare("
     FROM Hours h
     INNER JOIN Personel p ON h.Person = p.Id
     LEFT JOIN Teams d ON p.Team = d.Id
-    WHERE h.Project = :project AND h.Year = :year AND h.Person > 0
+    WHERE h.Project = :project AND h.Year = :year
     GROUP BY p.Id, p.Name, p.Shortname, d.Name, h.Activity
     HAVING ActualHours > 0 OR PlannedHours > 0
 ");

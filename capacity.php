@@ -23,7 +23,7 @@ $hoursBudgeted = $budgetStmt->fetchColumn();
 
 // 2️⃣ Fetch total person planned hours (with filter)
 $personPlannedStmt = $pdo->prepare("
-    SELECT COALESCE(SUM(CASE WHEN Person > 0 THEN Plan ELSE 0 END), 0) AS PlannedHours
+    SELECT COALESCE(SUM(Plan), 0) AS PlannedHours
     FROM Hours
     WHERE Project > 0 $projectFilter AND `Year` = :selectedYear
 ");
@@ -47,15 +47,15 @@ $realisedStmt = $pdo->prepare("
         COALESCE(SUM(r.OutBudgetHours), 0) AS OutBudgetHours
     FROM (
         SELECT 
-            SUM(CASE WHEN h.Person > 0 THEN h.Hours ELSE 0 END) / 100 AS RealisedHours,
+            SUM(h.Hours) / 100 AS RealisedHours,
             COALESCE(b.Hours, 0) AS BudgetHours,
             LEAST(
-                SUM(CASE WHEN h.Person > 0 THEN h.Hours ELSE 0 END) / 100,
+                SUM(h.Hours) / 100,
                 COALESCE(b.Hours, 0)
             ) AS InBudgetHours,
             GREATEST(
                 0,
-                (SUM(CASE WHEN h.Person > 0 THEN h.Hours ELSE 0 END) / 100) - COALESCE(b.Hours, 0)
+                (SUM(h.Hours) / 100) - COALESCE(b.Hours, 0)
             ) AS OutBudgetHours
         FROM Hours h
         JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project

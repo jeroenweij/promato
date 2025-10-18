@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
         $val = str_replace(',', '.', $val);  // Replace comma with dot for decimal point
         $hours = floatval($val);  // Convert to float
       
-        if ($hours > 0 && $currentProject > 0) {
+        if ($hours > 0 && $personId > 0 && $currentProject > 0) {
           $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Hours, `Year`)
             VALUES (:project, :activity, :person, :hours, :year)
             ON DUPLICATE KEY UPDATE Hours = :hours");
@@ -94,19 +94,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
             ':year' => $selectedYear
           ]);
       
-          if ($personId > 0){
-            $team = $teamMap[$personId]; // Get the team for this person
-            $stmt = $pdo->prepare("INSERT INTO TeamHours (Project, Activity, Team, Hours, `Year`)
-              VALUES (:project, :activity, :team, :hours, :year)
-              ON DUPLICATE KEY UPDATE Hours = Hours + :hours");
-            $stmt->execute([
-              ':project' => $currentProject,
-              ':activity' => $activity,
-              ':team' => $team,
-              ':hours' => round($hours * 100),
-              ':year' => $selectedYear
-            ]);
-          }
+          $team = $teamMap[$personId]; // Get the team for this person
+          $stmt = $pdo->prepare("INSERT INTO TeamHours (Project, Activity, Team, Hours, `Year`)
+            VALUES (:project, :activity, :team, :hours, :year)
+            ON DUPLICATE KEY UPDATE Hours = Hours + :hours");
+          $stmt->execute([
+            ':project' => $currentProject,
+            ':activity' => $activity,
+            ':team' => $team,
+            ':hours' => round($hours * 100),
+            ':year' => $selectedYear
+          ]);
           $count++;
         }
       }

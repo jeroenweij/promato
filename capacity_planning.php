@@ -319,19 +319,9 @@ if ($teamFilter && !empty($personnel)) {
                                 if (isset($hoursData[$activityKey])) {
                                     foreach ($hoursData[$activityKey] as $personId => $data) {
                                         // If team filter is active, only count hours from personnel in that team
-                                        if ($teamFilter && isset($personnelById[$personId])) {
-                                            // Only include if person is in our filtered personnel list
-                                            if ($personId != 0) {
-                                                $planned += $data['Plan'] / 100;
-                                                $realised += $data['Hours'] / 100;
-                                            }
-                                        } elseif (!$teamFilter) {
-                                            // No filter - include all hours
-                                            if ($personId != 0) {
-                                                $planned += $data['Plan'] / 100;
-                                            } else {
-                                                $realised = $data['Hours'] / 100;
-                                            }
+                                        if (!$teamFilter || isset($personnelById[$personId])) {
+                                            $planned += $data['Plan'] / 100;
+                                            $realised += $data['Hours'] / 100;
                                         }
                                     }
                                 }

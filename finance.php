@@ -26,10 +26,10 @@ $realisedStmt = $pdo->prepare("
         COALESCE(SUM(r.BillableHours), 0) AS BillableHours
     FROM (
         SELECT 
-            SUM(CASE WHEN h.Person > 0 THEN h.Hours ELSE 0 END) / 100 AS RealisedHours,
+            SUM(h.Hours) / 100 AS RealisedHours,
             COALESCE(b.Hours, 0) AS BudgetHours,
             LEAST(
-                SUM(CASE WHEN h.Person > 0 AND h.Project > 100 THEN h.Hours ELSE 0 END) / 100,
+                SUM(CASE WHEN h.Project > 100 THEN h.Hours ELSE 0 END) / 100,
                 COALESCE(b.Hours, 0)
             ) AS BillableHours
         FROM Hours h
@@ -90,14 +90,14 @@ SELECT
         SELECT SUM(h.Hours) / 100
         FROM Hours h
         LEFT JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
-        WHERE h.Project = p.Id AND a.Visible=1 AND h.Year = :year AND h.Person > 0
+        WHERE h.Project = p.Id AND a.Visible=1 AND h.Year = :year
     ), 0) as ActualHours,
     
     -- Planned hours
     COALESCE((
         SELECT SUM(h.Plan) / 100
         FROM Hours h
-        WHERE h.Project = p.Id AND h.Year = :year AND h.Person > 0
+        WHERE h.Project = p.Id AND h.Year = :year
     ), 0) as PlannedHours
     
 FROM Projects p

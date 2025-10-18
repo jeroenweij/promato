@@ -116,7 +116,8 @@ INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VAL
 (68, 'Project finance', 'project_finance.php', 5, NULL, 0, NULL),
 (69, 'Update page access', 'update_page_access.php', 6, NULL, 0, NULL),
 (70, 'Page access', 'access_admin.php', 6, 4, 0, 'shield-user'),
-(71, 'Team Admin', 'team_admin.php', 6, 4, 0, 'group');
+(71, 'Team Admin', 'team_admin.php', 6, 4, 0, 'group'),
+(72, 'Report', 'report.php', 5, 1, 0, 'file-text');
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,
@@ -337,6 +338,7 @@ ALTER TABLE `Budgets`
   ADD CONSTRAINT `Budgets_ibfk_1` FOREIGN KEY (`Activity`) REFERENCES `Activities` (`Id`);
 
 ALTER TABLE `Hours`
+  ADD CONSTRAINT `fk_hours_person` FOREIGN KEY (`Person`) REFERENCES `Personel` (`Id`),
   ADD CONSTRAINT `fk_hours_project` FOREIGN KEY (`Project`) REFERENCES `Projects` (`Id`),
   ADD CONSTRAINT `fk_hours_status` FOREIGN KEY (`Status`) REFERENCES `HourStatus` (`Id`);
 

@@ -34,7 +34,7 @@ LEFT JOIN (
            COUNT(*) as TaskCount,
            SUM(CASE WHEN Status = 4 THEN 1 ELSE 0 END) as CompletedCount
     FROM Hours 
-    WHERE Year = :selectedYear AND Person > 0
+    WHERE Year = :selectedYear
     GROUP BY Project, Activity
 ) h ON a.Project = h.Project AND a.Key = h.Activity
 WHERE a.Id IS NOT NULL
