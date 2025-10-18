@@ -19,6 +19,34 @@ if ($statusFilter > 0) {
 
 $whereClause = implode(" AND ", $whereFilters);
 
+// Fetch total hours
+$realisedStmt = $pdo->prepare("
+    SELECT 
+        COALESCE(SUM(r.RealisedHours), 0) AS RealisedHours,
+        COALESCE(SUM(r.BillableHours), 0) AS BillableHours
+    FROM (
+        SELECT 
+            SUM(CASE WHEN h.Person > 0 THEN h.Hours ELSE 0 END) / 100 AS RealisedHours,
+            COALESCE(b.Hours, 0) AS BudgetHours,
+            LEAST(
+                SUM(CASE WHEN h.Person > 0 AND h.Project > 100 THEN h.Hours ELSE 0 END) / 100,
+                COALESCE(b.Hours, 0)
+            ) AS BillableHours
+        FROM Hours h
+        JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
+        LEFT JOIN Budgets b ON b.Activity = a.Id AND b.Year = :selectedYear
+        WHERE h.Project > 0 
+            AND h.Year = :selectedYear
+            AND a.Visible = 1
+        GROUP BY a.Id, b.Hours
+    ) AS r
+");
+
+$realisedStmt->execute(['selectedYear' => $selectedYear]);
+$realisedData = $realisedStmt->fetch(PDO::FETCH_ASSOC);
+$totalHoursRealized = $realisedData['RealisedHours'];
+$billableHours = $realisedData['BillableHours'];
+
 // Main financial query - Fixed budget calculation
 $sql = "
 SELECT 
@@ -61,7 +89,8 @@ SELECT
     COALESCE((
         SELECT SUM(h.Hours) / 100
         FROM Hours h
-        WHERE h.Project = p.Id AND h.Year = :year AND h.Person > 0
+        LEFT JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
+        WHERE h.Project = p.Id AND a.Visible=1 AND h.Year = :year AND h.Person > 0
     ), 0) as ActualHours,
     
     -- Planned hours
@@ -90,7 +119,6 @@ $totals = [
     'labor_cost' => 0,
     'total_cost' => 0,
     'budgeted_hours' => 0,
-    'actual_hours' => 0,
     'planned_hours' => 0,
     'over_budget_count' => 0,
     'at_risk_count' => 0
@@ -131,7 +159,6 @@ foreach ($projects as &$project) {
     $totals['labor_cost'] += $project['LaborCost'];
     $totals['total_cost'] += $project['TotalCost'];
     $totals['budgeted_hours'] += $project['BudgetedHours'];
-    $totals['actual_hours'] += $project['ActualHours'];
     $totals['planned_hours'] += $project['PlannedHours'];
 }
 
@@ -256,12 +283,26 @@ function getStatusBadge($status, $statusName) {
                     <h5 class="card-title">Hours Overview</h5>
                     <div class="row">
                         <div class="col-md-4">
-                            <strong>Budgeted Hours:</strong> <?= formatHours($totals['budgeted_hours']) ?>
+                        <strong>Actual Hours:</strong> <?= formatHours($totalHoursRealized) ?> <?= formatHours($totalHoursRealized) ?>
                         </div>
                         <div class="col-md-4">
-                            <strong>Actual Hours:</strong> <?= formatHours($totals['actual_hours']) ?>
+                            <strong>Hours VS budget:</strong>
                             <?php if ($totals['budgeted_hours'] > 0): ?>
-                                (<?= number_form(($totals['actual_hours'] / $totals['budgeted_hours']) * 100, 1) ?>%)
+                                (<?= number_form(($totalHoursRealized / $totals['budgeted_hours']) * 100, 1) ?>%)
+                            <?php endif; ?>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Budgeted Hours:</strong> <?= formatHours($totals['budgeted_hours']) ?>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Billable Hours:</strong> <?= formatHours($billableHours) ?>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Billable VS Actual Hours:</strong> 
+                            <?php if ($totalHoursRealized > 0): ?>
+                                <?= number_form(($billableHours / $totalHoursRealized) * 100, 1) ?>%
                             <?php endif; ?>
                         </div>
                         <div class="col-md-4">
@@ -357,7 +398,7 @@ function getStatusBadge($status, $statusName) {
                     </th>
                     <th class="text-end"><?= number_form($totals['utilization'], 1) ?>%</th>
                     <th class="text-center">
-                        <?= formatHours($totals['actual_hours']) ?> / <?= formatHours($totals['budgeted_hours']) ?>
+                        <?= formatHours($totalHoursRealized) ?> / <?= formatHours($totals['budgeted_hours']) ?>
                     </th>
                     <th></th>
                 </tr>

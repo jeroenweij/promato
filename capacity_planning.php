@@ -75,8 +75,8 @@ foreach ($personnel as $p) {
 $stmtPersonHours = $pdo->query(
     "SELECT 
         Person,
-        SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END) AS TotalPlanned,
-        SUM(CASE WHEN Project > 0 THEN Hours ELSE 0 END) - 
+        SUM(Plan) AS TotalPlanned,
+        SUM(Hours) - 
         SUM(CASE WHEN Project = 10 AND Activity = 7 THEN Hours ELSE 0 END) AS TotalRealised
     FROM Hours WHERE `Year` = $selectedYear
     GROUP BY Person"
