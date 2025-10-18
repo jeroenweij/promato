@@ -80,9 +80,9 @@ $capacityStmt = $pdo->prepare("
         p.Id,
         p.Shortname, 
         p.Fultime, 
-        COALESCE(h.Plan, 0) AS AvailableHours 
+        COALESCE(h.Hours, 0) AS AvailableHours 
     FROM Personel p 
-    LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND h.`Year` = :selectedYear
+    LEFT JOIN Availability h ON h.Person = p.Id AND h.`Year` = :selectedYear
     WHERE p.plan = 1 
     AND YEAR(p.StartDate) <= :selectedYear 
     AND (p.EndDate IS NULL OR YEAR(p.EndDate) >= :selectedYear)

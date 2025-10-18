@@ -20,8 +20,8 @@ $currentDate = new DateTime();
 
 // Get total planned vs logged hours for the year
 $totalHoursStmt = $pdo->prepare("SELECT 
-    SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END) AS TotalPlanned,
-    SUM(CASE WHEN Project = 0 THEN Hours ELSE 0 END) AS TotalLogged
+    SUM(Plan) AS TotalPlanned,
+    SUM(Hours) AS TotalLogged
     FROM Hours 
     WHERE Person = :userid AND Year = :selectedYear"
     );

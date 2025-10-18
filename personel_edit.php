@@ -144,9 +144,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Insert a record for each year
     foreach ($hoursByYear as $year => $hours) {
-        $stmt = $pdo->prepare("INSERT INTO Hours (Project, Activity, Person, Plan, `Year`) 
-            VALUES (0, 0, :person, :hours, :year)
-            ON DUPLICATE KEY UPDATE Plan = :hours");
+        $stmt = $pdo->prepare("INSERT INTO Availability (Person, Hours, `Year`) 
+            VALUES (:person, :hours, :year)
+            ON DUPLICATE KEY UPDATE Hours = :hours");
         $stmt->execute([
             ':person' => $personId,
             ':hours' => $hours * 100, // stored as hundredths

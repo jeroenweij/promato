@@ -13,6 +13,12 @@ CREATE TABLE `Activities` (
   `Active` tinyint(1) NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE `Availability` (
+  `Person` smallint DEFAULT NULL,
+  `Hours` int DEFAULT NULL,
+  `Year` smallint NOT NULL DEFAULT (year(curdate()))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 CREATE TABLE `Budgets` (
   `Id` smallint NOT NULL,
   `Activity` smallint NOT NULL,
@@ -106,8 +112,8 @@ INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VAL
 (64, 'Upload Hours', 'upload.php', 4, 5, 1, 'upload'),
 (65, 'Export to Yoobi', 'export.php', 5, 5, 0, 'download'),
 (66, 'Data backup', 'backup.php', 5, 5, 0, 'download-cloud'),
-(67, 'Financial dashboard', 'finance.php', 5, 5, 0, NULL),
-(68, 'Project finance', 'project_finance.php', 5, 5, 0, NULL),
+(67, 'Financial dashboard', 'finance.php', 5, 1, 0, 'dollar-sign'),
+(68, 'Project finance', 'project_finance.php', 5, NULL, 0, NULL),
 (69, 'Update page access', 'update_page_access.php', 6, NULL, 0, NULL),
 (70, 'Page access', 'access_admin.php', 6, 4, 0, 'shield-user'),
 (71, 'Team Admin', 'team_admin.php', 6, 4, 0, 'group');
@@ -210,6 +216,10 @@ ALTER TABLE `Activities`
   ADD KEY `Project` (`Project`),
   ADD KEY `Key` (`Key`),
   ADD KEY `fk_activities_wbso` (`Wbso`);
+
+ALTER TABLE `Availability`
+  ADD UNIQUE KEY `personYearIndex` (`Person`,`Year`),
+  ADD KEY `Person` (`Person`);
 
 ALTER TABLE `Budgets`
   ADD PRIMARY KEY (`Id`),
@@ -320,10 +330,14 @@ ALTER TABLE `Activities`
   ADD CONSTRAINT `Activities_ibfk_1` FOREIGN KEY (`Project`) REFERENCES `Projects` (`Id`),
   ADD CONSTRAINT `fk_activities_wbso` FOREIGN KEY (`Wbso`) REFERENCES `Wbso` (`Id`);
 
+ALTER TABLE `Availability`
+  ADD CONSTRAINT `fk_avail_person` FOREIGN KEY (`Person`) REFERENCES `Personel` (`Id`);
+
 ALTER TABLE `Budgets`
   ADD CONSTRAINT `Budgets_ibfk_1` FOREIGN KEY (`Activity`) REFERENCES `Activities` (`Id`);
 
 ALTER TABLE `Hours`
+  ADD CONSTRAINT `fk_hours_project` FOREIGN KEY (`Project`) REFERENCES `Projects` (`Id`),
   ADD CONSTRAINT `fk_hours_status` FOREIGN KEY (`Status`) REFERENCES `HourStatus` (`Id`);
 
 ALTER TABLE `PageAccess`

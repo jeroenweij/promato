@@ -17,10 +17,10 @@ foreach ($teams as $team) {
 $stmt = $pdo->prepare("
     SELECT 
         p.Team,
-        COALESCE(h.Plan, 0) AS AvailableHours,
+        COALESCE(h.Hours, 0) AS AvailableHours,
         p.Fultime
     FROM Personel p 
-    LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND h.`Year` = :selectedYear
+    LEFT JOIN Availability h ON h.Person = p.Id AND h.`Year` = :selectedYear
     WHERE p.plan = 1
     AND YEAR(p.StartDate) <= :selectedYear 
     AND (p.EndDate IS NULL OR YEAR(p.EndDate) >= :selectedYear)
@@ -55,8 +55,8 @@ foreach ($personnel as $p) {
 $stmtTeamHours = $pdo->prepare("
     SELECT 
         Team,
-        SUM(CASE WHEN Project > 0 THEN Plan ELSE 0 END) AS TotalPlanned,
-        SUM(CASE WHEN Project > 0 THEN Hours ELSE 0 END) - 
+        SUM(Plan) AS TotalPlanned,
+        SUM(Hours) - 
         SUM(CASE WHEN Project = 10 AND Activity = 7 THEN Hours ELSE 0 END) AS TotalRealised
     FROM TeamHours 
     WHERE `Year` = :selectedYear

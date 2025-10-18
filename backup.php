@@ -4,7 +4,7 @@ require_once 'includes/db.php';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $selectedTables = array('Teams', 'Personel', 'Wbso', 'Projects', 'Activities', 'Hours', 'TeamHours', 'Budgets');
+    $selectedTables = array('Teams', 'Personel', 'Wbso', 'Projects', 'Activities', 'Hours', 'TeamHours', 'Availability', 'Budgets');
     $sqlData = "";
 
     foreach ($selectedTables as $table) {

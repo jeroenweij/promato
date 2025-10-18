@@ -40,13 +40,13 @@ $stmt = $pdo->prepare("
         p.Id AS Number, 
         p.Fultime, 
         p.Team,
-        COALESCE(h.Plan, 0) AS AvailableHours,
+        COALESCE(h.Hours, 0) AS AvailableHours,
         d.Ord AS DeptOrder,
         d.Name AS TeamName,
         p.Ord AS PersonOrder,
         d.Planable
     FROM Personel p 
-    LEFT JOIN Hours h ON h.Person = p.Id AND h.Project = 0 AND h.Activity = 0 AND `Year`= :selectedYear
+    LEFT JOIN Availability h ON h.Person = p.Id AND `Year`= :selectedYear
     LEFT JOIN Teams d ON p.Team = d.Id
     $whereClause
     ORDER BY d.Ord, p.Ord, p.Name
