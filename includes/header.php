@@ -170,6 +170,22 @@ if ($selectedYear === 0) {
             }
             ?>
 
+            <!-- Search Bar -->
+            <li class="nav-item nav-search-container">
+              <form action="/search.php" method="GET" class="nav-search-form">
+                <input
+                  type="text"
+                  name="q"
+                  id="navSearchInput"
+                  class="nav-search-input"
+                  placeholder="Search..."
+                  autocomplete="off">
+                <button type="submit" class="nav-search-btn">
+                  <i class="icon ion-md-search"></i>
+                </button>
+              </form>
+            </li>
+
             <?php if (isset($_SESSION['user_id'])): ?>
                 <li class="nav-item nav-custom-link btn btn-demo-small">
                     <a class="nav-link" href="/dashboard.php"><?= htmlspecialchars($_SESSION['user_name']) ?><i class="icon ion-ios-arrow-forward icon-mobile"></i></a>

@@ -740,3 +740,139 @@ footer small {
 		margin-left: 10px;
 	}
 }
+
+
+.nav-search-form {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.nav-search-input {
+  width: 250px;
+  padding: 8px 40px 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  font-size: 14px;
+  transition: all 0.3s;
+  background-color: #f8f9fa;
+}
+
+.nav-search-input:focus {
+  outline: none;
+  width: 350px;
+  background-color: #fff;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+}
+
+.nav-search-btn {
+  position: absolute;
+  right: 5px;
+  background: none;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  color: #6c757d;
+  transition: color 0.2s;
+}
+
+.nav-search-btn:hover {
+  color: #007bff;
+}
+
+.nav-search-btn i {
+  font-size: 18px;
+}
+
+@media (max-width: 992px) {
+  .nav-search-container {
+    width: 100%;
+    margin: 10px 0;
+  }
+
+  .nav-search-input {
+    width: 100%;
+  }
+
+  .nav-search-input:focus {
+    width: 100%;
+  }
+}
+
+/* Navigation Search Bar - Updated for inline display */
+.nav-search-container {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  margin: 0 10px;
+}
+
+.nav-search-form {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin: 0;
+}
+
+.nav-search-input {
+  width: 200px;
+  padding: 6px 35px 6px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  font-size: 14px;
+  transition: all 0.3s;
+  background-color: #f8f9fa;
+  height: 32px;
+}
+
+.nav-search-input:focus {
+  outline: none;
+  width: 280px;
+  background-color: #fff;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+}
+
+.nav-search-btn {
+  position: absolute;
+  right: 3px;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #6c757d;
+  transition: color 0.2s;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-search-btn:hover {
+  color: #007bff;
+}
+
+.nav-search-btn i {
+  font-size: 16px;
+}
+
+@media (max-width: 992px) {
+  .nav-search-container {
+    width: 100%;
+    margin: 10px 0;
+    display: flex;
+  }
+
+  .nav-search-form {
+    width: 100%;
+  }
+
+  .nav-search-input {
+    width: 100%;
+  }
+
+  .nav-search-input:focus {
+    width: 100%;
+  }
+}
