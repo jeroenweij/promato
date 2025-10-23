@@ -7,7 +7,7 @@ session_start();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['credential'])) {
     $id_token = $_POST['credential'];
 
-    $client = new Google_Client(['client_id' => '736797298668-1380256p7or78ojij5eqssddb8d4gpge.apps.googleusercontent.com']);
+    $client = new Google_Client(['client_id' => GOOGLE_CLIENT_ID]);
     $payload = $client->verifyIdToken($id_token);
 
     if ($payload && isset($payload['email'])) {
@@ -26,17 +26,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['credential'])) {
             $_SESSION['user_team'] = $user['Team'];
             $_SESSION['auth_level'] = $user['Type'];
 
-            $pdo->exec('UPDATE Personel SET LastLogin = CURRENT_TIMESTAMP WHERE Id = ' . $user['Id']);
+            // Fix SQL injection - use prepared statement
+            $stmt = $pdo->prepare('UPDATE Personel SET LastLogin = CURRENT_TIMESTAMP WHERE Id = ?');
+            $stmt->execute([$user['Id']]);
 
             // Check if there's a redirect URL stored in the session
             if (isset($_SESSION['redirect_after_login'])) {
                 $redirect_url = $_SESSION['redirect_after_login'];
                 // Clear the stored URL
                 unset($_SESSION['redirect_after_login']);
-                
-                // Redirect to the originally requested page
-                header("Location: $redirect_url");
-                exit;
+
+                // Fix open redirect - validate URL is local
+                $parsed = parse_url($redirect_url);
+                $isLocal = !isset($parsed['host']) || $parsed['host'] === $_SERVER['HTTP_HOST'];
+
+                if ($isLocal && isset($parsed['path'])) {
+                    // Redirect to the originally requested page
+                    header("Location: " . $parsed['path'] . (isset($parsed['query']) ? '?' . $parsed['query'] : ''));
+                    exit;
+                }
             }
             
             // Default redirect if no specific page was requested

@@ -1,6 +1,7 @@
 <?php
 require 'includes/auth.php';
 require_once 'includes/db.php';
+require_once 'includes/csrf.php';
 
 header('Content-Type: text/plain');
 set_time_limit(0); // Important for long uploads
@@ -15,8 +16,44 @@ function logmsg($msg) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
+  csrf_protect(); // Verify CSRF token
+
+  // Validate file upload
+  if (!isset($_FILES['csv']) || $_FILES['csv']['error'] !== UPLOAD_ERR_OK) {
+    logmsg("❌ File upload error");
+    exit;
+  }
+
+  // Validate file size (max 10MB)
+  $maxSize = 10 * 1024 * 1024; // 10MB
+  if ($_FILES['csv']['size'] > $maxSize) {
+    logmsg("❌ File too large. Maximum size is 10MB");
+    exit;
+  }
+
+  // Validate file type - must be CSV
+  $finfo = finfo_open(FILEINFO_MIME_TYPE);
+  $mimeType = finfo_file($finfo, $_FILES['csv']['tmp_name']);
+  finfo_close($finfo);
+
+  $allowedMimeTypes = ['text/plain', 'text/csv', 'application/csv', 'text/x-csv', 'application/x-csv', 'text/comma-separated-values', 'text/x-comma-separated-values'];
+
+  // Also check file extension
+  $fileExtension = strtolower(pathinfo($_FILES['csv']['name'], PATHINFO_EXTENSION));
+
+  if (!in_array($mimeType, $allowedMimeTypes) && $fileExtension !== 'csv') {
+    logmsg("❌ Invalid file type. Only CSV files are allowed. Detected: $mimeType");
+    exit;
+  }
+
   $file = $_FILES['csv']['tmp_name'];
-  $selectedYear = $_POST['year'];
+
+  // Validate year parameter
+  $selectedYear = filter_var($_POST['year'] ?? 0, FILTER_VALIDATE_INT);
+  if (!$selectedYear || $selectedYear < 2000 || $selectedYear > 2100) {
+    logmsg("❌ Invalid year parameter");
+    exit;
+  }
 
   // Count total lines for progress (excluding header)
   $totalRows = max(1, count(file($file)) - 2); // minus 2 headers

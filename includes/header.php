@@ -1,5 +1,6 @@
 <?php
 require_once 'auth.php';
+require_once 'csrf.php';
 
 function number_form($number, $decimals=-1) {
   if ($decimals == -1){
@@ -10,6 +11,7 @@ function number_form($number, $decimals=-1) {
 
 // Check if a new year is being selected
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newYear'])) {
+    csrf_protect(); // Verify CSRF token
     $newYear = $_POST['newYear'];
     $_SESSION['selectedYear'] = (int)$_POST['newYear'];
     echo("newYear = $newYear - SESSION=" . $_SESSION['selectedYear']);
@@ -91,6 +93,19 @@ if ($selectedYear === 0) {
       }
     }
   }
+
+  // CSRF Token for AJAX requests
+  window.csrfToken = '<?= csrf_token() ?>';
+
+  // Add CSRF token to all fetch requests automatically
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options = {}) {
+    options.headers = options.headers || {};
+    if (typeof options.headers === 'object' && !(options.headers instanceof Headers)) {
+      options.headers['X-CSRF-Token'] = window.csrfToken;
+    }
+    return originalFetch(url, options);
+  };
 </script>
 
 </head>
@@ -99,6 +114,7 @@ if ($selectedYear === 0) {
         <!-- Hidden form for POST submission -->
         <form id="yearSelectForm" method="POST" action="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
           <input type="hidden" id="newYear" name="newYear" value="">
+          <?php csrf_field(); ?>
         </form>
 
   <!-- N A V B A R -->

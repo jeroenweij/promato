@@ -1,8 +1,12 @@
 <?php
 require 'includes/auth.php';
 require_once 'includes/db.php';
+require_once 'includes/csrf.php';
+
+header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_protect();
     $project = $_POST['project'] ?? null;
     $activity = $_POST['activity'] ?? null;
     $person = $_POST['person'] ?? null;

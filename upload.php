@@ -40,10 +40,14 @@ document.getElementById('uploadBtn').addEventListener('click', async () => {
   const formData = new FormData();
   formData.append('csv', file);
   formData.append('year', '<?= $selectedYear ?>');
+  formData.append('csrf_token', window.csrfToken);
 
   const response = await fetch('upload_handler.php', {
     method: 'POST',
-    body: formData
+    body: formData,
+    headers: {
+      'X-CSRF-Token': window.csrfToken
+    }
   });
 
   const reader = response.body.getReader();

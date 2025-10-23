@@ -2,6 +2,8 @@
 require 'includes/auth.php';
 require_once 'includes/db.php';
 
+header('Content-Type: application/json');
+
 // Get JSON data from POST request
 $data = json_decode(file_get_contents('php://input'), true);
 

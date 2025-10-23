@@ -3,3 +3,7 @@ tmp*
 
 execute
 vendor
+
+# Environment files with sensitive credentials
+.env.php
+includes/.env.php

@@ -1,6 +1,13 @@
 <?php
 require 'includes/auth.php';
 require_once 'includes/db.php';
+require_once 'includes/csrf.php';
+
+// Set proper Content-Type header
+header('Content-Type: application/json');
+
+// Verify CSRF token
+csrf_protect();
 
 $data = json_decode(file_get_contents('php://input'), true);
 

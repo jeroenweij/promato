@@ -19,7 +19,7 @@ function getErrorMessage($error_code) {
 }
 ?>
 
-    <meta name="google-signin-client_id" content="736797298668-1380256p7or78ojij5eqssddb8d4gpge.apps.googleusercontent.com">
+    <meta name="google-signin-client_id" content="<?= GOOGLE_CLIENT_ID ?>">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <section>
@@ -34,7 +34,7 @@ function getErrorMessage($error_code) {
     <?php endif; ?>
 
     <div id="g_id_onload"
-         data-client_id="736797298668-1380256p7or78ojij5eqssddb8d4gpge.apps.googleusercontent.com"
+         data-client_id="<?= GOOGLE_CLIENT_ID ?>"
          data-callback="handleCredentialResponse">
     </div>
 

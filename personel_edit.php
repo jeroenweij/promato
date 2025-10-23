@@ -29,17 +29,78 @@ if ($editing) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_protect(); // Verify CSRF token
+
+    // Input validation
+    $errors = [];
+
+    // Validate email
+    $email = filter_var($_POST['Email'] ?? '', FILTER_VALIDATE_EMAIL);
+    if (!$email) {
+        $errors[] = "Invalid email address";
+    }
+
+    // Validate name and shortname
+    $name = trim($_POST['Name'] ?? '');
+    $shortname = trim($_POST['Shortname'] ?? '');
+    if (empty($shortname)) {
+        $errors[] = "Shortname is required";
+    }
+
+    // Validate dates
+    $startdate = $_POST['Startdate'] ?? '';
+    $enddate = $_POST['Enddate'] ?? null;
+    if (!empty($startdate) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startdate)) {
+        $errors[] = "Invalid start date format";
+    }
+    if (!empty($enddate) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $enddate)) {
+        $errors[] = "Invalid end date format";
+    }
+    if (!empty($startdate) && !empty($enddate) && $enddate < $startdate) {
+        $errors[] = "End date cannot be before start date";
+    }
+
+    // Validate fulltime percentage
+    $fultime = filter_var($_POST['Fultime'] ?? 100, FILTER_VALIDATE_INT);
+    if ($fultime === false || $fultime < 0 || $fultime > 100) {
+        $errors[] = "Fulltime percentage must be between 0 and 100";
+    }
+
+    // Validate type
+    $type = filter_var($_POST['Type'] ?? 1, FILTER_VALIDATE_INT);
+    if ($type === false || $type < 1 || $type > 7) {
+        $errors[] = "Invalid user type";
+    }
+
+    // Validate team
+    $team = filter_var($_POST['Deparment'] ?? 0, FILTER_VALIDATE_INT);
+    if ($team === false) {
+        $errors[] = "Invalid team selection";
+    }
+
+    // If there are validation errors, display them
+    if (!empty($errors)) {
+        echo '<section><div class="container"><div class="alert alert-danger">';
+        echo '<h4>Validation Errors:</h4><ul>';
+        foreach ($errors as $error) {
+            echo '<li>' . htmlspecialchars($error) . '</li>';
+        }
+        echo '</ul><a href="javascript:history.back()">Go Back</a></div></div></section>';
+        require 'includes/footer.php';
+        exit;
+    }
+
     $data = [
-        $_POST['Email'],
-        $_POST['Name'],
-        $_POST['Startdate'],
-        $_POST['Enddate'] ?: null,
+        $email,
+        $name,
+        $startdate,
+        $enddate ?: null,
         isset($_POST['WBSO']) ? 1 : 0,
-        $_POST['Fultime'],
-        $_POST['Type'],
-        $_POST['Deparment'],
+        $fultime,
+        $type,
+        $team,
         isset($_POST['plan']) ? 1 : 0,
-        $_POST['Shortname']
+        $shortname
     ];
 
     if ($editing) {
@@ -198,6 +259,7 @@ $teams = $pdo->query("SELECT Id, Name FROM Teams ORDER BY Ord")->fetchAll(PDO::F
     <div class="container">
         <h2><?= $editing ? 'Edit' : 'Add' ?> Person</h2>
         <form method="post">
+            <?php csrf_field(); ?>
             <label>Email:<br><input type="email" name="Email" required value="<?= htmlspecialchars($person['Email']) ?>"></label><br><br>
             <label>Name:<br><input type="text" name="Name" value="<?= htmlspecialchars($person['Name']) ?>"></label><br><br>
             <label>Shortname:<br><input type="text" name="Shortname" required value="<?= htmlspecialchars($person['Shortname']) ?>"></label><br><br>
