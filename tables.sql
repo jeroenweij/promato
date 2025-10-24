@@ -58,7 +58,7 @@ CREATE TABLE `Menus` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `Menus` (`Id`, `Name`, `Icon`) VALUES
-(1, 'Main', 'bg-main'),
+(1, 'Main', 'menu'),
 (2, 'Planning', 'calendar'),
 (3, 'Kroketto', 'chef-hat'),
 (4, 'Admin', 'shield'),

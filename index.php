@@ -54,7 +54,7 @@ foreach ($results as $row) {
 }
 ?>
 
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
 <section id="personal-dashboard">
     <div class="container py-5">
@@ -91,7 +91,18 @@ foreach ($results as $row) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    console.log('DOMContentLoaded fired');
+    console.log('lucide object:', typeof lucide);
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        console.log('Creating Lucide icons...');
+        // Latest Lucide version requires passing icons object with all available icons
+        lucide.createIcons({
+            icons: lucide.icons
+        });
+        console.log('Lucide icons created');
+    } else {
+        console.error('Lucide library not loaded properly');
+    }
 });
 </script>
 
