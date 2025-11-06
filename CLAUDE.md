@@ -8,12 +8,75 @@ This is "Promato" - a PHP-based project management and resource planning applica
 
 ## Architecture
 
-### Database-Driven Page System
-- All pages are registered in the `Pages` table with authentication requirements and menu assignments
-- Access control is handled by `includes/auth.php` which checks both:
-  1. User auth level (`Types` table: 1=Inactive, 2=User, 3=Project Manager, 4=Elevated, 5=Administrator, 6=Total Admin, 7=God)
-  2. Explicit page access via `PageAccess` table (allows granting specific users access to restricted pages)
-- Skip pages not in the database - they will trigger authentication failures
+### Database-Driven Page System & Authentication
+
+**How It Works:**
+Every PHP page that includes `header.php` is automatically protected by the authentication system. The `includes/auth.php` file (loaded by header.php) performs these checks on EVERY page load:
+
+1. **Verifies user is logged in** - Checks `$_SESSION['user_id']` exists
+2. **Looks up the current page** - Queries `Pages` table using the current filename
+3. **Checks minimum auth level** - Compares user's auth level against page's `Auth` requirement
+4. **Checks explicit access** - Queries `PageAccess` table for user-specific permissions
+5. **Redirects to login** - If any check fails, user is sent to `login.php`
+
+**Pages Table Structure:**
+```sql
+CREATE TABLE `Pages` (
+  `Id` tinyint NOT NULL,
+  `Name` varchar(32) NOT NULL,        -- Display name
+  `Path` varchar(64) NOT NULL,        -- Filename (e.g., 'dashboard.php')
+  `Auth` tinyint NOT NULL,            -- Minimum auth level (1-7)
+  `Menu` tinyint DEFAULT '0',         -- Menu group (NULL=not in menu, 1-5=menu sections)
+  `InHead` tinyint(1) DEFAULT '0',    -- Show in header nav (1=yes, 0=no)
+  `Icon` varchar(16) DEFAULT NULL     -- Lucide icon name
+);
+```
+
+**Auth Levels (cumulative):**
+- 1 = Inactive (can only access login)
+- 2 = User (can view dashboards, projects, planning)
+- 3 = Project Manager (can edit team hours, priorities)
+- 4 = Elevated (can create/edit projects, upload data)
+- 5 = Administrator (can manage users, teams, export data)
+- 6 = Total Admin (can manage page access)
+- 7 = God (can manage database directly)
+
+**PageAccess Table:**
+Allows granting specific users access to pages above their auth level. Used for exceptions (e.g., giving a level 2 user access to a specific level 4 page).
+
+**IMPORTANT - When to Add Pages to Database:**
+
+**DO NOT manually add pages to the database when:**
+- Creating AJAX update handlers (`update_*.php`) - these are already registered
+- Modifying existing pages - they're already in the database
+- Working on internal logic or includes - only user-facing pages need registration
+- Most day-to-day development work
+
+**DO add pages to the database when:**
+- Creating a NEW user-facing page that users will navigate to directly
+- Adding a NEW admin page or utility page
+- Creating a NEW form or edit page
+- The page doesn't exist in `tables.sql` yet
+
+**To check if a page needs registration:**
+```bash
+# Search for the filename in tables.sql
+grep "your_new_file.php" tables.sql
+```
+
+If the page exists in `tables.sql`, it will be created when the database is set up. You only need to manually INSERT if:
+1. The database is already deployed and you're adding a new page
+2. You're testing locally and don't want to rebuild the database
+
+**Example - Adding a New Page:**
+```sql
+-- Get the next available ID (check last entry in tables.sql, currently 73)
+INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES
+(74, 'My New Page', 'my_new_page.php', 5, NULL, 0, NULL);
+-- Auth 5 = Administrator only
+-- Menu NULL = not shown in menu
+-- InHead 0 = not in header nav
+```
 
 ### Session & Authentication
 - Session-based authentication managed via `$_SESSION['user_id']`, `$_SESSION['auth_level']`, `$_SESSION['user_name']`

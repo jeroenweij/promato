@@ -128,16 +128,17 @@ $projectStatusSummary = [
 
 // 5. Resource allocation (total hours allocated vs available capacity)
 $resourceAllocationStmt = $pdo->prepare("
-    SELECT 
+    SELECT
         u.Id AS PersonId,
         u.Name AS PersonName,
         u.Team,
-        SUM(h.Plan)AS AvailableHours,
-        SUM(h.Hours) AS AllocatedHours
+        COALESCE(a.Hours, u.Fultime * 2080 * 100) AS AvailableHours,
+        SUM(h.Plan) AS AllocatedHours
     FROM Personel u
+    LEFT JOIN Availability a ON a.Person = u.Id AND a.Year = :selectedYear
     LEFT JOIN Hours h ON h.Person = u.Id AND h.Project > 0 AND h.`Year` = :selectedYear
     WHERE u.Plan = 1 AND u.Type > 1
-    GROUP BY u.Id
+    GROUP BY u.Id, a.Hours, u.Fultime
     ORDER BY u.Team, u.Name
 ");
 

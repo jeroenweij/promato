@@ -118,7 +118,8 @@ INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VAL
 (70, 'Page access', 'access_admin.php', 6, 4, 0, 'shield-user'),
 (71, 'Team Admin', 'team_admin.php', 6, 4, 0, 'group'),
 (72, 'Report', 'report.php', 5, 1, 0, 'file-text'),
-(73, 'Database Admin', 'db_admin.php', 7, 4, 0, 'database');
+(73, 'Database Admin', 'db_admin.php', 7, 4, 0, 'database'),
+(74, 'Change Personnel Team', 'personel_change_team.php', 5, NULL, 0, NULL);
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,
