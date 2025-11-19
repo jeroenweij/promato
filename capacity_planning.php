@@ -332,15 +332,15 @@ if ($teamFilter && !empty($personnel)) {
                                 $realisedClass = ($realised > $planned) ? 'overbudget' : '';
 
                                 // Check if activity is closed (!Active or end date has passed)
-                                $isClosed = (!$activity['Active'] || (strtotime($activity['EndDate']) < strtotime('today')));
-                                $closedClass = $isClosed ? 'style="background-color: #e0e0e0; color: #666;"' : '';
+                                $isClosed = ($activity['Status'] == 4 || !$activity['Active'] || (strtotime($activity['EndDate']) < strtotime('today')));
+                                $closedClass = $isClosed ? 'closed' : '';
                                 ?>
                                 <tr>
-                                    <td class="text fixedheigth"><?= $taskCode ?></td>
-                                    <td class="text fixedheigth" <?= $closedClass ?>><?= htmlspecialchars($activity['ActivityName']) ?></td>
-                                    <td class="totals fixedheigth"><?= $availableHours ? number_form($availableHours) : '' ?></td>
-                                    <td class="totals <?= $plannedClass ?> fixedheigth"><?= number_form($planned) ?></td>
-                                    <td class="totals <?= $realisedClass ?>"><?= number_form($realised) ?></td>
+                                    <td class="text fixedheigth <?= $closedClass ?>"><?= $taskCode ?></td>
+                                    <td class="text fixedheigth <?= $closedClass ?>" ><?= htmlspecialchars($activity['ActivityName']) ?></td>
+                                    <td class="totals fixedheigth <?= $closedClass ?>""><?= $availableHours ? number_form($availableHours) : '' ?></td>
+                                    <td class="totals <?= $plannedClass ?> fixedheigth <?= $closedClass ?>""><?= number_form($planned) ?></td>
+                                    <td class="totals <?= $realisedClass ?> <?= $closedClass ?>""><?= number_form($realised) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endforeach; ?>

@@ -148,3 +148,8 @@
 	text-align: right;
 	padding-right: 4px;
 }
+
+.closed {
+    background-color: #e0e0e0; 
+    color: #666;
+}

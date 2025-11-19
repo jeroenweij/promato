@@ -135,6 +135,7 @@ if ($selectedYear === 0) {
             <div onclick="selectYear(2024)" class="year-option">2024</div>
             <div onclick="selectYear(2025)" class="year-option">2025</div>
             <div onclick="selectYear(2026)" class="year-option">2026</div>
+            <div onclick="selectYear(2027)" class="year-option">2027</div>
           </div>
         </div>
 
