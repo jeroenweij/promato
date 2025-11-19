@@ -294,6 +294,11 @@
     height: 18px;
 }
 
+.add-activity-form select {
+    width: auto;
+    min-width: 200px;
+}
+
 .save-indicator {
     display: none;
     align-items: center;

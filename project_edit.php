@@ -36,24 +36,69 @@ if (!$project) {
     exit;
 }
 
-// Fetch the activities for the project with budget information and usage check
+// Fetch the activities for the project with usage check
 $activityStmt = $pdo->prepare("
-    SELECT Activities.*, 
-           Budgets.Hours AS BudgetHours, 
-           Budgets.Budget, 
-           Budgets.OopSpend, 
-           Budgets.Rate,
+    SELECT Activities.*,
            Wbso.Name AS WbsoName,
            (SELECT COUNT(*) FROM Hours WHERE Project = Activities.Project AND Activity = Activities.Key AND (Hours>0 OR Plan>0)) as HoursCount,
            (SELECT COUNT(*) FROM TeamHours WHERE Project = Activities.Project AND Activity = Activities.Key AND (Hours>0 OR Plan>0)) as TeamHoursCount
-    FROM Activities 
-    LEFT JOIN Budgets ON Activities.Id = Budgets.Activity AND Budgets.`Year` = ? 
+    FROM Activities
     LEFT JOIN Wbso ON Activities.Wbso = Wbso.Id
     WHERE Project = ?
     ORDER BY Activities.Key ASC
 ");
-$activityStmt->execute([$selectedYear, $projectId]);
+$activityStmt->execute([$projectId]);
 $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch all budgets for all activities in this project
+$budgetStmt = $pdo->prepare("
+    SELECT b.*, a.Key as ActivityKey
+    FROM Budgets b
+    JOIN Activities a ON b.Activity = a.Id
+    WHERE a.Project = ?
+");
+$budgetStmt->execute([$projectId]);
+$allBudgets = $budgetStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Group budgets by activity ID and year
+$budgetsByActivityYear = [];
+foreach ($allBudgets as $budget) {
+    $budgetsByActivityYear[$budget['Activity']][$budget['Year']] = $budget;
+}
+
+// Determine which years need tables
+$yearsWithActivities = [];
+foreach ($activities as $activity) {
+    $startYear = (int)date('Y', strtotime($activity['StartDate']));
+    $endYear = (int)date('Y', strtotime($activity['EndDate']));
+
+    // Add all years in the activity's date range
+    for ($year = $startYear; $year <= $endYear; $year++) {
+        if (!isset($yearsWithActivities[$year])) {
+            $yearsWithActivities[$year] = [];
+        }
+        $yearsWithActivities[$year][] = $activity['Id'];
+    }
+}
+
+// Also add years that have budgets with values > 0
+foreach ($allBudgets as $budget) {
+    $year = $budget['Year'];
+    $activityId = $budget['Activity'];
+
+    // Check if any budget value is > 0
+    if ($budget['Budget'] > 0 || $budget['OopSpend'] > 0 || $budget['Rate'] > 0 || $budget['Hours'] > 0) {
+        if (!isset($yearsWithActivities[$year])) {
+            $yearsWithActivities[$year] = [];
+        }
+        if (!in_array($activityId, $yearsWithActivities[$year])) {
+            $yearsWithActivities[$year][] = $activityId;
+        }
+    }
+}
+
+// Sort years
+ksort($yearsWithActivities);
 
 // Fetch status options
 $statusStmt = $pdo->query("SELECT * FROM Status");
@@ -127,7 +172,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_update_budgets']
     $oopSpends = $_POST['oop_spend'] ?? [];
     $rates = $_POST['rate'] ?? [];
     $hours = $_POST['hours'] ?? [];
-    
+    $year = $_POST['budget_year'] ?? $selectedYear;
+
     foreach ($activityIds as $index => $activityId) {
         $budget = isset($budgets[$index]) && is_numeric($budgets[$index]) && $budgets[$index] !== '' ? (int)$budgets[$index] : 0;
         $oopSpend = isset($oopSpends[$index]) && is_numeric($oopSpends[$index]) && $oopSpends[$index] !== '' ? (int)$oopSpends[$index] : 0;
@@ -136,26 +182,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_update_budgets']
 
         // Check if a budget record exists for this activity
         $checkBudgetStmt = $pdo->prepare("SELECT Id FROM Budgets WHERE Activity = ? AND `Year` = ?");
-        $checkBudgetStmt->execute([$activityId, $selectedYear]);
+        $checkBudgetStmt->execute([$activityId, $year]);
         $existingBudget = $checkBudgetStmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($existingBudget) {
             // Update existing budget
             $updateBudgetStmt = $pdo->prepare("
                 UPDATE Budgets SET Budget = ?, OopSpend = ?, Hours = ?, Rate = ?
                 WHERE Activity = ? AND `Year` = ?
             ");
-            $updateBudgetStmt->execute([$budget, $oopSpend, $hour, $rate, $activityId, $selectedYear]);
+            $updateBudgetStmt->execute([$budget, $oopSpend, $hour, $rate, $activityId, $year]);
         } else {
             // Insert new budget
             $insertBudgetStmt = $pdo->prepare("
                 INSERT INTO Budgets (Activity, Budget, OopSpend, Hours, Rate, `Year`)
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
-            $insertBudgetStmt->execute([$activityId, $budget, $oopSpend, $hour, $rate, $selectedYear]);
+            $insertBudgetStmt->execute([$activityId, $budget, $oopSpend, $hour, $rate, $year]);
         }
     }
-    
+
     $redirectNeeded = true;
     $redirectUrl = "project_edit.php?project_id=" . $projectId;
 }
@@ -339,11 +385,14 @@ if ($redirectNeeded && ob_get_length() === 0) {
                                 <td>
                                     <select name="wbso[]" onchange="markRowModified(this, 'activity')">
                                         <option value="">-- None --</option>
-                                        <?php foreach ($wbsoOptions as $wbsoOption): ?>
-                                            <option value="<?= $wbsoOption['Id']; ?>" 
+                                        <?php foreach ($wbsoOptions as $wbsoOption):
+                                            $description = $wbsoOption['Description'] ?? '';
+                                            $preview = $description ? ' - ' . substr($description, 0, 20) . (strlen($description) > 20 ? '...' : '') : '';
+                                        ?>
+                                            <option value="<?= $wbsoOption['Id']; ?>"
                                                     <?= $activity['Wbso'] == $wbsoOption['Id'] ? 'selected' : ''; ?>
-                                                    title="<?= htmlspecialchars($wbsoOption['Description'] ?? ''); ?>">
-                                                <?= htmlspecialchars($wbsoOption['Name']); ?>
+                                                    title="<?= htmlspecialchars($description); ?>">
+                                                <?= htmlspecialchars($wbsoOption['Name'] . $preview); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -396,11 +445,13 @@ if ($redirectNeeded && ob_get_length() === 0) {
             </form>
         </div>
 
-        <!-- Budgets Section -->
+        <!-- Budgets Section - One table per year -->
+        <?php foreach ($yearsWithActivities as $year => $activityIdsForYear): ?>
         <div class="activities-section">
-            <h2>Budgets for <?= $selectedYear; ?></h2>
+            <h2>Budgets for <?= $year; ?></h2>
 
-            <form method="POST" id="bulkBudgetForm">
+            <form method="POST" id="bulkBudgetForm<?= $year; ?>">
+                <input type="hidden" name="budget_year" value="<?= $year; ?>">
                 <div class="table-wrapper">
                     <table class="activities-table">
                         <thead>
@@ -415,34 +466,48 @@ if ($redirectNeeded && ob_get_length() === 0) {
                         </tr>
                         </thead>
                         <tbody>
-                        <?php foreach ($activities as $activity): ?>
+                        <?php
+                        // Filter activities for this year
+                        foreach ($activities as $activity):
+                            // Skip if this activity is not in this year's list
+                            if (!in_array($activity['Id'], $activityIdsForYear)) {
+                                continue;
+                            }
+
+                            // Get budget data for this year
+                            $budgetData = $budgetsByActivityYear[$activity['Id']][$year] ?? null;
+                        ?>
                             <tr class="budget-row">
                                 <input type="hidden" name="budget_activity_id[]" value="<?= $activity['Id']; ?>">
                                 <td class="task-code"><?= $activity['Project'] . '-' . str_pad($activity['Key'], 3, '0', STR_PAD_LEFT); ?></td>
                                 <td><?= htmlspecialchars($activity['Name']); ?></td>
                                 <td>
-                                    <input type="number" name="budget[]" 
-                                           value="<?= $activity['Budget'] ?? 0; ?>"
+                                    <input type="number" name="budget[]"
+                                           value="<?= $budgetData['Budget'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           onchange="markRowModified(this, 'budget');">
+                                           data-year="<?= $year; ?>"
+                                           onchange="markRowModified(this, 'budget', <?= $year; ?>);">
                                 </td>
                                 <td>
-                                    <input type="number" name="oop_spend[]" 
-                                           value="<?= $activity['OopSpend'] ?? 0; ?>"
+                                    <input type="number" name="oop_spend[]"
+                                           value="<?= $budgetData['OopSpend'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           onchange="markRowModified(this, 'budget');">
+                                           data-year="<?= $year; ?>"
+                                           onchange="markRowModified(this, 'budget', <?= $year; ?>);">
                                 </td>
                                 <td>
-                                    <input type="number" name="rate[]" 
-                                           value="<?= $activity['Rate'] ?? 0; ?>"
+                                    <input type="number" name="rate[]"
+                                           value="<?= $budgetData['Rate'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           onchange="markRowModified(this, 'budget');">
+                                           data-year="<?= $year; ?>"
+                                           onchange="markRowModified(this, 'budget', <?= $year; ?>);">
                                 </td>
                                 <td>
-                                    <input type="number" name="hours[]" 
-                                           value="<?= $activity['BudgetHours'] ?? 0; ?>"
+                                    <input type="number" name="hours[]"
+                                           value="<?= $budgetData['Hours'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           onchange="markRowModified(this, 'budget');">
+                                           data-year="<?= $year; ?>"
+                                           onchange="markRowModified(this, 'budget', <?= $year; ?>);">
                                 </td>
                                 <td>
                                     <button type="button" onclick="calculateBudget(this);" class="btn btn-primary">Calc</button>
@@ -454,16 +519,17 @@ if ($redirectNeeded && ob_get_length() === 0) {
                 </div>
 
                 <div style="display: flex; align-items: center; margin-top: 1rem;">
-                    <button type="submit" name="bulk_update_budgets" class="btn btn-primary" id="saveBudgetsBtn" disabled>
-                        Save All Budgets
+                    <button type="submit" name="bulk_update_budgets" class="btn btn-primary" id="saveBudgetsBtn<?= $year; ?>" disabled>
+                        Save All Budgets for <?= $year; ?>
                     </button>
-                    <span class="save-indicator" id="budgetIndicator">
+                    <span class="save-indicator" id="budgetIndicator<?= $year; ?>">
                         <span>●</span>
-                        <span id="budgetModifiedCount">0</span> row(s) modified
+                        <span id="budgetModifiedCount<?= $year; ?>">0</span> row(s) modified
                     </span>
                 </div>
             </form>
         </div>
+        <?php endforeach; ?>
 
         <!-- Add New Activity -->
         <div class="activities-section">
@@ -487,10 +553,13 @@ if ($redirectNeeded && ob_get_length() === 0) {
                             <label for="new_wbso">WBSO</label>
                             <select name="new_wbso" id="new_wbso" class="form-control">
                                 <option value="">-- None --</option>
-                                <?php foreach ($wbsoOptions as $wbsoOption): ?>
-                                    <option value="<?= $wbsoOption['Id']; ?>" 
-                                            title="<?= htmlspecialchars($wbsoOption['Description'] ?? ''); ?>">
-                                        <?= htmlspecialchars($wbsoOption['Name']); ?>
+                                <?php foreach ($wbsoOptions as $wbsoOption):
+                                    $description = $wbsoOption['Description'] ?? '';
+                                    $preview = $description ? ' - ' . substr($description, 0, 20) . (strlen($description) > 20 ? '...' : '') : '';
+                                ?>
+                                    <option value="<?= $wbsoOption['Id']; ?>"
+                                            title="<?= htmlspecialchars($description); ?>">
+                                        <?= htmlspecialchars($wbsoOption['Name'] . $preview); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -549,29 +618,32 @@ if ($redirectNeeded && ob_get_length() === 0) {
 
 <script>
 let modifiedActivityRows = new Set();
-let modifiedBudgetRows = new Set();
+let modifiedBudgetRowsByYear = {}; // Track by year: { 2025: Set(), 2026: Set(), ... }
 
-function markRowModified(element, type) {
+function markRowModified(element, type, year = null) {
     const row = element.closest('tr');
     const rowIndex = Array.from(row.parentElement.children).indexOf(row);
-    
+
     row.classList.add('modified');
-    
+
     if (type === 'activity') {
         modifiedActivityRows.add(rowIndex);
         updateSaveButton('activity');
-    } else if (type === 'budget') {
-        modifiedBudgetRows.add(rowIndex);
-        updateSaveButton('budget');
+    } else if (type === 'budget' && year !== null) {
+        if (!modifiedBudgetRowsByYear[year]) {
+            modifiedBudgetRowsByYear[year] = new Set();
+        }
+        modifiedBudgetRowsByYear[year].add(rowIndex);
+        updateSaveButton('budget', year);
     }
 }
 
-function updateSaveButton(type) {
+function updateSaveButton(type, year = null) {
     if (type === 'activity') {
         const saveBtn = document.getElementById('saveActivitiesBtn');
         const indicator = document.getElementById('activityIndicator');
         const countSpan = document.getElementById('activityModifiedCount');
-        
+
         if (modifiedActivityRows.size > 0) {
             saveBtn.disabled = false;
             indicator.classList.add('show');
@@ -580,15 +652,16 @@ function updateSaveButton(type) {
             saveBtn.disabled = true;
             indicator.classList.remove('show');
         }
-    } else if (type === 'budget') {
-        const saveBtn = document.getElementById('saveBudgetsBtn');
-        const indicator = document.getElementById('budgetIndicator');
-        const countSpan = document.getElementById('budgetModifiedCount');
-        
-        if (modifiedBudgetRows.size > 0) {
+    } else if (type === 'budget' && year !== null) {
+        const saveBtn = document.getElementById('saveBudgetsBtn' + year);
+        const indicator = document.getElementById('budgetIndicator' + year);
+        const countSpan = document.getElementById('budgetModifiedCount' + year);
+
+        const modifiedRows = modifiedBudgetRowsByYear[year] || new Set();
+        if (modifiedRows.size > 0) {
             saveBtn.disabled = false;
             indicator.classList.add('show');
-            countSpan.textContent = modifiedBudgetRows.size;
+            countSpan.textContent = modifiedRows.size;
         } else {
             saveBtn.disabled = true;
             indicator.classList.remove('show');
