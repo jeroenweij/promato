@@ -29,6 +29,14 @@ CREATE TABLE `Budgets` (
   `Year` smallint NOT NULL DEFAULT (year(curdate()))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE `egg_orders` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `egg_type` enum('boiled','fried') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `order_date` date NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 CREATE TABLE `Hours` (
   `Project` smallint DEFAULT NULL,
   `Activity` smallint DEFAULT NULL,
@@ -118,8 +126,11 @@ INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VAL
 (70, 'Page access', 'access_admin.php', 6, 4, 0, 'shield-user'),
 (71, 'Team Admin', 'team_admin.php', 6, 4, 0, 'group'),
 (72, 'Report', 'report.php', 5, 1, 0, 'file-text'),
-(73, 'Database Admin', 'db_admin.php', 7, 4, 0, 'database'),
-(74, 'Change Personnel Team', 'personel_change_team.php', 5, NULL, 0, NULL);
+(73, 'Database Admin', 'db_admin.php', 7, 5, 0, 'database'),
+(74, 'Search', 'search.php', 2, NULL, 0, 'search'),
+(75, 'Change Personnel Team', 'personel_change_team.php', 5, NULL, 0, NULL),
+(76, 'Omeletto', 'omeletto.php', 2, 3, 0, 'egg-fried'),
+(77, 'Omeletto Admin', 'omeletto_admin.php', 5, 3, 0, 'egg');
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,
@@ -228,11 +239,17 @@ ALTER TABLE `Budgets`
   ADD PRIMARY KEY (`Id`),
   ADD KEY `Budgets_ibfk_1` (`Activity`);
 
+ALTER TABLE `egg_orders`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_user_week` (`user_id`,`order_date`),
+  ADD KEY `idx_order_date` (`order_date`),
+  ADD KEY `idx_user_id` (`user_id`);
+
 ALTER TABLE `Hours`
   ADD UNIQUE KEY `hoursIndex` (`Project`,`Activity`,`Person`,`Year`),
   ADD KEY `Activity` (`Activity`),
-  ADD KEY `Person` (`Person`),
-  ADD KEY `fk_hours_status` (`Status`);
+  ADD KEY `fk_hours_status` (`Status`),
+  ADD KEY `Person` (`Person`) USING BTREE;
 
 ALTER TABLE `HourStatus`
   ADD PRIMARY KEY (`Id`),
@@ -294,6 +311,9 @@ ALTER TABLE `Activities`
 
 ALTER TABLE `Budgets`
   MODIFY `Id` smallint NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `egg_orders`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `HourStatus`
   MODIFY `Id` int NOT NULL AUTO_INCREMENT;
