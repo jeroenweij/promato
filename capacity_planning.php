@@ -93,22 +93,24 @@ while ($row = $stmtPersonHours->fetch(PDO::FETCH_ASSOC)) {
 
 // Fetch all projects and activities in a single query with JOINs
 $activitiesQuery = $pdo->prepare("
-    SELECT 
-        a.Project, 
-        a.Key, 
-        a.Name AS ActivityName, 
-        b.Hours AS BudgetHours, 
-        p.Name AS ProjectName, 
-        pe.ShortName AS Manager, 
+    SELECT
+        a.Project,
+        a.Key,
+        a.Name AS ActivityName,
+        a.EndDate,
+        a.Active,
+        b.Hours AS BudgetHours,
+        p.Name AS ProjectName,
+        pe.ShortName AS Manager,
         p.Manager AS ManagerId,
         p.Status
     FROM Activities a
-    JOIN Projects p ON a.Project = p.Id 
-    LEFT JOIN Personel pe ON p.Manager = pe.Id 
+    JOIN Projects p ON a.Project = p.Id
+    LEFT JOIN Personel pe ON p.Manager = pe.Id
     LEFT JOIN Budgets b ON a.Id = b.Activity
-    WHERE p.Status > 2 
-    AND a.Visible = 1 
-    AND YEAR(a.StartDate) <= :selectedYear 
+    WHERE p.Status > 2
+    AND a.Visible = 1
+    AND YEAR(a.StartDate) <= :selectedYear
     AND YEAR(a.EndDate) >= :selectedYear
     ORDER BY p.Status, p.Id, a.Key
 ");
@@ -328,10 +330,14 @@ if ($teamFilter && !empty($personnel)) {
                                 
                                 $plannedClass = ($availableHours !== '' && $planned > $availableHours) ? 'overbudget' : '';
                                 $realisedClass = ($realised > $planned) ? 'overbudget' : '';
+
+                                // Check if activity is closed (!Active or end date has passed)
+                                $isClosed = (!$activity['Active'] || (strtotime($activity['EndDate']) < strtotime('today')));
+                                $closedClass = $isClosed ? 'style="background-color: #e0e0e0; color: #666;"' : '';
                                 ?>
                                 <tr>
                                     <td class="text fixedheigth"><?= $taskCode ?></td>
-                                    <td class="text fixedheigth"><?= htmlspecialchars($activity['ActivityName']) ?></td>
+                                    <td class="text fixedheigth" <?= $closedClass ?>><?= htmlspecialchars($activity['ActivityName']) ?></td>
                                     <td class="totals fixedheigth"><?= $availableHours ? number_form($availableHours) : '' ?></td>
                                     <td class="totals <?= $plannedClass ?> fixedheigth"><?= number_form($planned) ?></td>
                                     <td class="totals <?= $realisedClass ?>"><?= number_form($realised) ?></td>

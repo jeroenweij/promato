@@ -1,6 +1,7 @@
 <?php
 require 'includes/header.php';
 require_once 'includes/db.php';
+require_once 'includes/sync_team_hours.php';
 
 // Handle leave calculation request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['calculate_leave'])) {
@@ -39,6 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['calculate_leave'])) {
     if (!empty($errors)) {
         $message .= " Errors: " . implode(', ', $errors);
     }
+
+    // sync team hours planning
+    syncTeamHours($pdo, 10, 1, $selectedYear);
 }
 
 function calculateLeaveForYear($startDate, $endDate, $fulltimePercent, $targetYear) {

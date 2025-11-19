@@ -2,6 +2,7 @@
 require 'includes/auth.php';
 require_once 'includes/db.php';
 require_once 'includes/csrf.php';
+require_once 'includes/sync_team_hours.php';
 
 header('Content-Type: text/plain');
 set_time_limit(0); // Important for long uploads
@@ -161,6 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
         ':activity' => 2,
         ':year' => $selectedYear
     ]);
+    // sync team hours planning
+    syncTeamHours($pdo, 10, 2, $selectedYear);
 
     // Update planned leave if leave > planned
     $stmt = $pdo->prepare("UPDATE Hours SET Plan = Hours WHERE Plan < Hours AND Project = :project AND Activity = :activity AND `Year` = :year");
