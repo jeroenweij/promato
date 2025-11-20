@@ -145,34 +145,37 @@ if ($teamFilter) {
     }
 }
 
-// Efficiently fetch all hours data for all activities at once
-$projectActivities = [];
+// Efficiently fetch all hours data for all projects at once
+// Get unique project IDs
+$projectIds = [];
 foreach ($activities as $a) {
-    $key = $a['Project'] . '-' . $a['Key'];
-    $projectActivities[$key] = true;
+    $projectIds[$a['Project']] = true;
+}
+$uniqueProjectIds = array_keys($projectIds);
+
+// Build named placeholders for the IN clause
+$namedPlaceholders = [];
+$executeParams = [':year' => $selectedYear];
+
+for ($i = 0; $i < count($uniqueProjectIds); $i++) {
+    $key = ":project_$i";
+    $namedPlaceholders[] = $key;
+    $executeParams[$key] = $uniqueProjectIds[$i];
 }
 
-$activityKeys = array_keys($projectActivities);
-$placeholders = implode(',', array_fill(0, count($activityKeys), '?'));
-if (empty($placeholders)){
-    $placeholders="''";
-}
+$placeholdersString = !empty($namedPlaceholders) ? implode(',', $namedPlaceholders) : "''";
+
 $allHoursQuery = $pdo->prepare("
-    SELECT 
+    SELECT
         CONCAT(Project, '-', Activity) AS ProjectActivity,
-        Person, 
-        Hours, 
+        Person,
+        Hours,
         Plan
-    FROM Hours 
-    WHERE `Year` = $selectedYear AND CONCAT(Project, '-', Activity) IN ($placeholders)
+    FROM Hours
+    WHERE `Year` = :year AND Project IN ($placeholdersString)
 ");
 
-// We need to execute with flattened array values
-$params = [];
-foreach ($activities as $a) {
-    $params[] = $a['Project'] . '-' . $a['Key'];
-}
-$allHoursQuery->execute(array_unique($params));
+$allHoursQuery->execute($executeParams);
 
 // Organize hours data for quick access
 $hoursData = [];

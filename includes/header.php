@@ -3,6 +3,7 @@ require_once 'auth.php';
 require_once 'csrf.php';
 
 function number_form($number, $decimals=-1) {
+  $number = $number ?? 0;
   if ($decimals == -1){
     $decimals = fmod($number, 1)? 1 : 0;
   }
@@ -65,7 +66,7 @@ if ($selectedYear === 0) {
     }
   ?>
 
-  <title><?= htmlspecialchars($pageInfo['Name']) ?></title>
+  <title><?= htmlspecialchars($pageInfo['Name'] ?? 'UNKNOWN PAGE') ?></title>
   <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
   
   <script>
