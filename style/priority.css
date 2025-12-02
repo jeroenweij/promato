@@ -36,3 +36,61 @@
     padding-bottom: 1px !important;
     max-height: fit-content;
 }
+
+/* Task card styling */
+.task-card {
+    cursor: grab;
+}
+
+.task-card:active {
+    cursor: grabbing;
+}
+
+/* Action buttons styling */
+.action-buttons {
+    display: flex;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+    align-items: center;
+    height: 100%;
+}
+
+.btn-action {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 1rem;
+    line-height: 1;
+    border: none !important;
+    opacity: 0.9;
+    transition: opacity 0.2s, transform 0.1s;
+    min-width: 32px;
+    min-height: 32px;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
+.btn-action:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.btn-action i {
+    font-size: 1.2rem;
+    line-height: 1;
+    display: block;
+}
+
+.project-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50%;
+}
+
+.item-priority {
+    font-weight: bold;
+    min-width: 2rem;
+    text-align: center;
+    font-size: 1rem;
+}

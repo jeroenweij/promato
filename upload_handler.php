@@ -174,6 +174,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
     ]);
     logmsg("📆 Set planned hours for holidays.");
 
+
+    // Update hours of unplanable team members
     $stmt = $pdo->prepare("UPDATE TeamHours AS th JOIN Teams AS t ON th.Team = t.Id SET th.Plan = th.Hours WHERE t.Planable = 0 AND th.`Year` = :year");
     $stmt->execute([
         ':year' => $selectedYear

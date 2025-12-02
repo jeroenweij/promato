@@ -193,14 +193,19 @@ if (isset($successMessage) && !empty($successMessage) && ob_get_length() === 0) 
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($wbsoEntries as $entry): 
-                                        $hourslogged = $entry['HoursLogged'] ?? 0;
+                                    <?php
+                                    $totalHours = 0;
+                                    $totalLogged = 0;
+                                    foreach ($wbsoEntries as $entry): 
+                                        $totalHours += $entry['Hours'] ?? 0;
+                                        $hourslogged = ($entry['HoursLogged'] ?? 0) / 100;
+                                        $totalLogged += $hourslogged;
                                         ?>
                                         <tr>
                                             <td><?php echo htmlspecialchars($entry['Name']); ?></td>
                                             <td><?php echo htmlspecialchars($entry['Description'] ?? ''); ?></td>
-                                            <td><?php echo htmlspecialchars($entry['Hours'] ?? 'N/A'); ?></td>
-                                            <td><?= round($hourslogged/100) ?></td>
+                                            <td><?php echo number_form($entry['Hours'] ?? 0); ?></td>
+                                            <td><?= number_form($hourslogged) ?></td>
                                             <td>
                                                 <?php 
                                                 if (!empty($entry['Date'])) {
@@ -223,6 +228,15 @@ if (isset($successMessage) && !empty($successMessage) && ob_get_length() === 0) 
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
+                                    <tr>
+                                        <td></td>
+                                        <td>Totals</td>
+                                        <td><?= number_form($totalHours) ?></td>
+                                        <td><?= number_form($totalLogged) ?></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
                                 </tbody>
                             </table>
                         <?php else: ?>

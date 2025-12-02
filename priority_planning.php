@@ -14,21 +14,31 @@ $teamStmt = $pdo->query("
 ");
 $teams = $teamStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Auto-update status to Done (4) for all TeamHours where project is closed (Status = 4)
+$autoUpdateStmt = $pdo->prepare("
+    UPDATE TeamHours th
+    JOIN Projects p ON th.Project = p.Id
+    SET th.Status = 4
+    WHERE p.Status = 4 AND th.Status != 4 AND th.`Year` = :selectedYear
+");
+$autoUpdateStmt->execute([':selectedYear' => $selectedYear]);
+
 // Fetch activities grouped by team and project
 $stmt = $pdo->prepare("
-SELECT 
-    th.Plan AS PlannedHours, 
+SELECT
+    th.Plan AS PlannedHours,
     th.Hours AS LoggedHours,
     th.Prio AS Priority,
     th.Team AS TeamId,
     th.Status AS Status,
     th.Project AS ProjectId,
     th.Activity AS ActivityKey,
-    a.Name AS ActivityName, 
-    p.Name AS ProjectName 
-FROM TeamHours th 
+    a.Name AS ActivityName,
+    p.Name AS ProjectName,
+    p.Status AS ProjectStatus
+FROM TeamHours th
 JOIN Activities a ON th.Activity = a.Key AND th.Project = a.Project
-JOIN Projects p ON a.Project = p.Id AND p.Status = 3
+JOIN Projects p ON a.Project = p.Id
 WHERE th.Plan > 0 AND a.IsTask = 1 AND th.`Year` = :selectedYear
 ORDER BY th.Team, th.Prio, p.Id, a.Key
 ");
@@ -133,31 +143,34 @@ foreach ($teams as $team) {
                                             data-project-id="<?= $project['projectId'] ?>"
                                             data-team-id="<?= $project['teamId'] ?>"
                                             data-status="2">
-                                            <div class="task-header bg-primary text-white project-header">
-                                                <span class="project-name">
+                                            <div class="task-header bg-primary text-white project-header d-flex justify-content-between align-items-center">
+                                                <span class="project-name flex-grow-1">
                                                     <?= htmlspecialchars($project['projectName']) ?>
                                                 </span>
-                                                <span class="item-priority">
+                                                <div class="action-buttons">
+                                                    <button class="btn btn-sm btn-light btn-action"
+                                                            onclick="moveToTop(<?= $project['projectId'] ?>, <?= $project['teamId'] ?>)"
+                                                            title="Move to top">
+                                                        <i class="icon ion-ios-arrow-up"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-light btn-action"
+                                                            onclick="moveToBottom(<?= $project['projectId'] ?>, <?= $project['teamId'] ?>)"
+                                                            title="Move to bottom">
+                                                        <i class="icon ion-ios-arrow-down"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-light btn-action"
+                                                            onclick="hideProject(<?= $project['projectId'] ?>, <?= $project['teamId'] ?>)"
+                                                            title="Hide">
+                                                        <i class="icon ion-ios-eye-off"></i>
+                                                    </button>
+                                                </div>
+                                                <span class="item-priority ml-2">
                                                     <?= ($project['priority'] > 0 && $project['priority'] < 250) ? $project['priority'] : '' ?>
                                                 </span>
-                                            </div> 
+                                            </div>
                                             <div class="card-body">
-                                                <?php foreach ($project['activities'] as $activity): 
-                                                    $planned = $activity['PlannedHours'] / 100;
-                                                    $logged = $activity['LoggedHours'] / 100;
-                                                ?>
-                                                    <div class="activity-item" style="margin-bottom: 8px;">
-                                                        <div class="task-name" style="font-size: 0.9em;">
-                                                            <?= htmlspecialchars($activity['ActivityName']) ?>
-                                                        </div>
-                                                        <div class="hours-info" style="font-size: 0.85em;">
-                                                            <?= $logged ?> / <?= $planned ?> hours
-                                                        </div>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                                
                                                 <div class="hours-info" style="margin-top: 10px; font-weight: bold;">
-                                                    Total: <?= $totalLogged ?> / <?= $totalPlanned ?> hours
+                                                    Total: <?= number_form($totalLogged, 1) ?> / <?= number_form($totalPlanned, 1) ?> hours
                                                 </div>
                                                 <div class="progress">
                                                     <?php $overshoot = $realpercent > 100 ? 'overshoot' : '' ?>
@@ -254,6 +267,79 @@ foreach ($teams as $team) {
             console.error('Error updating project status', error);
             alert('Error updating project status');
             throw error;
+        });
+    }
+
+    // Move project to top
+    function moveToTop(projectId, teamId) {
+        const container = document.getElementById('team-' + teamId);
+        const cards = Array.from(container.querySelectorAll('.task-card'));
+        const targetCard = cards.find(card =>
+            card.dataset.projectId == projectId && card.dataset.teamId == teamId
+        );
+
+        if (targetCard) {
+            container.insertBefore(targetCard, container.firstChild);
+            updatePriorities(teamId);
+        }
+    }
+
+    // Move project to bottom
+    function moveToBottom(projectId, teamId) {
+        const container = document.getElementById('team-' + teamId);
+        const cards = Array.from(container.querySelectorAll('.task-card'));
+        const targetCard = cards.find(card =>
+            card.dataset.projectId == projectId && card.dataset.teamId == teamId
+        );
+
+        if (targetCard) {
+            container.appendChild(targetCard);
+            updatePriorities(teamId);
+        }
+    }
+
+    // Hide project (move to hidden section)
+    function hideProject(projectId, teamId) {
+        updateProjectStatus({
+            projectId: projectId,
+            teamId: teamId,
+            status: 5 // Set to hidden
+        }).then(() => {
+            window.location.reload();
+        });
+    }
+
+    // Update priorities for all cards in a team container
+    function updatePriorities(teamId) {
+        const container = document.getElementById('team-' + teamId);
+        const cards = container.querySelectorAll('.task-card');
+
+        const projectIds = [];
+        cards.forEach((card, index) => {
+            projectIds.push({
+                projectId: card.dataset.projectId,
+                teamId: card.dataset.teamId,
+                priority: index + 1
+            });
+        });
+
+        // Send updated priorities to backend
+        fetch('update_priority.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(projectIds)
+        }).then(res => res.json()).then(data => {
+            console.log('Priorities updated', data);
+            // Update priority display
+            cards.forEach((card, index) => {
+                const prioritySpan = card.querySelector('.item-priority');
+                if (prioritySpan) {
+                    prioritySpan.textContent = index + 1;
+                }
+            });
+        }).catch(error => {
+            console.error('Error updating priorities', error);
+            alert('Error updating priorities');
         });
     }
 
