@@ -100,6 +100,16 @@ foreach ($allBudgets as $budget) {
 // Sort years
 ksort($yearsWithActivities);
 
+// Determine selected budget year (from URL param or default to session year)
+$selectedBudgetYear = isset($_GET['budget_year']) && is_numeric($_GET['budget_year'])
+    ? (int)$_GET['budget_year']
+    : $selectedYear;
+
+// If selected year doesn't have activities, default to first available year
+if (!isset($yearsWithActivities[$selectedBudgetYear]) && count($yearsWithActivities) > 0) {
+    $selectedBudgetYear = array_key_first($yearsWithActivities);
+}
+
 // Fetch status options
 $statusStmt = $pdo->query("SELECT * FROM Status");
 $statuses = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -123,7 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     $updateStatusStmt->execute([$projectId]);
 
     $redirectNeeded = true;
-    $redirectUrl = "project_edit.php?project_id=" . $projectId;
+    $budgetYearParam = isset($_GET['budget_year']) ? '&budget_year=' . $_GET['budget_year'] : '';
+    $redirectUrl = "project_edit.php?project_id=" . $projectId . $budgetYearParam;
 }
 
 // Handle form submission to update the project manager
@@ -134,7 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_manager'])) {
     $updateManagerStmt->execute([$newManager, $projectId]);
 
     $redirectNeeded = true;
-    $redirectUrl = "project_edit.php?project_id=" . $projectId;
+    $budgetYearParam = isset($_GET['budget_year']) ? '&budget_year=' . $_GET['budget_year'] : '';
+    $redirectUrl = "project_edit.php?project_id=" . $projectId . $budgetYearParam;
 }
 
 // Handle bulk activity updates
@@ -162,7 +174,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_update_activitie
     }
 
     $redirectNeeded = true;
-    $redirectUrl = "project_edit.php?project_id=" . $projectId;
+    $budgetYearParam = isset($_GET['budget_year']) ? '&budget_year=' . $_GET['budget_year'] : '';
+    $redirectUrl = "project_edit.php?project_id=" . $projectId . $budgetYearParam;
 }
 
 // Handle bulk budget updates
@@ -203,7 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_update_budgets']
     }
 
     $redirectNeeded = true;
-    $redirectUrl = "project_edit.php?project_id=" . $projectId;
+    $budgetYearParam = '&budget_year=' . $year;  // Keep user on the same budget year tab
+    $redirectUrl = "project_edit.php?project_id=" . $projectId . $budgetYearParam;
 }
 
 // Add a new activity
@@ -257,9 +271,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_activity'])) {
             $selectedYear
         ]);
     }
-    
+
     $redirectNeeded = true;
-    $redirectUrl = "project_edit.php?project_id=" . $projectId;
+    $budgetYearParam = isset($_GET['budget_year']) ? '&budget_year=' . $_GET['budget_year'] : '';
+    $redirectUrl = "project_edit.php?project_id=" . $projectId . $budgetYearParam;
 }
 
 // Handle activity deletion
@@ -292,9 +307,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_activity'])) {
         $deleteActivityStmt = $pdo->prepare("DELETE FROM Activities WHERE Id = ?");
         $deleteActivityStmt->execute([$activityId]);
     }
-    
+
     $redirectNeeded = true;
-    $redirectUrl = "project_edit.php?project_id=" . $projectId;
+    $budgetYearParam = isset($_GET['budget_year']) ? '&budget_year=' . $_GET['budget_year'] : '';
+    $redirectUrl = "project_edit.php?project_id=" . $projectId . $budgetYearParam;
 }
 
 // Perform redirect if needed
@@ -445,12 +461,27 @@ if ($redirectNeeded && ob_get_length() === 0) {
             </form>
         </div>
 
-        <!-- Budgets Section - One table per year -->
-        <?php foreach ($yearsWithActivities as $year => $activityIdsForYear): ?>
+        <!-- Budgets Section with Year Tabs -->
+        <?php if (count($yearsWithActivities) > 0): ?>
         <div class="activities-section">
-            <h2>Budgets for <?= $year; ?></h2>
+            <h2>Budgets</h2>
 
-            <form method="POST" id="bulkBudgetForm<?= $year; ?>">
+            <!-- Year Tabs -->
+            <div class="budget-year-tabs">
+                <?php foreach ($yearsWithActivities as $year => $activityIdsForYear): ?>
+                <a href="?project_id=<?= $projectId; ?>&budget_year=<?= $year; ?>"
+                   class="budget-tab <?= $year == $selectedBudgetYear ? 'active' : ''; ?>">
+                    <?= $year; ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Budget Table for Selected Year -->
+            <?php
+            $year = $selectedBudgetYear;
+            $activityIdsForYear = $yearsWithActivities[$year] ?? [];
+            ?>
+            <form method="POST" id="bulkBudgetForm">
                 <input type="hidden" name="budget_year" value="<?= $year; ?>">
                 <div class="table-wrapper">
                     <table class="activities-table">
@@ -485,29 +516,25 @@ if ($redirectNeeded && ob_get_length() === 0) {
                                     <input type="number" name="budget[]"
                                            value="<?= $budgetData['Budget'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           data-year="<?= $year; ?>"
-                                           onchange="markRowModified(this, 'budget', <?= $year; ?>);">
+                                           onchange="markRowModified(this, 'budget');">
                                 </td>
                                 <td>
                                     <input type="number" name="oop_spend[]"
                                            value="<?= $budgetData['OopSpend'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           data-year="<?= $year; ?>"
-                                           onchange="markRowModified(this, 'budget', <?= $year; ?>);">
+                                           onchange="markRowModified(this, 'budget');">
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]"
                                            value="<?= $budgetData['Rate'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           data-year="<?= $year; ?>"
-                                           onchange="markRowModified(this, 'budget', <?= $year; ?>);">
+                                           onchange="markRowModified(this, 'budget');">
                                 </td>
                                 <td>
                                     <input type="number" name="hours[]"
                                            value="<?= $budgetData['Hours'] ?? 0; ?>"
                                            data-row-index="<?= $activity['Id']; ?>"
-                                           data-year="<?= $year; ?>"
-                                           onchange="markRowModified(this, 'budget', <?= $year; ?>);">
+                                           onchange="markRowModified(this, 'budget');">
                                 </td>
                                 <td>
                                     <button type="button" onclick="calculateBudget(this);" class="btn btn-primary">Calc</button>
@@ -519,17 +546,17 @@ if ($redirectNeeded && ob_get_length() === 0) {
                 </div>
 
                 <div style="display: flex; align-items: center; margin-top: 1rem;">
-                    <button type="submit" name="bulk_update_budgets" class="btn btn-primary" id="saveBudgetsBtn<?= $year; ?>" disabled>
+                    <button type="submit" name="bulk_update_budgets" class="btn btn-primary" id="saveBudgetsBtn" disabled>
                         Save All Budgets for <?= $year; ?>
                     </button>
-                    <span class="save-indicator" id="budgetIndicator<?= $year; ?>">
+                    <span class="save-indicator" id="budgetIndicator">
                         <span>●</span>
-                        <span id="budgetModifiedCount<?= $year; ?>">0</span> row(s) modified
+                        <span id="budgetModifiedCount">0</span> row(s) modified
                     </span>
                 </div>
             </form>
         </div>
-        <?php endforeach; ?>
+        <?php endif; ?>
 
         <!-- Add New Activity -->
         <div class="activities-section">
@@ -618,9 +645,9 @@ if ($redirectNeeded && ob_get_length() === 0) {
 
 <script>
 let modifiedActivityRows = new Set();
-let modifiedBudgetRowsByYear = {}; // Track by year: { 2025: Set(), 2026: Set(), ... }
+let modifiedBudgetRows = new Set();
 
-function markRowModified(element, type, year = null) {
+function markRowModified(element, type) {
     const row = element.closest('tr');
     const rowIndex = Array.from(row.parentElement.children).indexOf(row);
 
@@ -629,16 +656,13 @@ function markRowModified(element, type, year = null) {
     if (type === 'activity') {
         modifiedActivityRows.add(rowIndex);
         updateSaveButton('activity');
-    } else if (type === 'budget' && year !== null) {
-        if (!modifiedBudgetRowsByYear[year]) {
-            modifiedBudgetRowsByYear[year] = new Set();
-        }
-        modifiedBudgetRowsByYear[year].add(rowIndex);
-        updateSaveButton('budget', year);
+    } else if (type === 'budget') {
+        modifiedBudgetRows.add(rowIndex);
+        updateSaveButton('budget');
     }
 }
 
-function updateSaveButton(type, year = null) {
+function updateSaveButton(type) {
     if (type === 'activity') {
         const saveBtn = document.getElementById('saveActivitiesBtn');
         const indicator = document.getElementById('activityIndicator');
@@ -652,16 +676,15 @@ function updateSaveButton(type, year = null) {
             saveBtn.disabled = true;
             indicator.classList.remove('show');
         }
-    } else if (type === 'budget' && year !== null) {
-        const saveBtn = document.getElementById('saveBudgetsBtn' + year);
-        const indicator = document.getElementById('budgetIndicator' + year);
-        const countSpan = document.getElementById('budgetModifiedCount' + year);
+    } else if (type === 'budget') {
+        const saveBtn = document.getElementById('saveBudgetsBtn');
+        const indicator = document.getElementById('budgetIndicator');
+        const countSpan = document.getElementById('budgetModifiedCount');
 
-        const modifiedRows = modifiedBudgetRowsByYear[year] || new Set();
-        if (modifiedRows.size > 0) {
+        if (modifiedBudgetRows.size > 0) {
             saveBtn.disabled = false;
             indicator.classList.add('show');
-            countSpan.textContent = modifiedRows.size;
+            countSpan.textContent = modifiedBudgetRows.size;
         } else {
             saveBtn.disabled = true;
             indicator.classList.remove('show');

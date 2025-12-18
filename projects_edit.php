@@ -15,9 +15,10 @@ $stmt = $pdo->prepare("SELECT
     FROM Projects
     LEFT JOIN Status ON Projects.Status = Status.Id
     LEFT JOIN Personel ON Projects.Manager = Personel.Id
+    WHERE Projects.Status < 4 OR YEAR((SELECT MAX(EndDate) FROM Activities WHERE Project = Projects.Id)) = :selectedYear
     ORDER BY Status.Status, Projects.Id");
 
-$stmt->execute();
+$stmt->execute([':selectedYear' => $selectedYear]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Group by status
@@ -56,16 +57,13 @@ foreach ($rows as $row) {
                                             <strong><?= htmlspecialchars($item['ProjectId']) ?></strong> <?= htmlspecialchars($item['ProjectName']) ?>
                                         </a>
                                     </span>
-                                </div> 
+                                    <span><?= htmlspecialchars($item['ProjectManager'] ?? "-") ?></span>
+                                </div>
                                 <div class="card-body">
-                                    <div class="task-name"><?= htmlspecialchars($item['ProjectManager'] ?? "-") ?></div>
-                                    <div class="hours-info">
-                                        <?= $item['ActivityCount'] ?> Activities
-                                    </div>
                                     <div class="date-range">
                                         <span><?= date('j M Y', strtotime($item['StartDate'])) ?></span>
                                         <span><?= date('j M Y', strtotime($item['EndDate'])) ?></span>
-                                    </div>                                
+                                    </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>

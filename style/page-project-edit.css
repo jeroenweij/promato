@@ -315,12 +315,59 @@
     display: inline-flex;
 }
 
+/* Budget Year Tabs */
+.budget-year-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 0;
+}
+
+.budget-tab {
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    color: #6c757d;
+    font-weight: 600;
+    border: 2px solid transparent;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    transition: all 0.2s ease;
+    background: transparent;
+    position: relative;
+    bottom: -2px;
+}
+
+.budget-tab:hover {
+    color: #495057;
+    background: #f8f9fa;
+    text-decoration: none;
+}
+
+.budget-tab.active {
+    color: #667eea;
+    background: white;
+    border-color: #dee2e6;
+    border-bottom-color: white;
+}
+
 @media (max-width: 768px) {
     .status-manager-row {
         flex-direction: column;
     }
-    
+
     .form-row {
         grid-template-columns: 1fr;
+    }
+
+    .budget-year-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+
+    .budget-tab {
+        white-space: nowrap;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
     }
 }
