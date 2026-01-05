@@ -104,7 +104,7 @@ $activitiesQuery = $pdo->prepare("
     FROM Activities a
     JOIN Projects p ON a.Project = p.Id
     LEFT JOIN Personel pe ON p.Manager = pe.Id
-    LEFT JOIN Budgets b ON a.Id = b.Activity
+    LEFT JOIN Budgets b ON a.Id = b.Activity AND b.Year = :selectedYear
     WHERE p.Status > 2
     AND a.Visible = 1
     AND YEAR(a.StartDate) <= :selectedYear
@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
 (function() {
     // Set initial height
     function setElementHeight() {
-        var height = window.innerHeight - 130;
+        var height = window.innerHeight - 250;
         document.querySelectorAll('.autoheight').forEach(el => {
             el.style.minHeight = height + 'px';
             el.style.maxHeight = height + 'px';
