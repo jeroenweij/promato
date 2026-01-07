@@ -1,5 +1,6 @@
 <?php
 $pageSpecificCSS = ['plantable.css'];
+$pageSpecificJS = ['/js/table-export.js'];  // Use absolute path from web root
 require 'includes/header.php';
 require_once 'includes/db.php';
 
@@ -181,6 +182,19 @@ $currentStatus = 3;
 ?>
 <section class="white">
     <div class="container" style="max-width: 20000px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2>Team Planning - <?= $selectedYear ?></h2>
+            <?php if ($userAuthLevel >= 5): ?>
+            <div>
+                <button class="btn btn-success" onclick="exportTeamPlanningToCSV()">
+                    <i class="icon ion-md-download"></i> Export to CSV
+                </button>
+                <button class="btn btn-primary" onclick="exportTeamPlanningToExcel()">
+                    <i class="icon ion-md-download"></i> Export to Excel
+                </button>
+            </div>
+            <?php endif; ?>
+        </div>
         <div class="autoheight">
             <div class="budget-table-wrapper">
                 <div class="scrollable-area verticalscrol">
@@ -562,6 +576,100 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 })();
+
+// Export button handlers - use shared export utility
+function exportTeamPlanningToCSV() {
+    const data = collectTeamPlanningData();
+    exportToCSV(data.headers, data.rows, 'team_planning_<?= $selectedYear ?>');
+}
+
+function exportTeamPlanningToExcel() {
+    const data = collectTeamPlanningData();
+    exportToExcel(data.headers, data.rows, 'team_planning_<?= $selectedYear ?>');
+}
+
+// Collect team planning table data
+function collectTeamPlanningData() {
+    const teams = <?= json_encode(array_values($teams)) ?>;
+    const headers = ['Project ID', 'Project Name', 'Manager', 'Task Code', 'Activity Name', 'Budget Hours', 'Planned Hours', 'Realised Hours'];
+
+    // Add team headers for Plan and Hours
+    teams.forEach(team => {
+        headers.push(team.Name + ' - Plan');
+        headers.push(team.Name + ' - Hours');
+    });
+
+    const rows = [];
+
+    // Get fixed table for activity details
+    const fixedTable = document.querySelector('.fixed-columns table');
+    const scrollTable = document.querySelector('.scrollable-columns table');
+
+    if (!fixedTable || !scrollTable) {
+        alert('Tables not found');
+        return { headers: [], rows: [] };
+    }
+
+    const fixedRows = Array.from(fixedTable.querySelectorAll('tr'));
+    const scrollRows = Array.from(scrollTable.querySelectorAll('tr'));
+
+    let currentProject = '';
+    let currentProjectName = '';
+    let currentManager = '';
+
+    for (let i = 0; i < fixedRows.length; i++) {
+        const fixedRow = fixedRows[i];
+        const scrollRow = scrollRows[i];
+
+        // Check if this is a project header
+        const projectHeader = fixedRow.querySelector('a[href*="project_details.php"]');
+        if (projectHeader) {
+            const text = projectHeader.textContent.trim();
+            const match = text.match(/^(\d+)\s+(.+?)(?:\s+\((.+?)\))?$/);
+            if (match) {
+                currentProject = match[1];
+                currentProjectName = match[2];
+                currentManager = match[3] || '';
+            }
+            continue;
+        }
+
+        // Check if this is an activity row
+        const cells = fixedRow.querySelectorAll('td');
+        if (cells.length >= 5 && cells[0].textContent.trim().match(/^\d+-\d+$/)) {
+            const row = [];
+
+            // Project info
+            row.push(currentProject);
+            row.push(currentProjectName);
+            row.push(currentManager);
+
+            // Activity info from fixed columns
+            row.push(cells[0].textContent.trim()); // Task Code
+            row.push(cells[1].textContent.trim()); // Activity Name
+            row.push(cells[2].textContent.trim()); // Budget Hours (Available)
+            row.push(cells[3].textContent.trim()); // Planned Hours
+            row.push(cells[4].textContent.trim()); // Realised Hours
+
+            // Team hours from scrollable columns
+            if (scrollRow) {
+                const scrollCells = scrollRow.querySelectorAll('td');
+                scrollCells.forEach(cell => {
+                    if (cell.classList.contains('input-cell')) {
+                        const input = cell.querySelector('input');
+                        row.push(input ? input.value : '');
+                    } else if (cell.classList.contains('budget')) {
+                        row.push(cell.textContent.trim());
+                    }
+                });
+            }
+
+            rows.push(row);
+        }
+    }
+
+    return { headers, rows };
+}
 </script>
 
 <?php require 'includes/footer.php'; ?>

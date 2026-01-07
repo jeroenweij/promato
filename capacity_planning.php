@@ -1,5 +1,6 @@
 <?php
 $pageSpecificCSS = ['plantable.css'];
+$pageSpecificJS = ['/js/table-export.js'];  // Use absolute path from web root
 require 'includes/header.php';
 require_once 'includes/db.php';
 
@@ -219,6 +220,20 @@ if ($teamFilter && !empty($personnel)) {
 ?>
 <section class="white">
     <div class="container" style="max-width: 20000px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2>Capacity Planning - <?= $selectedYear ?><?= $teamFilter ? ' - ' . htmlspecialchars($teamName) : '' ?></h2>
+            <?php if ($userAuthLevel >= 5): ?>
+            <div>
+                <button class="btn btn-success" onclick="exportCapacityPlanningToCSV()">
+                    <i class="icon ion-md-download"></i> Export to CSV
+                </button>
+                <button class="btn btn-primary" onclick="exportCapacityPlanningToExcel()">
+                    <i class="icon ion-md-download"></i> Export to Excel
+                </button>
+            </div>
+            <?php endif; ?>
+        </div>
+
         <?php if (!$teamFilter && count($teams) > 0): ?>
             <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #d0d0d0; border-radius: 5px;">
                 <h3 style="margin: 0 0 10px 0;">Filter by Team:</h3>
@@ -636,6 +651,100 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 })();
+
+// Export button handlers - use shared export utility
+function exportCapacityPlanningToCSV() {
+    const data = collectCapacityPlanningData();
+    exportToCSV(data.headers, data.rows, 'capacity_planning_<?= $selectedYear ?><?= $teamFilter ? "_" . preg_replace("/[^a-zA-Z0-9]/", "_", $teamName) : "" ?>');
+}
+
+function exportCapacityPlanningToExcel() {
+    const data = collectCapacityPlanningData();
+    exportToExcel(data.headers, data.rows, 'capacity_planning_<?= $selectedYear ?><?= $teamFilter ? "_" . preg_replace("/[^a-zA-Z0-9]/", "_", $teamName) : "" ?>');
+}
+
+// Collect capacity planning table data
+function collectCapacityPlanningData() {
+    const personnel = <?= json_encode(array_values($personnel)) ?>;
+    const headers = ['Project ID', 'Project Name', 'Manager', 'Task Code', 'Activity Name', 'Budget Hours', 'Planned Hours', 'Realised Hours'];
+
+    // Add person headers for Plan and Hours
+    personnel.forEach(person => {
+        headers.push(person.Name + ' - Plan');
+        headers.push(person.Name + ' - Hours');
+    });
+
+    const rows = [];
+
+    // Get fixed table for activity details
+    const fixedTable = document.querySelector('.fixed-columns table');
+    const scrollTable = document.querySelector('.scrollable-columns table');
+
+    if (!fixedTable || !scrollTable) {
+        alert('Tables not found');
+        return { headers: [], rows: [] };
+    }
+
+    const fixedRows = Array.from(fixedTable.querySelectorAll('tr'));
+    const scrollRows = Array.from(scrollTable.querySelectorAll('tr'));
+
+    let currentProject = '';
+    let currentProjectName = '';
+    let currentManager = '';
+
+    for (let i = 0; i < fixedRows.length; i++) {
+        const fixedRow = fixedRows[i];
+        const scrollRow = scrollRows[i];
+
+        // Check if this is a project header
+        const projectHeader = fixedRow.querySelector('a[href*="project_details.php"]');
+        if (projectHeader) {
+            const text = projectHeader.textContent.trim();
+            const match = text.match(/^(\d+)\s+(.+?)(?:\s+\((.+?)\))?$/);
+            if (match) {
+                currentProject = match[1];
+                currentProjectName = match[2];
+                currentManager = match[3] || '';
+            }
+            continue;
+        }
+
+        // Check if this is an activity row
+        const cells = fixedRow.querySelectorAll('td');
+        if (cells.length >= 5 && cells[0].textContent.trim().match(/^\d+-\d+$/)) {
+            const row = [];
+
+            // Project info
+            row.push(currentProject);
+            row.push(currentProjectName);
+            row.push(currentManager);
+
+            // Activity info from fixed columns
+            row.push(cells[0].textContent.trim()); // Task Code
+            row.push(cells[1].textContent.trim()); // Activity Name
+            row.push(cells[2].textContent.trim()); // Budget Hours (Available)
+            row.push(cells[3].textContent.trim()); // Planned Hours
+            row.push(cells[4].textContent.trim()); // Realised Hours
+
+            // Person hours from scrollable columns
+            if (scrollRow) {
+                const scrollCells = scrollRow.querySelectorAll('td');
+                scrollCells.forEach(cell => {
+                    if (cell.classList.contains('input-cell')) {
+                        const input = cell.querySelector('input');
+                        row.push(input ? input.value : '');
+                    } else if (cell.classList.contains('budget')) {
+                        row.push(cell.textContent.trim());
+                    }
+                });
+            }
+
+            rows.push(row);
+        }
+    }
+
+    return { headers, rows };
+}
 </script>
 
 <?php require 'includes/footer.php'; ?>
