@@ -19,23 +19,30 @@ function formatDate($value) {
 }
 
 try {
-    $stmt = $pdo->query("SELECT 
-        p.Name AS PN, 
-        p.Id AS PID, 
+    $stmt = $pdo->query("SELECT
+        p.Name AS PN,
+        p.Id AS PID,
         (SELECT MIN(StartDate) FROM Activities WHERE Project = p.Id) AS PSD,
         (SELECT MAX(EndDate) FROM Activities WHERE Project = p.Id) AS PED,
-        a.Name AS AN, 
-        a.Active AS AA, 
-        p.Status AS PS, 
-        a.Key AS AK, 
-        a.StartDate AS ASD, 
+        a.Name AS AN,
+        a.Active AS AA,
+        p.Status AS PS,
+        a.Key AS AK,
+        a.StartDate AS ASD,
         a.EndDate AS AED,
-        w.Name AS WL
+        w.Name AS WL,
+        (SELECT SUM(b.Hours)
+         FROM Budgets b
+         JOIN Activities a2 ON b.Activity = a2.Id
+         WHERE a2.Project = p.Id) AS PB,
+        (SELECT SUM(b.Hours)
+         FROM Budgets b
+         WHERE b.Activity = a.Id) AS AB
     FROM Activities a
     LEFT JOIN Projects p ON p.Id = a.Project
     LEFT JOIN Personel u ON p.Manager = u.Id
     LEFT JOIN Wbso w ON w.Id = a.Wbso
-    WHERE Export = 1;"); 
+    WHERE Export = 1;");
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (empty($rows)) {
@@ -74,6 +81,8 @@ try {
         $sheet->setCellValue('AB' . $rowNumber, 'Time');
         $sheet->setCellValue('AC' . $rowNumber, 'Time');
         $sheet->setCellValue('AD' . $rowNumber, 'activity');
+        $sheet->setCellValue('AG' . $rowNumber, $row["PB"]);
+        $sheet->setCellValue('AH' . $rowNumber, $row["AB"]);
         $sheet->setCellValue('AI' . $rowNumber, '1');
         $sheet->setCellValue('AJ' . $rowNumber, '100');
         $sheet->setCellValue('AK' . $rowNumber, '0');
