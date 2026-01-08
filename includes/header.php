@@ -15,7 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newYear'])) {
     csrf_protect(); // Verify CSRF token
     $newYear = $_POST['newYear'];
     $_SESSION['selectedYear'] = (int)$_POST['newYear'];
-    echo("newYear = $newYear - SESSION=" . $_SESSION['selectedYear']);
 }
 
 // Default to 0, which indicates no specific year selected
