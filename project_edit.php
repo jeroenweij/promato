@@ -50,6 +50,15 @@ $activityStmt = $pdo->prepare("
 $activityStmt->execute([$projectId]);
 $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Check if any activities can have their keys changed (not exported)
+$anyKeyEditable = false;
+foreach ($activities as $activity) {
+    if ($activity['IsExported'] == 0) {
+        $anyKeyEditable = true;
+        break;
+    }
+}
+
 // Fetch all budgets for all activities in this project
 $budgetStmt = $pdo->prepare("
     SELECT b.*, a.Key as ActivityKey
@@ -153,21 +162,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_manager'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_update_activities'])) {
     $activityIds = $_POST['activity_id'] ?? [];
     $activityNames = $_POST['activity_name'] ?? [];
+    $activityKeys = $_POST['activity_key'] ?? [];
     $startDates = $_POST['start_date'] ?? [];
     $endDates = $_POST['end_date'] ?? [];
     $wbsos = $_POST['wbso'] ?? [];
     $visibles = $_POST['visible'] ?? [];
     $isTasks = $_POST['is_task'] ?? [];
     $isActives = $_POST['is_active'] ?? [];
-    
+
     foreach ($activityIds as $index => $activityId) {
         $name = $activityNames[$index] ?? '';
+        $newKey = isset($activityKeys[$index]) && is_numeric($activityKeys[$index]) ? (int)$activityKeys[$index] : null;
         $startDate = $startDates[$index] ?? null;
         $endDate = $endDates[$index] ?? null;
         $wbso = !empty($wbsos[$index]) ? $wbsos[$index] : null;
         $visible = in_array($activityId, $visibles) ? 1 : 0;
         $isTask = in_array($activityId, $isTasks) ? 1 : 0;
         $isActive = in_array($activityId, $isActives) ? 1 : 0;
+
+        // Check if we need to update the key
+        if ($newKey !== null) {
+            // Get current key
+            $currentKeyStmt = $pdo->prepare("SELECT `Key`, IsExported FROM Activities WHERE Id = ?");
+            $currentKeyStmt->execute([$activityId]);
+            $currentActivity = $currentKeyStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($currentActivity && $currentActivity['IsExported'] == 0 && $currentActivity['Key'] != $newKey) {
+                // Check for duplicates
+                $duplicateStmt = $pdo->prepare("SELECT Id FROM Activities WHERE Project = ? AND `Key` = ? AND Id != ?");
+                $duplicateStmt->execute([$projectId, $newKey, $activityId]);
+
+                if ($duplicateStmt->fetch()) {
+                    echo "<script>alert('Cannot update activity key to $newKey: This key already exists in the project.');</script>";
+                    continue;
+                }
+
+                // Update the key in Activities table
+                $updateKeyStmt = $pdo->prepare("UPDATE Activities SET `Key` = ? WHERE Id = ?");
+                $updateKeyStmt->execute([$newKey, $activityId]);
+
+                // Update related tables (Hours and TeamHours use Key, not Id)
+                $oldKey = $currentActivity['Key'];
+                $updateHoursStmt = $pdo->prepare("UPDATE Hours SET Activity = ? WHERE Project = ? AND Activity = ?");
+                $updateHoursStmt->execute([$newKey, $projectId, $oldKey]);
+
+                $updateTeamHoursStmt = $pdo->prepare("UPDATE TeamHours SET Activity = ? WHERE Project = ? AND Activity = ?");
+                $updateTeamHoursStmt->execute([$newKey, $projectId, $oldKey]);
+            }
+        }
 
         $updateStmt = $pdo->prepare("UPDATE Activities SET Name = ?, StartDate = ?, EndDate = ?, Wbso = ?, Visible = ?, IsTask = ?, Active = ?, Export = 1 WHERE Id = ?");
         $updateStmt->execute([$name, $startDate, $endDate, $wbso, $visible, $isTask, $isActive, $activityId]);
@@ -230,7 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_activity'])) {
     $newIsTask = isset($_POST['new_is_task']) ? 1 : 0;
     $addBudget = isset($_POST['add_budget']) ? 1 : 0;
 
-    $keyStmt = $pdo->prepare("SELECT MAX(`Key`) as MaxKey FROM Activities WHERE `Key` < 999 AND Project = ?");
+    $keyStmt = $pdo->prepare("SELECT MAX(`Key`) as MaxKey FROM Activities WHERE `Key` < 900 AND Project = ?");
     $keyStmt->execute([$projectId]);
     $maxKeyRow = $keyStmt->fetch(PDO::FETCH_ASSOC);
     $nextKey = $maxKeyRow && $maxKeyRow['MaxKey'] !== null ? $maxKeyRow['MaxKey'] + 1 : 1;
@@ -375,6 +417,9 @@ if ($redirectNeeded && ob_get_length() === 0) {
                         <thead>
                         <tr>
                             <th>Code</th>
+                            <?php if ($anyKeyEditable): ?>
+                            <th>Key</th>
+                            <?php endif; ?>
                             <th style="min-width: 200px;">Activity Name</th>
                             <th style="min-width: 150px;">WBSO</th>
                             <th>Start Date</th>
@@ -394,8 +439,21 @@ if ($redirectNeeded && ob_get_length() === 0) {
                             <tr class="activity-row">
                                 <input type="hidden" name="activity_id[]" value="<?= $activity['Id']; ?>">
                                 <td class="task-code"><?= $activity['Project'] . '-' . str_pad($activity['Key'], 3, '0', STR_PAD_LEFT); ?></td>
+                                <?php if ($anyKeyEditable): ?>
                                 <td>
-                                    <input type="text" name="activity_name[]" value="<?= htmlspecialchars($activity['Name']); ?>" 
+                                    <?php if ($activity['IsExported'] == 0): ?>
+                                        <input type="number" name="activity_key[]" value="<?= $activity['Key']; ?>"
+                                               style="width: 70px;"
+                                               min="1"
+                                               onchange="markRowModified(this, 'activity')">
+                                    <?php else: ?>
+                                        <input type="hidden" name="activity_key[]" value="<?= $activity['Key']; ?>">
+                                        <span><?= $activity['Key']; ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <?php endif; ?>
+                                <td>
+                                    <input type="text" name="activity_name[]" value="<?= htmlspecialchars($activity['Name']); ?>"
                                            onchange="markRowModified(this, 'activity')">
                                 </td>
                                 <td>
