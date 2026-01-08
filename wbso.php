@@ -73,7 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $successMessage = 'WBSO entry added successfully.';
 
                 // Redirect to avoid form resubmission
-                header("Location: wbso.php?success=added");
+                $redirectUrl = "wbso.php?success=added";
+                if (isset($_GET['show_all']) && $_GET['show_all'] === '1') {
+                    $redirectUrl .= "&show_all=1";
+                }
+                header("Location: $redirectUrl");
                 exit;
             }
         }
@@ -107,7 +111,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $successMessage = 'WBSO entry updated successfully.';
 
                 // Redirect to avoid form resubmission
-                header("Location: wbso.php?success=updated");
+                $redirectUrl = "wbso.php?success=updated";
+                if (isset($_GET['show_all']) && $_GET['show_all'] === '1') {
+                    $redirectUrl .= "&show_all=1";
+                }
+                header("Location: $redirectUrl");
                 exit;
             }
         }
@@ -132,7 +140,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $successMessage = 'WBSO entry deleted successfully.';
 
             // Redirect to avoid form resubmission
-            header("Location: wbso.php?success=deleted");
+            $redirectUrl = "wbso.php?success=deleted";
+            if (isset($_GET['show_all']) && $_GET['show_all'] === '1') {
+                $redirectUrl .= "&show_all=1";
+            }
+            header("Location: $redirectUrl");
             exit;
         }
     }
@@ -178,7 +190,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $successMessage = 'Budgets updated successfully.';
 
         // Redirect back to edit page
-        header("Location: wbso.php?edit=$wbsoId&success=budget_saved");
+        $redirectUrl = "wbso.php?edit=$wbsoId&success=budget_saved";
+        if (isset($_GET['show_all']) && $_GET['show_all'] === '1') {
+            $redirectUrl .= "&show_all=1";
+        }
+        header("Location: $redirectUrl");
         exit;
     }
 }
@@ -199,22 +215,37 @@ if (isset($_GET['success'])) {
     }
 }
 
-// Fetch all WBSO entries with budget info for current year
-$stmt = $pdo->prepare("SELECT w.Id, w.Name, w.Description, w.StartDate, w.EndDate,
+// Check if showing all items or only active
+$showAll = isset($_GET['show_all']) && $_GET['show_all'] === '1';
+
+// Fetch WBSO entries with budget info for current year
+$sql = "SELECT w.Id, w.Name, w.Description, w.StartDate, w.EndDate,
     COUNT(DISTINCT Activities.Id) AS UsageCount,
     COALESCE(SUM(Hours.Hours), 0) AS HoursLogged,
     (SELECT wb2.Hours FROM WbsoBudget wb2 WHERE wb2.WbsoId = w.Id AND wb2.Year = :selectedYear) AS BudgetHours
     FROM Wbso w
     LEFT JOIN Activities ON Activities.Wbso = w.Id
-    LEFT JOIN Hours ON Hours.Project = Activities.Project AND Hours.Activity = Activities.Key AND Hours.Year = :selectedYear
-    GROUP BY w.Id, w.Name, w.Description, w.StartDate, w.EndDate
-    ORDER BY w.Name DESC");
+    LEFT JOIN Hours ON Hours.Project = Activities.Project AND Hours.Activity = Activities.Key AND Hours.Year = :selectedYear";
+
+// Add filter for active items only if not showing all
+if (!$showAll) {
+    $sql .= " WHERE YEAR(w.StartDate) <= :selectedYear AND (w.EndDate IS NULL OR YEAR(w.EndDate) >= :selectedYear)";
+}
+
+$sql .= " GROUP BY w.Id, w.Name, w.Description, w.StartDate, w.EndDate
+    ORDER BY w.Name DESC";
+
+$stmt = $pdo->prepare($sql);
 $stmt->execute(['selectedYear' => $selectedYear]);
 $wbsoEntries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // If we're still here, check if output has started before sending headers
 if (isset($successMessage) && !empty($successMessage) && ob_get_length() === 0) {
-    header("Location: wbso.php");
+    $redirectUrl = "wbso.php";
+    if ($showAll) {
+        $redirectUrl .= "?show_all=1";
+    }
+    header("Location: $redirectUrl");
     exit;
 }
 ?>
@@ -247,6 +278,16 @@ if (isset($successMessage) && !empty($successMessage) && ob_get_length() === 0) 
                         <h2>WBSO Categories</h2>
                     </div>
                     <div class="card-body">
+                        <!-- Filter Checkbox -->
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="showAllCheckbox"
+                                   <?= $showAll ? 'checked' : '' ?>
+                                   onchange="window.location.href='wbso.php?show_all=' + (this.checked ? '1' : '0')">
+                            <label class="form-check-label" for="showAllCheckbox">
+                                Show all items (including inactive for <?= $selectedYear ?>)
+                            </label>
+                        </div>
+
                         <?php if (count($wbsoEntries) > 0): ?>
                             <table class="table table-striped">
                                 <thead>
@@ -295,7 +336,7 @@ if (isset($successMessage) && !empty($successMessage) && ob_get_length() === 0) 
                                             <td><?= number_form($hourslogged) ?></td>
                                             <td><?php echo $entry['UsageCount']; ?></td>
                                             <td>
-                                                <a href="wbso.php?edit=<?php echo $entry['Id']; ?>" class="btn btn-sm btn-primary">Edit</a>
+                                                <a href="wbso.php?edit=<?php echo $entry['Id']; ?><?= $showAll ? '&show_all=1' : '' ?>" class="btn btn-sm btn-primary">Edit</a>
 
                                                 <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this WBSO category?');">
                                                     <input type="hidden" name="id" value="<?php echo $entry['Id']; ?>">
@@ -368,7 +409,7 @@ if (isset($successMessage) && !empty($successMessage) && ob_get_length() === 0) 
                             <div class="form-group">
                                 <?php if ($editId): ?>
                                     <button type="submit" name="update_wbso" class="btn btn-primary">Update WBSO Category</button>
-                                    <a href="wbso.php" class="btn btn-secondary">Cancel</a>
+                                    <a href="wbso.php<?= $showAll ? '?show_all=1' : '' ?>" class="btn btn-secondary">Cancel</a>
                                 <?php else: ?>
                                     <button type="submit" name="add_wbso" class="btn btn-success">Add WBSO Category</button>
                                 <?php endif; ?>

@@ -11,7 +11,7 @@ $footerMenusStmt = $pdo->prepare("
     LEFT JOIN PageAccess pa ON pa.PageId = p.Id AND pa.UserId = :userId
     WHERE p.Id IS NOT NULL 
         AND (p.Auth <= :authLevel OR pa.UserId IS NOT NULL)
-    ORDER BY m.Id, p.Id
+    ORDER BY m.Id, p.Name
 ");
 
 $footerMenusStmt->execute([

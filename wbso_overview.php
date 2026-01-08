@@ -21,9 +21,39 @@ $wbsoRealizedStmt = $pdo->prepare("
     WHERE h.`Year` = :selectedYear
         AND a.Wbso IS NOT NULL
         AND a.Visible = 1
+        AND YEAR(a.StartDate) <= :selectedYear
+        AND YEAR(a.EndDate) >= :selectedYear
 ");
 $wbsoRealizedStmt->execute(['selectedYear' => $selectedYear]);
 $wbsoRealizedHours = $wbsoRealizedStmt->fetchColumn();
+
+// 2A️⃣ Fetch total activity budget for activities with WBSO
+$activityBudgetStmt = $pdo->prepare("
+    SELECT COALESCE(SUM(b.Hours), 0) AS TotalActivityBudget
+    FROM Budgets b
+    JOIN Activities a ON b.Activity = a.Id
+    WHERE b.`Year` = :selectedYear
+        AND a.Wbso IS NOT NULL
+        AND a.Visible = 1
+        AND YEAR(a.StartDate) <= :selectedYear
+        AND YEAR(a.EndDate) >= :selectedYear
+");
+$activityBudgetStmt->execute(['selectedYear' => $selectedYear]);
+$activityBudgetHours = $activityBudgetStmt->fetchColumn();
+
+// 2B️⃣ Fetch total planned hours on WBSO activities
+$plannedHoursStmt = $pdo->prepare("
+    SELECT COALESCE(SUM(h.Plan) / 100, 0) AS TotalPlannedHours
+    FROM Hours h
+    JOIN Activities a ON h.Activity = a.Key AND h.Project = a.Project
+    WHERE h.`Year` = :selectedYear
+        AND a.Wbso IS NOT NULL
+        AND a.Visible = 1
+        AND YEAR(a.StartDate) <= :selectedYear
+        AND YEAR(a.EndDate) >= :selectedYear
+");
+$plannedHoursStmt->execute(['selectedYear' => $selectedYear]);
+$totalPlannedHours = $plannedHoursStmt->fetchColumn();
 
 // 3️⃣ Fetch WBSO realized hours breakdown by WBSO item
 $wbsoBreakdownStmt = $pdo->prepare("
@@ -32,103 +62,144 @@ $wbsoBreakdownStmt = $pdo->prepare("
         w.Description AS WbsoDescription,
         w.Id AS WbsoId,
         COALESCE(wb.Hours, 0) AS BudgetHours,
-        COALESCE(SUM(h.Hours) / 100, 0) AS RealizedHours,
-        COALESCE(SUM(h.Plan) / 100, 0) AS PlannedHours
+        COALESCE((
+            SELECT SUM(b2.Hours)
+            FROM Budgets b2
+            JOIN Activities a2 ON b2.Activity = a2.Id
+            WHERE a2.Wbso = w.Id
+                AND a2.Visible = 1
+                AND b2.Year = :selectedYear
+                AND YEAR(a2.StartDate) <= :selectedYear
+                AND YEAR(a2.EndDate) >= :selectedYear
+        ), 0) AS ActivityBudgetHours,
+        COALESCE((
+            SELECT SUM(h2.Hours) / 100
+            FROM Hours h2
+            JOIN Activities a3 ON h2.Activity = a3.Key AND h2.Project = a3.Project
+            WHERE a3.Wbso = w.Id
+                AND a3.Visible = 1
+                AND h2.Year = :selectedYear
+                AND YEAR(a3.StartDate) <= :selectedYear
+                AND YEAR(a3.EndDate) >= :selectedYear
+        ), 0) AS RealizedHours,
+        COALESCE((
+            SELECT SUM(h3.Plan) / 100
+            FROM Hours h3
+            JOIN Activities a4 ON h3.Activity = a4.Key AND h3.Project = a4.Project
+            WHERE a4.Wbso = w.Id
+                AND a4.Visible = 1
+                AND h3.Year = :selectedYear
+                AND YEAR(a4.StartDate) <= :selectedYear
+                AND YEAR(a4.EndDate) >= :selectedYear
+        ), 0) AS PlannedHours
     FROM Wbso w
     LEFT JOIN WbsoBudget wb ON w.Id = wb.WbsoId AND wb.`Year` = :selectedYear
-    LEFT JOIN Activities a ON a.Wbso = w.Id AND a.Visible = 1
-    LEFT JOIN Hours h ON h.Activity = a.Key AND h.Project = a.Project AND h.`Year` = :selectedYear
     WHERE YEAR(w.StartDate) <= :selectedYear
         AND (w.EndDate IS NULL OR YEAR(w.EndDate) >= :selectedYear)
-    GROUP BY w.Id, w.Name, w.Description, wb.Hours
     ORDER BY w.Name
 ");
 $wbsoBreakdownStmt->execute(['selectedYear' => $selectedYear]);
 $wbsoBreakdown = $wbsoBreakdownStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 📊 Calculate pie chart values
-$wbsoRealizedPie = round($wbsoRealizedHours);
-$wbsoRemainingPie = round(max(0, $wbsoBudgetedHours - $wbsoRealizedHours));
+// 📊 Calculate percentages for bar charts
+// Chart 1: WBSO budget vs activity budget
+$wbsoBudgetVsActivityPercentage = $activityBudgetHours > 0 ? round(($wbsoBudgetedHours / $activityBudgetHours) * 100, 1) : 0;
 
-// Calculate percentage
-$wbsoRealizedPercentage = $wbsoBudgetedHours > 0 ? round(($wbsoRealizedHours / $wbsoBudgetedHours) * 100, 1) : 0;
+// Chart 2: Realized vs WBSO budget
+$realizedVsWbsoBudgetPercentage = $wbsoBudgetedHours > 0 ? round(($wbsoRealizedHours / $wbsoBudgetedHours) * 100, 1) : 0;
 
-// Build pie chart data
-$pieParts = [
-    'Hours Realized' => $wbsoRealizedPie,
-    'Hours Remaining' => $wbsoRemainingPie
-];
+// Chart 3: Realized vs activity budget
+$realizedVsActivityBudgetPercentage = $activityBudgetHours > 0 ? round(($wbsoRealizedHours / $activityBudgetHours) * 100, 1) : 0;
 
-$pieColors = [
-    'rgba(244, 180, 0, 0.7)',   // yellow - Realized
-    'rgba(15, 157, 88, 0.7)'    // green - Remaining
-];
+// Chart 4: Realized vs planned hours
+$realizedVsPlannedPercentage = $totalPlannedHours > 0 ? round(($wbsoRealizedHours / $totalPlannedHours) * 100, 1) : 0;
 ?>
 
 <section class="white" id="wbso-overview">
     <div class="container">
         <h1>WBSO Overview - <?= $selectedYear ?></h1>
 
-        <!-- Pie Chart and Summary -->
-        <h3>WBSO Budget Progress</h3>
-        <div class="chart-container">
-            <div class="pie-chart-wrapper">
-                <canvas id="wbsoPieChart" width="400" height="400"></canvas>
-            </div>
-
-            <div class="pie-legend-table">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Color</th>
-                            <th>Category</th>
-                            <th>Hours</th>
-                            <th>Percentage</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><div style="width:30px; height:30px; background-color:<?= $pieColors[0] ?>; border-radius: 4px;"></div></td>
-                            <td><strong>Hours Realized</strong></td>
-                            <td><?= number_form($wbsoRealizedHours) ?> hrs</td>
-                            <td><?= $wbsoBudgetedHours > 0 ? round($wbsoRealizedPie / $wbsoBudgetedHours * 100, 1) : 0 ?>%</td>
-                        </tr>
-                        <tr>
-                            <td><div style="width:30px; height:30px; background-color:<?= $pieColors[1] ?>; border-radius: 4px;"></div></td>
-                            <td><strong>Hours Remaining</strong></td>
-                            <td><?= number_form($wbsoRemainingPie) ?> hrs</td>
-                            <td><?= $wbsoBudgetedHours > 0 ? round($wbsoRemainingPie / $wbsoBudgetedHours * 100, 1) : 0 ?>%</td>
-                        </tr>
-                        <tr class="table-info">
-                            <td colspan="2"><strong>Total WBSO Budget</strong></td>
-                            <td><strong><?= number_form($wbsoBudgetedHours) ?> hrs</strong></td>
-                            <td><strong>100%</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <hr>
-
-        <!-- Overall Progress -->
+        <!-- Progress Charts -->
         <div class="row">
-            <div class="col-md-12 mb-4">
+            <!-- Chart 1: WBSO Budget vs Activity Budget -->
+            <div class="col-md-6 mb-4">
                 <div class="progress-block">
-                    <h4>Total WBSO Hours Progress</h4>
+                    <h4>WBSO Budget vs Project Budget</h4>
                     <div class="progress-container">
                         <div class="progress">
-                            <div class="progress-bar <?= $wbsoRealizedPercentage > 100 ? 'bg-danger' : 'bg-warning' ?>"
+                            <div class="progress-bar <?= $wbsoBudgetVsActivityPercentage > 100 ? 'bg-danger' : 'bg-info' ?>"
                                  role="progressbar"
-                                 style="width: <?= min(100, $wbsoRealizedPercentage) ?>%">
-                                <?= $wbsoRealizedPercentage ?>%
+                                 style="width: <?= min(100, $wbsoBudgetVsActivityPercentage) ?>%">
+                                <?= $wbsoBudgetVsActivityPercentage ?>%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>WBSO Budget: <?= number_form($wbsoBudgetedHours) ?> hrs</span>
+                        <span>Project Budget: <?= number_form($activityBudgetHours) ?> hrs</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart 2: Realized vs WBSO Budget -->
+            <div class="col-md-6 mb-4">
+                <div class="progress-block">
+                    <h4>Realized vs WBSO Budget</h4>
+                    <div class="progress-container">
+                        <div class="progress">
+                            <div class="progress-bar <?= $realizedVsWbsoBudgetPercentage > 100 ? 'bg-danger' : 'bg-warning' ?>"
+                                 role="progressbar"
+                                 style="width: <?= min(100, $realizedVsWbsoBudgetPercentage) ?>%">
+                                <?= $realizedVsWbsoBudgetPercentage ?>%
                             </div>
                         </div>
                     </div>
                     <div class="progress-stats">
                         <span>Realized: <?= number_form($wbsoRealizedHours) ?> hrs</span>
-                        <span>Budgeted: <?= number_form($wbsoBudgetedHours) ?> hrs</span>
+                        <span>WBSO Budget: <?= number_form($wbsoBudgetedHours) ?> hrs</span>
                         <span>Remaining: <?= number_form(max(0, $wbsoBudgetedHours - $wbsoRealizedHours)) ?> hrs</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart 3: Realized vs Activity Budget -->
+            <div class="col-md-6 mb-4">
+                <div class="progress-block">
+                    <h4>Realized vs Project Budget</h4>
+                    <div class="progress-container">
+                        <div class="progress">
+                            <div class="progress-bar <?= $realizedVsActivityBudgetPercentage > 100 ? 'bg-danger' : 'bg-success' ?>"
+                                 role="progressbar"
+                                 style="width: <?= min(100, $realizedVsActivityBudgetPercentage) ?>%">
+                                <?= $realizedVsActivityBudgetPercentage ?>%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>Realized: <?= number_form($wbsoRealizedHours) ?> hrs</span>
+                        <span>Project Budget: <?= number_form($activityBudgetHours) ?> hrs</span>
+                        <span>Remaining: <?= number_form(max(0, $activityBudgetHours - $wbsoRealizedHours)) ?> hrs</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart 4: Realized vs Planned Hours -->
+            <div class="col-md-6 mb-4">
+                <div class="progress-block">
+                    <h4>Realized vs Planned Hours</h4>
+                    <div class="progress-container">
+                        <div class="progress">
+                            <div class="progress-bar <?= $realizedVsPlannedPercentage > 100 ? 'bg-danger' : 'bg-primary' ?>"
+                                 role="progressbar"
+                                 style="width: <?= min(100, $realizedVsPlannedPercentage) ?>%">
+                                <?= $realizedVsPlannedPercentage ?>%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>Realized: <?= number_form($wbsoRealizedHours) ?> hrs</span>
+                        <span>Planned: <?= number_form($totalPlannedHours) ?> hrs</span>
+                        <span>Remaining: <?= number_form(max(0, $totalPlannedHours - $wbsoRealizedHours)) ?> hrs</span>
                     </div>
                 </div>
             </div>
@@ -143,7 +214,9 @@ $pieColors = [
                 <tr>
                     <th>WBSO Item</th>
                     <th>Description</th>
-                    <th>Budget Hours</th>
+                    <th>WBSO Budget</th>
+                    <th>Project Budget</th>
+                    <th>Planned Hours</th>
                     <th>Realized Hours</th>
                     <th>Remaining Hours</th>
                     <th>Progress</th>
@@ -159,6 +232,8 @@ $pieColors = [
                     <td><strong><?= htmlspecialchars($wbso['WbsoName']) ?></strong></td>
                     <td><?= htmlspecialchars($wbso['WbsoDescription'] ?? '') ?></td>
                     <td><?= number_form($wbso['BudgetHours']) ?> hrs</td>
+                    <td><?= number_form($wbso['ActivityBudgetHours']) ?> hrs</td>
+                    <td><?= number_form($wbso['PlannedHours']) ?> hrs</td>
                     <td><?= number_form($wbso['RealizedHours']) ?> hrs</td>
                     <td><?= number_form($remaining) ?> hrs</td>
                     <td>
@@ -174,50 +249,15 @@ $pieColors = [
                 <?php endforeach; ?>
                 <?php if (empty($wbsoBreakdown)): ?>
                 <tr>
-                    <td colspan="6" class="text-center text-muted">No WBSO items found for <?= $selectedYear ?></td>
+                    <td colspan="8" class="text-center text-muted">No WBSO items found for <?= $selectedYear ?></td>
                 </tr>
                 <?php endif; ?>
+                <tr>
+                    <td colspan="8" class="text-center text-muted"><a href="wbso_details.php">Show more details</a></td>
+                </tr>
             </tbody>
         </table>
     </div>
 </section>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const pieCtx = document.getElementById('wbsoPieChart').getContext('2d');
-    const pieChart = new Chart(pieCtx, {
-        type: 'pie',
-        data: {
-            labels: <?= json_encode(array_keys($pieParts)) ?>,
-            datasets: [{
-                data: <?= json_encode(array_values($pieParts)) ?>,
-                backgroundColor: <?= json_encode($pieColors) ?>,
-                borderColor: '#fff',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.parsed || 0;
-                            const total = <?= $wbsoBudgetedHours ?>;
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                            return label + ': ' + value.toLocaleString() + ' hrs (' + percentage + '%)';
-                        }
-                    }
-                }
-            }
-        }
-    });
-});
-</script>
 
 <?php require 'includes/footer.php'; ?>

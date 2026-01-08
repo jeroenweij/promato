@@ -128,8 +128,9 @@ $managerStmt = $pdo->query("SELECT Id, Shortname AS Name FROM Personel WHERE Typ
 $managers = $managerStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch WBSO options
-$wbsoStmt = $pdo->query("SELECT Id, Name, Description FROM Wbso");
-$wbsoOptions = $wbsoStmt->fetchAll(PDO::FETCH_ASSOC);
+$stmt = $pdo->prepare("SELECT Id, Name, Description FROM Wbso WHERE  YEAR(StartDate) <= :selectedYear AND YEAR(EndDate) >= :selectedYear");
+$stmt->execute(['selectedYear' => $selectedYear]);
+$wbsoOptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle form submission to update the project status
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
@@ -461,7 +462,7 @@ if ($redirectNeeded && ob_get_length() === 0) {
                                         <option value="">-- None --</option>
                                         <?php foreach ($wbsoOptions as $wbsoOption):
                                             $description = $wbsoOption['Description'] ?? '';
-                                            $preview = $description ? ' - ' . substr($description, 0, 20) . (strlen($description) > 20 ? '...' : '') : '';
+                                            $preview = $description ? ' - ' . substr($description, 0, 30) . (strlen($description) > 30 ? '...' : '') : '';
                                         ?>
                                             <option value="<?= $wbsoOption['Id']; ?>"
                                                     <?= $activity['Wbso'] == $wbsoOption['Id'] ? 'selected' : ''; ?>
