@@ -1,3 +1,12 @@
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+
 CREATE TABLE `Activities` (
   `Id` smallint NOT NULL,
   `Key` smallint NOT NULL,
@@ -221,7 +230,15 @@ CREATE TABLE `Wbso` (
   `Name` varchar(16) COLLATE utf8mb4_general_ci NOT NULL,
   `Description` varchar(64) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `Hours` smallint DEFAULT NULL,
-  `Date` date NOT NULL
+  `StartDate` date NOT NULL,
+  `EndDate` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `WbsoBudget` (
+  `Id` int NOT NULL,
+  `WbsoId` smallint NOT NULL,
+  `Year` smallint NOT NULL,
+  `Hours` int DEFAULT NULL COMMENT 'Budget hours for this WBSO in this year'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
@@ -305,6 +322,11 @@ ALTER TABLE `Types`
 ALTER TABLE `Wbso`
   ADD PRIMARY KEY (`Id`);
 
+ALTER TABLE `WbsoBudget`
+  ADD PRIMARY KEY (`Id`),
+  ADD UNIQUE KEY `unique_wbso_year` (`WbsoId`,`Year`),
+  ADD KEY `fk_wbsobudget_wbso` (`WbsoId`);
+
 
 ALTER TABLE `Activities`
   MODIFY `Id` smallint NOT NULL AUTO_INCREMENT;
@@ -348,6 +370,9 @@ ALTER TABLE `Types`
 ALTER TABLE `Wbso`
   MODIFY `Id` smallint NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `WbsoBudget`
+  MODIFY `Id` int NOT NULL AUTO_INCREMENT;
+
 
 ALTER TABLE `Activities`
   ADD CONSTRAINT `Activities_ibfk_1` FOREIGN KEY (`Project`) REFERENCES `Projects` (`Id`),
@@ -387,3 +412,10 @@ ALTER TABLE `snack_orders`
 ALTER TABLE `TeamHours`
   ADD CONSTRAINT `fk_team_hours_status` FOREIGN KEY (`Project`) REFERENCES `Projects` (`Id`),
   ADD CONSTRAINT `fk_team_hours_team` FOREIGN KEY (`Team`) REFERENCES `Teams` (`Id`);
+
+ALTER TABLE `WbsoBudget`
+  ADD CONSTRAINT `fk_wbsobudget_wbso` FOREIGN KEY (`WbsoId`) REFERENCES `Wbso` (`Id`) ON DELETE CASCADE;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
