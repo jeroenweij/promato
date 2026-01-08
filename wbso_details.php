@@ -58,9 +58,9 @@ $allWbsoItems = $allWbsoStmt->fetchAll(PDO::FETCH_ASSOC);
 $wbsoGroups = [];
 foreach ($allWbsoItems as $wbsoItem) {
     $wbsoGroups[$wbsoItem['WbsoId']] = [
-        'name' => $wbsoItem['WbsoName'],
-        'description' => $wbsoItem['WbsoDescription'],
-        'wbsoBudget' => $wbsoItem['WbsoBudget'],
+        'name' => $wbsoItem['WbsoName'] ?? '',
+        'description' => $wbsoItem['WbsoDescription'] ?? '',
+        'wbsoBudget' => $wbsoItem['WbsoBudget'] ?? 0,
         'projects' => [],
         'totalActivityBudget' => 0,
         'totalPlanned' => 0,
@@ -72,6 +72,19 @@ foreach ($allWbsoItems as $wbsoItem) {
 foreach ($activities as $activity) {
     $wbsoId = $activity['WbsoId'];
     $projectId = $activity['ProjectId'];
+
+    // Ensure WBSO group exists (in case activity references WBSO not active in selected year)
+    if (!isset($wbsoGroups[$wbsoId])) {
+        $wbsoGroups[$wbsoId] = [
+            'name' => $activity['WbsoName'] ?? '',
+            'description' => $activity['WbsoDescription'] ?? '',
+            'wbsoBudget' => $activity['WbsoBudget'] ?? 0,
+            'projects' => [],
+            'totalActivityBudget' => 0,
+            'totalPlanned' => 0,
+            'totalRealized' => 0
+        ];
+    }
 
     // Initialize project group within WBSO if not exists
     if (!isset($wbsoGroups[$wbsoId]['projects'][$projectId])) {
@@ -87,14 +100,14 @@ foreach ($activities as $activity) {
 
     // Add activity to project
     $wbsoGroups[$wbsoId]['projects'][$projectId]['activities'][] = $activity;
-    $wbsoGroups[$wbsoId]['projects'][$projectId]['totalActivityBudget'] += $activity['ActivityBudget'];
-    $wbsoGroups[$wbsoId]['projects'][$projectId]['totalPlanned'] += $activity['PlannedHours'];
-    $wbsoGroups[$wbsoId]['projects'][$projectId]['totalRealized'] += $activity['RealizedHours'];
+    $wbsoGroups[$wbsoId]['projects'][$projectId]['totalActivityBudget'] += $activity['ActivityBudget'] ?? 0;
+    $wbsoGroups[$wbsoId]['projects'][$projectId]['totalPlanned'] += $activity['PlannedHours'] ?? 0;
+    $wbsoGroups[$wbsoId]['projects'][$projectId]['totalRealized'] += $activity['RealizedHours'] ?? 0;
 
     // Update WBSO totals
-    $wbsoGroups[$wbsoId]['totalActivityBudget'] += $activity['ActivityBudget'];
-    $wbsoGroups[$wbsoId]['totalPlanned'] += $activity['PlannedHours'];
-    $wbsoGroups[$wbsoId]['totalRealized'] += $activity['RealizedHours'];
+    $wbsoGroups[$wbsoId]['totalActivityBudget'] += $activity['ActivityBudget'] ?? 0;
+    $wbsoGroups[$wbsoId]['totalPlanned'] += $activity['PlannedHours'] ?? 0;
+    $wbsoGroups[$wbsoId]['totalRealized'] += $activity['RealizedHours'] ?? 0;
 }
 
 // Calculate grand totals
@@ -103,10 +116,10 @@ $grandTotalActivityBudget = 0;
 $grandTotalPlanned = 0;
 $grandTotalRealized = 0;
 foreach ($wbsoGroups as $wbso) {
-    $grandTotalWbsoBudget += $wbso['wbsoBudget'];
-    $grandTotalActivityBudget += $wbso['totalActivityBudget'];
-    $grandTotalPlanned += $wbso['totalPlanned'];
-    $grandTotalRealized += $wbso['totalRealized'];
+    $grandTotalWbsoBudget += $wbso['wbsoBudget'] ?? 0;
+    $grandTotalActivityBudget += $wbso['totalActivityBudget'] ?? 0;
+    $grandTotalPlanned += $wbso['totalPlanned'] ?? 0;
+    $grandTotalRealized += $wbso['totalRealized'] ?? 0;
 }
 
 // Project status labels
