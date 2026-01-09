@@ -103,15 +103,18 @@ $wbsoBreakdown = $wbsoBreakdownStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 📊 Calculate percentages for bar charts
 // Chart 1: WBSO budget vs activity budget
-$wbsoBudgetVsActivityPercentage = $activityBudgetHours > 0 ? round(($wbsoBudgetedHours / $activityBudgetHours) * 100, 1) : 0;
+$wbsoBudgetVsActivityPercentage = $wbsoBudgetedHours > 0 ? round(($activityBudgetHours / $wbsoBudgetedHours) * 100, 1) : 0;
 
-// Chart 2: Realized vs WBSO budget
+// Chart 2: Planned vs WBSO budget
+$plannedVsWbsoBudgetPercentage = $wbsoBudgetedHours > 0 ? round(($totalPlannedHours / $wbsoBudgetedHours) * 100, 1) : 0;
+
+// Chart 3: Realized vs WBSO budget
 $realizedVsWbsoBudgetPercentage = $wbsoBudgetedHours > 0 ? round(($wbsoRealizedHours / $wbsoBudgetedHours) * 100, 1) : 0;
 
-// Chart 3: Realized vs activity budget
+// Chart 4: Realized vs activity budget
 $realizedVsActivityBudgetPercentage = $activityBudgetHours > 0 ? round(($wbsoRealizedHours / $activityBudgetHours) * 100, 1) : 0;
 
-// Chart 4: Realized vs planned hours
+// Chart 5: Realized vs planned hours
 $realizedVsPlannedPercentage = $totalPlannedHours > 0 ? round(($wbsoRealizedHours / $totalPlannedHours) * 100, 1) : 0;
 ?>
 
@@ -124,7 +127,7 @@ $realizedVsPlannedPercentage = $totalPlannedHours > 0 ? round(($wbsoRealizedHour
             <!-- Chart 1: WBSO Budget vs Activity Budget -->
             <div class="col-md-6 mb-4">
                 <div class="progress-block">
-                    <h4>WBSO Budget vs Project Budget</h4>
+                    <h4>Project Budget vs WBSO Budget</h4>
                     <div class="progress-container">
                         <div class="progress">
                             <div class="progress-bar <?= $wbsoBudgetVsActivityPercentage > 100 ? 'bg-danger' : 'bg-info' ?>"
@@ -135,8 +138,29 @@ $realizedVsPlannedPercentage = $totalPlannedHours > 0 ? round(($wbsoRealizedHour
                         </div>
                     </div>
                     <div class="progress-stats">
-                        <span>WBSO Budget: <?= number_form($wbsoBudgetedHours) ?> hrs</span>
                         <span>Project Budget: <?= number_form($activityBudgetHours) ?> hrs</span>
+                        <span>WBSO Budget: <?= number_form($wbsoBudgetedHours) ?> hrs</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart 2: Planned vs WBSO budget -->
+            <div class="col-md-6 mb-4">
+                <div class="progress-block">
+                    <h4>Planned vs WBSO budget</h4>
+                    <div class="progress-container">
+                        <div class="progress">
+                            <div class="progress-bar <?= $plannedVsWbsoBudgetPercentage > 100 ? 'bg-danger' : 'bg-warning' ?>"
+                                 role="progressbar"
+                                 style="width: <?= min(100, $plannedVsWbsoBudgetPercentage) ?>%">
+                                <?= $plannedVsWbsoBudgetPercentage ?>%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>Planned: <?= number_form($totalPlannedHours) ?> hrs</span>
+                        <span>WBSO Budget: <?= number_form($wbsoBudgetedHours) ?> hrs</span>
+                        <span>Remaining: <?= number_form(max(0, $wbsoBudgetedHours - $totalPlannedHours)) ?> hrs</span>
                     </div>
                 </div>
             </div>
@@ -250,6 +274,25 @@ $realizedVsPlannedPercentage = $totalPlannedHours > 0 ? round(($wbsoRealizedHour
                 <?php if (empty($wbsoBreakdown)): ?>
                 <tr>
                     <td colspan="8" class="text-center text-muted">No WBSO items found for <?= $selectedYear ?></td>
+                </tr>
+                <?php else: ?>
+                <!-- Totals Row -->
+                <tr>
+                    <td colspan="2"><strong>TOTAL</strong></td>
+                    <td><strong><?= number_form($wbsoBudgetedHours) ?> hrs</strong></td>
+                    <td><strong><?= number_form($activityBudgetHours) ?> hrs</strong></td>
+                    <td><strong><?= number_form($totalPlannedHours) ?> hrs</strong></td>
+                    <td><strong><?= number_form($wbsoRealizedHours) ?> hrs</strong></td>
+                    <td><strong><?= number_form(max(0, $wbsoBudgetedHours - $wbsoRealizedHours)) ?> hrs</strong></td>
+                    <td>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar <?= $realizedVsWbsoBudgetPercentage > 100 ? 'bg-danger' : ($realizedVsWbsoBudgetPercentage >= 80 ? 'bg-warning' : 'bg-success') ?>"
+                                 role="progressbar"
+                                 style="width: <?= min(100, $realizedVsWbsoBudgetPercentage) ?>%">
+                                <?= $realizedVsWbsoBudgetPercentage ?>%
+                            </div>
+                        </div>
+                    </td>
                 </tr>
                 <?php endif; ?>
                 <tr>
