@@ -603,19 +603,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (plannedCell && budgetCell) {
                     // Update the planned hours cell
                     plannedCell.textContent = totalPlanned;
-                    
-                    // Check if planned is over budget (only if budget exists)
+
+                    // Check if planned is over budget (only if budget exists and is > 0)
                     const budgetText = budgetCell.textContent.trim();
-                    if (budgetText !== '') {
-                        const budget = parseFloat(budgetText) || 0;
-                        plannedCell.classList.toggle('overbudget', totalPlanned > budget);
+                    if (budgetText !== '' && budgetText !== '0') {
+                        // Convert European number format (1.500,5) to standard (1500.5)
+                        const budget = parseFloat(budgetText.replace(/\./g, '').replace(',', '.')) || 0;
+                        plannedCell.classList.toggle('overbudget', budget > 0 && totalPlanned > budget);
                     } else {
                         plannedCell.classList.remove('overbudget');
                     }
-                    
+
                     // Check if logged is over planned
                     if (loggedCell) {
-                        const logged = parseFloat(loggedCell.textContent) || 0;
+                        const logged = parseFloat(loggedCell.textContent.replace(/\./g, '').replace(',', '.')) || 0;
                         loggedCell.classList.toggle('overbudget', logged > totalPlanned);
                     }
                 }
@@ -636,16 +637,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (personPlannedCell) {
             personPlannedCell.innerText = personPlanned;
-            
+
             // Check against available hours
             if (availableCell) {
-                const available = parseFloat(availableCell.innerText) || 0;
+                // Convert European number format (1.500,5) to standard (1500.5)
+                const available = parseFloat(availableCell.innerText.replace(/\./g, '').replace(',', '.')) || 0;
                 personPlannedCell.classList.toggle('overbudget', personPlanned > available);
             }
-            
+
             // Check realised vs planned
             if (realisedCell) {
-                const realised = parseFloat(realisedCell.innerText) || 0;
+                // Convert European number format (1.500,5) to standard (1500.5)
+                const realised = parseFloat(realisedCell.innerText.replace(/\./g, '').replace(',', '.')) || 0;
                 realisedCell.classList.toggle('overbudget', realised > personPlanned);
             }
         }
