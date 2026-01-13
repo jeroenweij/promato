@@ -182,19 +182,6 @@ $currentStatus = 3;
 ?>
 <section class="white">
     <div class="container" style="max-width: 20000px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h2>Team Planning - <?= $selectedYear ?></h2>
-            <?php if ($userAuthLevel >= 5): ?>
-            <div>
-                <button class="btn btn-success" onclick="exportTeamPlanningToCSV()">
-                    <i class="icon ion-md-download"></i> Export to CSV
-                </button>
-                <button class="btn btn-primary" onclick="exportTeamPlanningToExcel()">
-                    <i class="icon ion-md-download"></i> Export to Excel
-                </button>
-            </div>
-            <?php endif; ?>
-        </div>
         <div class="autoheight">
             <div class="budget-table-wrapper">
                 <div class="scrollable-area verticalscrol">
@@ -402,6 +389,22 @@ $currentStatus = 3;
             <div class="horizontal-scroll-container" id="horizontal-scrollbar">
                 <div class="horizontal-scroll-content" id="scrollbar-content"></div>
             </div>
+
+        <?php if ($userAuthLevel >= 5): ?>
+        <hr>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">    
+            
+            <div>
+                <button class="btn btn-success" onclick="exportTeamPlanningToCSV()">
+                    <i class="icon ion-md-download"></i> Export to CSV
+                </button>
+                <button class="btn btn-primary" onclick="exportTeamPlanningToExcel()">
+                    <i class="icon ion-md-download"></i> Export to Excel
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+
     </div><!-- container -->
 </section>
 
@@ -445,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
 (function() {
     // Set initial height
     function setElementHeight() {
-        var height = window.innerHeight - 250;
+        var height = window.innerHeight - 150;
         document.querySelectorAll('.autoheight').forEach(el => {
             el.style.minHeight = height + 'px';
             el.style.maxHeight = height + 'px';

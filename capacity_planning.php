@@ -220,20 +220,6 @@ if ($teamFilter && !empty($personnel)) {
 ?>
 <section class="white">
     <div class="container" style="max-width: 20000px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h2>Capacity Planning - <?= $selectedYear ?><?= $teamFilter ? ' - ' . htmlspecialchars($teamName) : '' ?></h2>
-            <?php if ($userAuthLevel >= 5): ?>
-            <div>
-                <button class="btn btn-success" onclick="exportCapacityPlanningToCSV()">
-                    <i class="icon ion-md-download"></i> Export to CSV
-                </button>
-                <button class="btn btn-primary" onclick="exportCapacityPlanningToExcel()">
-                    <i class="icon ion-md-download"></i> Export to Excel
-                </button>
-            </div>
-            <?php endif; ?>
-        </div>
-
         <?php if (!$teamFilter && count($teams) > 0): ?>
             <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #d0d0d0; border-radius: 5px;">
                 <h3 style="margin: 0 0 10px 0;">Filter by Team:</h3>
@@ -474,6 +460,20 @@ if ($teamFilter && !empty($personnel)) {
             <div class="horizontal-scroll-container" id="horizontal-scrollbar">
                 <div class="horizontal-scroll-content" id="scrollbar-content"></div>
             </div>
+
+        <?php if ($userAuthLevel >= 5): ?>
+        <hr>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div>
+                <button class="btn btn-success" onclick="exportCapacityPlanningToCSV()">
+                    <i class="icon ion-md-download"></i> Export to CSV
+                </button>
+                <button class="btn btn-primary" onclick="exportCapacityPlanningToExcel()">
+                    <i class="icon ion-md-download"></i> Export to Excel
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
     </div><!-- container -->
 </section>
 
