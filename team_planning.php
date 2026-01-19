@@ -251,7 +251,15 @@ $currentStatus = 3;
                                     }
                                 }
                                 
-                                $plannedClass = ($activity['BudgetHours'] && $planned > $activity['BudgetHours']) ? 'overbudget' : '';
+                                // Check if user can edit this activity's hours
+                                $isEditable = $userAuthLevel >= 4 || ($_SESSION['user_id'] ?? 0) == $activity['ManagerId'];
+
+                                $plannedClass = '';
+                                if ($activity['BudgetHours'] && $planned > $activity['BudgetHours']) {
+                                    $plannedClass = 'overbudget';
+                                } elseif ($isEditable && $activity['BudgetHours'] && $planned < $activity['BudgetHours']) {
+                                    $plannedClass = 'underbudget';
+                                }
                                 $realisedClass = ($realised > $planned) ? 'overbudget' : '';
 
                                 // Check if activity is closed (!Active or end date has passed)
@@ -262,7 +270,7 @@ $currentStatus = 3;
                                     <td class="text fixedheigth <?= $closedClass ?>"><?= $taskCode ?></td>
                                     <td class="text fixedheigth <?= $closedClass ?>" ><?= htmlspecialchars($activity['ActivityName']) ?></td>
                                     <td class="totals fixedheigth <?= $closedClass ?>"><?= number_form($activity['BudgetHours']) ?></td>
-                                    <td class="totals <?= $plannedClass ?> fixedheigth <?= $closedClass ?>"><?= number_form($planned) ?></td>
+                                    <td class="totals <?= $plannedClass ?> fixedheigth <?= $closedClass ?>" data-editable="<?= $isEditable ? '1' : '0' ?>"><?= number_form($planned) ?></td>
                                     <td class="totals <?= $realisedClass ?> <?= $closedClass ?>"><?= number_form($realised) ?></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -539,12 +547,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // Check if planned is over budget (only if budget exists and is > 0)
                     const budgetText = budgetCell.textContent.trim();
+                    const isEditable = plannedCell.dataset.editable === '1';
                     if (budgetText !== '' && budgetText !== '0') {
                         // Convert European number format (1.500,5) to standard (1500.5)
                         const budget = parseFloat(budgetText.replace(/\./g, '').replace(',', '.')) || 0;
-                        plannedCell.classList.toggle('overbudget', budget > 0 && totalPlanned > budget);
+                        const isOverBudget = budget > 0 && totalPlanned > budget;
+                        const isUnderBudget = isEditable && budget > 0 && totalPlanned < budget;
+                        plannedCell.classList.toggle('overbudget', isOverBudget);
+                        plannedCell.classList.toggle('underbudget', isUnderBudget && !isOverBudget);
                     } else {
                         plannedCell.classList.remove('overbudget');
+                        plannedCell.classList.remove('underbudget');
                     }
 
                     // Check if logged is over planned

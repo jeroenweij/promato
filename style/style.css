@@ -28,6 +28,10 @@
     background-color: rgba(255, 0, 0, 0.2) !important;
 }
 
+.underbudget {
+    background-color: rgba(0, 128, 0, 0.2) !important;
+}
+
 .container {
     max-width: 1800px;
 }
