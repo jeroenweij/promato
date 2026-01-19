@@ -52,12 +52,18 @@ $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Check if any activities can have their keys changed (not exported)
 $anyKeyEditable = false;
+$projectIsExported = false;
 foreach ($activities as $activity) {
     if ($activity['IsExported'] == 0) {
         $anyKeyEditable = true;
-        break;
+    }
+    if ($activity['IsExported'] == 1) {
+        $projectIsExported = true;
     }
 }
+
+// Project name is editable if there are no activities, or if all activities are not exported
+$projectNameEditable = (count($activities) == 0) || !$projectIsExported;
 
 // Fetch all budgets for all activities in this project
 $budgetStmt = $pdo->prepare("
@@ -153,6 +159,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_manager'])) {
 
     $updateManagerStmt = $pdo->prepare("UPDATE Projects SET Manager = ? WHERE Id = ?");
     $updateManagerStmt->execute([$newManager, $projectId]);
+
+    $redirectNeeded = true;
+    $budgetYearParam = isset($_GET['budget_year']) ? '&budget_year=' . $_GET['budget_year'] : '';
+    $redirectUrl = "project_edit.php?project_id=" . $projectId . $budgetYearParam;
+}
+
+// Handle form submission to update the project name
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_project_name'])) {
+    $newName = $_POST['project_name'];
+
+    $updateNameStmt = $pdo->prepare("UPDATE Projects SET Name = ? WHERE Id = ?");
+    $updateNameStmt->execute([$newName, $projectId]);
 
     $redirectNeeded = true;
     $budgetYearParam = isset($_GET['budget_year']) ? '&budget_year=' . $_GET['budget_year'] : '';
@@ -372,7 +390,16 @@ if ($redirectNeeded && ob_get_length() === 0) {
 
         <!-- Project Header -->
         <div class="project-header">
-            <h1><?= $project['Id'] ?> - <?= htmlspecialchars($project['Name']); ?></h1>
+            <?php if ($projectNameEditable): ?>
+                <form method="POST" style="display: inline;">
+                    <h1 style="display: inline;"><?= $project['Id'] ?> - </h1>
+                    <input type="text" name="project_name" value="<?= htmlspecialchars($project['Name']); ?>"
+                           style="font-size: 1.5rem; font-weight: bold; border: 1px solid #ccc; padding: 0.25rem; width: auto; min-width: 300px;">
+                    <button type="submit" name="update_project_name" class="btn btn-primary" style="font-size: 1rem;">Save Name</button>
+                </form>
+            <?php else: ?>
+                <h1><?= $project['Id'] ?> - <?= htmlspecialchars($project['Name']); ?></h1>
+            <?php endif; ?>
         </div>
 
         <!-- Status and Manager -->
@@ -454,8 +481,13 @@ if ($redirectNeeded && ob_get_length() === 0) {
                                 </td>
                                 <?php endif; ?>
                                 <td>
-                                    <input type="text" name="activity_name[]" value="<?= htmlspecialchars($activity['Name']); ?>"
-                                           onchange="markRowModified(this, 'activity')">
+                                    <?php if ($activity['IsExported'] == 0): ?>
+                                        <input type="text" name="activity_name[]" value="<?= htmlspecialchars($activity['Name']); ?>"
+                                               onchange="markRowModified(this, 'activity')">
+                                    <?php else: ?>
+                                        <input type="hidden" name="activity_name[]" value="<?= htmlspecialchars($activity['Name']); ?>">
+                                        <span><?= htmlspecialchars($activity['Name']); ?></span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <select name="wbso[]" onchange="markRowModified(this, 'activity')">

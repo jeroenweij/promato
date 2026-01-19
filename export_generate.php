@@ -42,7 +42,7 @@ try {
     LEFT JOIN Projects p ON p.Id = a.Project
     LEFT JOIN Personel u ON p.Manager = u.Id
     LEFT JOIN Wbso w ON w.Id = a.Wbso
-    WHERE Export = 1;");
+    WHERE Export = 1 AND p.Status IN (3, 4);");
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (empty($rows)) {
