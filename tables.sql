@@ -139,7 +139,9 @@ INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VAL
 (74, 'Search', 'search.php', 2, NULL, 0, 'search'),
 (75, 'Change Personnel Team', 'personel_change_team.php', 5, NULL, 0, NULL),
 (76, 'Omeletto', 'omeletto.php', 2, 3, 0, 'egg-fried'),
-(77, 'Omeletto Admin', 'omeletto_admin.php', 5, 3, 0, 'egg');
+(77, 'Omeletto Admin', 'omeletto_admin.php', 5, 3, 0, 'egg'),
+(78, 'WBSO Overview', 'wbso_overview.php', 4, 2, 1, 'activity'),
+(79, 'Burndown', 'burndown.php', 3, 2, 0, 'trending-down');
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,
@@ -161,7 +163,8 @@ CREATE TABLE `Projects` (
   `Id` smallint NOT NULL,
   `Name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
   `Status` tinyint DEFAULT '0',
-  `Manager` smallint DEFAULT NULL
+  `Manager` smallint DEFAULT NULL,
+  `OpenProjectId` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `snack_options` (

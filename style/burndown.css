@@ -1,0 +1,34 @@
+/* Burndown Dashboard Styles */
+
+.card {
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-body h2 {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+.card-body small {
+    opacity: 0.8;
+}
+
+.table th {
+    border-top: none;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.alert pre {
+    background: #f1f1f1;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    border-radius: 4px;
+}
+
+#burndownChart {
+    max-height: 400px;
+}

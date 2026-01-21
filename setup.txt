@@ -1,0 +1,20 @@
+=====================================================
+OpenProject Integration Setup
+=====================================================
+
+1. Add to .env.php:
+
+   define('OPENPROJECT_URL', 'https://your-openproject-instance.com');
+   define('OPENPROJECT_API_KEY', 'your-api-key-here');
+
+   (Generate API key in OpenProject: My Account -> Access tokens -> API)
+
+2. Run these SQL statements:
+
+   -- Add OpenProjectId column to Projects table
+   ALTER TABLE `Projects`
+     ADD COLUMN `OpenProjectId` VARCHAR(100) COLLATE utf8mb4_general_ci DEFAULT NULL;
+
+   -- Register the Burndown page
+   INSERT INTO `Pages` (`Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES
+   ('Burndown', 'burndown.php', 3, 2, 0, 'trending-down');
