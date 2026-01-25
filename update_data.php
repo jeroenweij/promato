@@ -18,14 +18,13 @@ $openProjectConfigured = defined('OPENPROJECT_URL') && defined('OPENPROJECT_API_
 $yoobiApi = new YoobiAPI();
 $yoobiConfigured = $yoobiApi->isConfigured();
 
-// Get all active and closed projects that have activities in the selected year
-// Exclude projects with ExcludeSync = 1
+// Get all active and closed projects that have Sync enabled and activities in the selected year
 $stmt = $pdo->prepare("
-    SELECT DISTINCT p.Id, p.Name, p.Status, p.OpenProjectId, p.ExcludeSync, s.Status AS StatusName
+    SELECT DISTINCT p.Id, p.Name, p.Status, p.OpenProjectId, p.Sync, s.Status AS StatusName
     FROM Projects p
     LEFT JOIN Status s ON p.Status = s.Id
     WHERE p.Status IN (3, 4)
-    AND p.ExcludeSync = 0
+    AND p.Sync = 1
     AND EXISTS (
         SELECT 1 FROM Activities a
         WHERE a.Project = p.Id
@@ -36,6 +35,18 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([':year' => $selectedYear]);
 $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get current sprint counts per project
+$sprintCountStmt = $pdo->prepare("
+    SELECT ProjectId, COUNT(*) AS SprintCount
+    FROM ProjectSprints
+    GROUP BY ProjectId
+");
+$sprintCountStmt->execute();
+$sprintCounts = [];
+while ($row = $sprintCountStmt->fetch(PDO::FETCH_ASSOC)) {
+    $sprintCounts[$row['ProjectId']] = $row['SprintCount'];
+}
 
 // Get recent sync history
 $historyStmt = $pdo->prepare("
@@ -73,6 +84,7 @@ $syncHistory = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                             <th>Project</th>
                             <th>Status</th>
                             <th>OpenProject ID</th>
+                            <th style="width: 70px;">Sprints</th>
                             <th style="width: 120px;">Sync Status</th>
                         </tr>
                     </thead>
@@ -84,6 +96,9 @@ $syncHistory = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($project['StatusName']) ?></td>
                             <td>
                                 <span id="opid-<?= $project['Id'] ?>"><?= htmlspecialchars($project['OpenProjectId'] ?? '-') ?></span>
+                            </td>
+                            <td>
+                                <span id="sprints-<?= $project['Id'] ?>"><?= $sprintCounts[$project['Id']] ?? 0 ?></span>
                             </td>
                             <td>
                                 <span id="status-<?= $project['Id'] ?>" class="badge badge-secondary">Pending</span>
@@ -252,6 +267,13 @@ function updateOpenProjectId(projectId, opid) {
     }
 }
 
+function updateSprintCount(projectId, count) {
+    const sprintsEl = document.getElementById('sprints-' + projectId);
+    if (sprintsEl) {
+        sprintsEl.textContent = count;
+    }
+}
+
 async function syncProject(project) {
     updateProjectStatus(project.id, 'Syncing...', 'info');
 
@@ -287,22 +309,26 @@ async function syncProject(project) {
 
             updateProjectStatus(project.id, 'Synced', 'success');
             updateOpenProjectId(project.id, result.openProjectIdentifier);
+            updateSprintCount(project.id, result.sprintCount);
 
         } else if (result.success && !result.matched) {
             projectsFailed++;
             addLog('error', `[${project.name}] ${result.error || 'No match found'}`);
             updateProjectStatus(project.id, 'No Match', 'danger');
+            updateSprintCount(project.id, 0);
 
         } else {
             projectsFailed++;
             addLog('error', `[${project.name}] ${result.error || 'Unknown error'}`);
             updateProjectStatus(project.id, 'Error', 'danger');
+            updateSprintCount(project.id, 0);
         }
 
     } catch (error) {
         projectsFailed++;
         addLog('error', `[${project.name}] Network error: ${error.message}`);
         updateProjectStatus(project.id, 'Error', 'danger');
+        updateSprintCount(project.id, 0);
     }
 }
 

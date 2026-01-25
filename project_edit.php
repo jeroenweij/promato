@@ -177,12 +177,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_project_name']
     $redirectUrl = "project_edit.php?project_id=" . $projectId . $budgetYearParam;
 }
 
-// Handle form submission to update ExcludeSync
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_exclude_sync'])) {
-    $excludeSync = isset($_POST['exclude_sync']) ? 1 : 0;
+// Handle form submission to update Sync
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_sync'])) {
+    $sync = isset($_POST['sync']) ? 1 : 0;
 
-    $updateSyncStmt = $pdo->prepare("UPDATE Projects SET ExcludeSync = ? WHERE Id = ?");
-    $updateSyncStmt->execute([$excludeSync, $projectId]);
+    $updateSyncStmt = $pdo->prepare("UPDATE Projects SET Sync = ? WHERE Id = ?");
+    $updateSyncStmt->execute([$sync, $projectId]);
 
     $redirectNeeded = true;
     $budgetYearParam = isset($_GET['budget_year']) ? '&budget_year=' . $_GET['budget_year'] : '';
@@ -447,11 +447,11 @@ if ($redirectNeeded && ob_get_length() === 0) {
             </div>
             <div class="info-card">
                 <form method="POST" class="form-inline-custom">
-                    <label for="exclude_sync">Exclude from Openproject Sync:</label>
-                    <input type="checkbox" name="exclude_sync" id="exclude_sync" value="1"
-                           <?= ($project['ExcludeSync'] ?? 0) ? 'checked' : ''; ?>
+                    <label for="sync">Sync with OpenProject:</label>
+                    <input type="checkbox" name="sync" id="sync" value="1"
+                           <?= ($project['Sync'] ?? 0) ? 'checked' : ''; ?>
                            onchange="this.form.submit()">
-                    <input type="hidden" name="update_exclude_sync" value="1">
+                    <input type="hidden" name="update_sync" value="1">
                 </form>
             </div>
         </div>

@@ -60,9 +60,9 @@ Run these SQL statements to enable the data sync feature:
      CONSTRAINT `fk_synclog_user` FOREIGN KEY (`UserId`) REFERENCES `Personel` (`Id`) ON DELETE SET NULL
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-   -- Add ExcludeSync column to Projects table
+   -- Add Sync column to Projects table (set to 1 for projects to sync)
    ALTER TABLE `Projects`
-     ADD COLUMN `ExcludeSync` tinyint(1) NOT NULL DEFAULT '0';
+     ADD COLUMN `Sync` tinyint(1) NOT NULL DEFAULT '0';
 
    -- Register the Sync Data pages
    INSERT INTO `Pages` (`Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES

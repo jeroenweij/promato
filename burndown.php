@@ -1,126 +1,92 @@
 <?php
 /**
- * Burndown Chart - OpenProject vs Yoobi Hours Comparison
+ * Burndown Chart - Sprint Hours Overview
  *
- * Compares estimated hours from OpenProject versions/sprints
- * with actual hours written in Yoobi (imported via Hours table)
+ * Shows estimated hours from synced OpenProject sprints
+ * compared with actual hours from Yoobi (imported via Hours table)
  *
- * Setup required:
- * 1. Add OPENPROJECT_URL and OPENPROJECT_API_KEY to .env.php
- * 2. Map Promato projects to OpenProject projects via the admin section below
+ * Uses data from ProjectSprints table (synced via update_data.php)
  */
 
 $pageSpecificCSS = ['burndown.css'];
 require 'includes/header.php';
-require_once 'includes/openproject_api.php';
-
-// Check if OpenProject is configured
-$openProjectConfigured = defined('OPENPROJECT_URL') && defined('OPENPROJECT_API_KEY');
 
 $selectedProject = isset($_GET['project']) ? (int)$_GET['project'] : null;
-$selectedVersion = isset($_GET['version']) ? (int)$_GET['version'] : null;
+$selectedSprint = isset($_GET['sprint']) ? (int)$_GET['sprint'] : null;
 
-// Get active projects from Promato
+// Get projects with Sync enabled that have sprints
 $stmt = $pdo->query("
-    SELECT p.Id, p.Name, p.Status, p.OpenProjectId, pe.Name AS ManagerName
+    SELECT DISTINCT p.Id, p.Name, p.Status, p.OpenProjectId, pe.Name AS ManagerName,
+           (SELECT COUNT(*) FROM ProjectSprints ps WHERE ps.ProjectId = p.Id) AS SprintCount
     FROM Projects p
     LEFT JOIN Personel pe ON p.Manager = pe.Id
-    WHERE p.Status = 3
+    WHERE p.Sync = 1
     ORDER BY p.Name
 ");
 $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$versions = [];
+$sprints = [];
 $burndownData = null;
-$error = null;
-$openProjectMatch = null; // Will hold the matched OpenProject project data
-$linkingError = null;
+$selectedProjectData = null;
 
-if ($openProjectConfigured && $selectedProject) {
-    try {
-        $api = new OpenProjectAPI();
-
-        // Find the selected Promato project
-        $promatoProject = null;
-        foreach ($projects as $p) {
-            if ($p['Id'] == $selectedProject) {
-                $promatoProject = $p;
-                break;
-            }
+// Get sprints for selected project
+if ($selectedProject) {
+    // Find selected project data
+    foreach ($projects as $p) {
+        if ($p['Id'] == $selectedProject) {
+            $selectedProjectData = $p;
+            break;
         }
+    }
 
-        if ($promatoProject) {
-            $openProjectIdentifier = null;
+    // Get sprints from ProjectSprints table (ordered by date for charts)
+    $sprintStmt = $pdo->prepare("
+        SELECT OpenProjectVersionId, SprintName, StartDate, EndDate,
+               EstimatedHours / 100 AS EstimatedHours,
+               COALESCE(LoggedHours, 0) / 100 AS LoggedHours
+        FROM ProjectSprints
+        WHERE ProjectId = :projectId
+        ORDER BY COALESCE(StartDate, '9999-12-31') ASC, SprintName ASC
+    ");
+    $sprintStmt->execute([':projectId' => $selectedProject]);
+    $sprints = $sprintStmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Step 1: Try to match on OpenProjectId if set
-            if (!empty($promatoProject['OpenProjectId'])) {
-                $openProjectMatch = $api->getProjectByIdentifier($promatoProject['OpenProjectId']);
-                if ($openProjectMatch) {
-                    $openProjectIdentifier = $promatoProject['OpenProjectId'];
-                } else {
-                    $linkingError = "OpenProject identifier '{$promatoProject['OpenProjectId']}' not found in OpenProject.";
-                }
-            }
+    // Calculate totals and burndown data
+    $totalEstimated = array_sum(array_column($sprints, 'EstimatedHours'));
+    $totalLogged = array_sum(array_column($sprints, 'LoggedHours'));
 
-            // Step 2: If no identifier set or not found, try to match by name
-            if (!$openProjectMatch) {
-                $openProjectMatch = $api->findProjectByName($promatoProject['Name']);
+    // Calculate cumulative burndown (remaining hours after each sprint)
+    $burndownPoints = [];
+    $remainingHours = $totalEstimated;
+    foreach ($sprints as $s) {
+        $remainingHours -= $s['LoggedHours'];
+        $burndownPoints[] = [
+            'sprint' => $s['SprintName'],
+            'remaining' => max(0, $remainingHours),
+            'estimated' => $s['EstimatedHours'],
+            'logged' => $s['LoggedHours']
+        ];
+    }
 
-                if ($openProjectMatch) {
-                    // Auto-update the OpenProjectId in the database
-                    $openProjectIdentifier = $openProjectMatch['identifier'];
-                    $updateStmt = $pdo->prepare("UPDATE Projects SET OpenProjectId = :opid WHERE Id = :id");
-                    $updateStmt->execute([':opid' => $openProjectIdentifier, ':id' => $selectedProject]);
+    if ($selectedSprint) {
+        // Get sprint data
+        $sprintDataStmt = $pdo->prepare("
+            SELECT OpenProjectVersionId, SprintName, StartDate, EndDate,
+                   EstimatedHours / 100 AS EstimatedHours,
+                   COALESCE(LoggedHours, 0) / 100 AS LoggedHours
+            FROM ProjectSprints
+            WHERE OpenProjectVersionId = :sprintId AND ProjectId = :projectId
+        ");
+        $sprintDataStmt->execute([':sprintId' => $selectedSprint, ':projectId' => $selectedProject]);
+        $sprintData = $sprintDataStmt->fetch(PDO::FETCH_ASSOC);
 
-                    // Update local array too
-                    $promatoProject['OpenProjectId'] = $openProjectIdentifier;
-                    foreach ($projects as &$p) {
-                        if ($p['Id'] == $selectedProject) {
-                            $p['OpenProjectId'] = $openProjectIdentifier;
-                            break;
-                        }
-                    }
-                    unset($p);
-                }
-            }
-
-            // Step 3: If still no match, show error
-            if (!$openProjectMatch) {
-                $linkingError = "Project '{$promatoProject['Name']}' is not linked to OpenProject. No matching identifier or project name found.";
-            }
-
-            // Get versions if we have a match
-            if ($openProjectIdentifier) {
-                $versions = $api->getVersions($openProjectIdentifier);
-
-                if ($selectedVersion) {
-                    // Get burndown data for selected version
-                    $opData = $api->getVersionHoursSummary($selectedVersion);
-
-                    // Get actual hours from Yoobi (Hours table) for this project
-                    // We sum all hours for the project in the selected year
-                    $stmt = $pdo->prepare("
-                        SELECT
-                            COALESCE(SUM(h.Hours), 0) / 100 AS actualHours,
-                            COALESCE(SUM(h.Plan), 0) / 100 AS plannedHours
-                        FROM Hours h
-                        WHERE h.Project = :project AND h.Year = :year
-                    ");
-                    $stmt->execute([':project' => $selectedProject, ':year' => $selectedYear]);
-                    $yoobiData = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                    $burndownData = [
-                        'openproject' => $opData,
-                        'yoobi' => [
-                            'actual' => (float)$yoobiData['actualHours'],
-                            'planned' => (float)$yoobiData['plannedHours']
-                        ]
-                    ];
-                }
-            }
+        if ($sprintData) {
+            $burndownData = [
+                'sprint' => $sprintData,
+                'estimated' => (float)$sprintData['EstimatedHours'],
+                'logged' => (float)$sprintData['LoggedHours']
+            ];
         }
-    } catch (Exception $e) {
-        $error = $e->getMessage();
     }
 }
 ?>
@@ -129,30 +95,16 @@ if ($openProjectConfigured && $selectedProject) {
     <div class="container-fluid">
         <h2>Burndown Dashboard</h2>
 
-        <?php if (!$openProjectConfigured): ?>
+        <?php if (empty($projects)): ?>
             <div class="alert alert-warning">
-                <strong>Configuration Required</strong><br>
-                Add the following to your <code>.env.php</code> file:
-                <pre>define('OPENPROJECT_URL', 'https://your-openproject-instance.com');
-define('OPENPROJECT_API_KEY', 'your-api-key-here');</pre>
-                <small>Generate an API key in OpenProject: My Account → Access tokens → API</small>
+                <strong>No Projects Available</strong><br>
+                No projects have sync enabled. Enable sync for projects in
+                <a href="projects_edit.php">Project Edit</a> and run
+                <a href="update_data.php">Data Sync</a> first.
             </div>
         <?php endif; ?>
 
-        <?php if ($error): ?>
-            <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
-
-        <?php if ($linkingError): ?>
-            <div class="alert alert-warning">
-                <strong>Project Not Linked</strong><br>
-                <?= htmlspecialchars($linkingError) ?>
-                <hr>
-                <small>To link manually, set the <code>OpenProjectId</code> field in the Projects table to match the OpenProject project identifier (slug).</small>
-            </div>
-        <?php endif; ?>
-
-        <!-- Project & Version Selection -->
+        <!-- Project & Sprint Selection -->
         <form method="get" class="row mb-4">
             <div class="col-md-4">
                 <label class="form-label">Project</label>
@@ -161,72 +113,67 @@ define('OPENPROJECT_API_KEY', 'your-api-key-here');</pre>
                     <?php foreach ($projects as $p): ?>
                         <option value="<?= $p['Id'] ?>" <?= $selectedProject == $p['Id'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($p['Name']) ?>
-                            <?= !empty($p['OpenProjectId']) ? ' ✓' : '' ?>
+                            (<?= $p['SprintCount'] ?> sprints)
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <small class="text-muted">✓ = linked to OpenProject</small>
             </div>
 
-            <?php if ($selectedProject && !empty($versions)): ?>
+            <?php if ($selectedProject && !empty($sprints)): ?>
             <div class="col-md-4">
-                <label class="form-label">Sprint / Version</label>
-                <select name="version" class="form-control" onchange="this.form.submit()">
-                    <option value="">-- Select Version --</option>
-                    <?php foreach ($versions as $v): ?>
-                        <option value="<?= $v['id'] ?>" <?= $selectedVersion == $v['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($v['name']) ?>
-                            <?php if (!empty($v['startDate']) || !empty($v['endDate'])): ?>
-                                (<?= $v['startDate'] ?? '?' ?> - <?= $v['endDate'] ?? '?' ?>)
+                <label class="form-label">Sprint</label>
+                <select name="sprint" class="form-control" onchange="this.form.submit()">
+                    <option value="">-- Select Sprint --</option>
+                    <?php foreach ($sprints as $s): ?>
+                        <option value="<?= $s['OpenProjectVersionId'] ?>" <?= $selectedSprint == $s['OpenProjectVersionId'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($s['SprintName']) ?>
+                            <?php if ($s['StartDate'] || $s['EndDate']): ?>
+                                (<?= $s['StartDate'] ?? '?' ?> - <?= $s['EndDate'] ?? '?' ?>)
                             <?php endif; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <?php elseif ($selectedProject && $openProjectConfigured && $openProjectMatch && empty($versions)): ?>
+            <?php elseif ($selectedProject && empty($sprints)): ?>
             <div class="col-md-4">
-                <label class="form-label">Sprint / Version</label>
-                <p class="text-muted">No versions found in OpenProject for "<?= htmlspecialchars($openProjectMatch['name'] ?? '') ?>"</p>
+                <label class="form-label">Sprint</label>
+                <p class="text-muted">No sprints synced for this project. Run <a href="update_data.php">Data Sync</a>.</p>
             </div>
             <?php endif; ?>
-
-            <input type="hidden" name="project" value="<?= $selectedProject ?>">
         </form>
 
-        <?php if ($burndownData): ?>
+        <?php if ($burndownData):
+            $remaining = max(0, $burndownData['estimated'] - $burndownData['logged']);
+            $progress = $burndownData['estimated'] > 0
+                ? round(($burndownData['logged'] / $burndownData['estimated']) * 100)
+                : 0;
+        ?>
         <!-- Burndown Summary Cards -->
         <div class="row mb-4">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card bg-primary text-white">
                     <div class="card-body">
                         <h5 class="card-title">Estimated (OpenProject)</h5>
-                        <h2><?= number_form($burndownData['openproject']['estimated'], 1) ?> hrs</h2>
-                        <small><?= $burndownData['openproject']['workPackageCount'] ?> work packages</small>
+                        <h2><?= number_form($burndownData['estimated'], 1) ?> hrs</h2>
+                        <small>Sprint: <?= htmlspecialchars($burndownData['sprint']['SprintName']) ?></small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">Remaining (OpenProject)</h5>
-                        <h2><?= number_form($burndownData['openproject']['remaining'], 1) ?> hrs</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card bg-success text-white">
                     <div class="card-body">
-                        <h5 class="card-title">Spent (OpenProject)</h5>
-                        <h2><?= number_form($burndownData['openproject']['spent'], 1) ?> hrs</h2>
+                        <h5 class="card-title">Logged (Yoobi)</h5>
+                        <h2><?= number_form($burndownData['logged'], 1) ?> hrs</h2>
+                        <small>Progress: <?= $progress ?>%</small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-dark">
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
                     <div class="card-body">
-                        <h5 class="card-title">Actual (Yoobi)</h5>
-                        <h2><?= number_form($burndownData['yoobi']['actual'], 1) ?> hrs</h2>
-                        <small>Planned: <?= number_form($burndownData['yoobi']['planned'], 1) ?> hrs</small>
+                        <h5 class="card-title">Remaining</h5>
+                        <h2><?= number_form($remaining, 1) ?> hrs</h2>
+                        <small>Estimated - Logged</small>
                     </div>
                 </div>
             </div>
@@ -235,64 +182,32 @@ define('OPENPROJECT_API_KEY', 'your-api-key-here');</pre>
         <!-- Comparison Table -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Hours Comparison</h5>
+                <h5 class="mb-0">Hours Overview</h5>
             </div>
             <div class="card-body">
                 <table class="table">
                     <thead>
                         <tr>
                             <th>Metric</th>
-                            <th class="text-right">OpenProject</th>
-                            <th class="text-right">Yoobi</th>
-                            <th class="text-right">Difference</th>
+                            <th class="text-right">Hours</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Estimated vs Planned</td>
-                            <td class="text-right"><?= number_form($burndownData['openproject']['estimated'], 1) ?></td>
-                            <td class="text-right"><?= number_form($burndownData['yoobi']['planned'], 1) ?></td>
-                            <?php $diff = $burndownData['openproject']['estimated'] - $burndownData['yoobi']['planned']; ?>
-                            <td class="text-right <?= $diff > 0 ? 'text-danger' : 'text-success' ?>">
-                                <?= $diff > 0 ? '+' : '' ?><?= number_form($diff, 1) ?>
-                            </td>
+                            <td>Estimated (OpenProject)</td>
+                            <td class="text-right"><?= number_form($burndownData['estimated'], 1) ?></td>
                         </tr>
                         <tr>
-                            <td>Spent vs Actual</td>
-                            <td class="text-right"><?= number_form($burndownData['openproject']['spent'], 1) ?></td>
-                            <td class="text-right"><?= number_form($burndownData['yoobi']['actual'], 1) ?></td>
-                            <?php $diff = $burndownData['openproject']['spent'] - $burndownData['yoobi']['actual']; ?>
-                            <td class="text-right <?= abs($diff) > 1 ? 'text-warning' : '' ?>">
-                                <?= $diff > 0 ? '+' : '' ?><?= number_form($diff, 1) ?>
-                            </td>
+                            <td>Logged (Yoobi)</td>
+                            <td class="text-right"><?= number_form($burndownData['logged'], 1) ?></td>
                         </tr>
                         <tr>
-                            <td>Remaining Work</td>
-                            <td class="text-right"><?= number_form($burndownData['openproject']['remaining'], 1) ?></td>
-                            <td class="text-right">
-                                <?= number_form(max(0, $burndownData['yoobi']['planned'] - $burndownData['yoobi']['actual']), 1) ?>
-                            </td>
-                            <td class="text-right">-</td>
+                            <td>Remaining</td>
+                            <td class="text-right"><?= number_form($remaining, 1) ?></td>
                         </tr>
                         <tr class="table-info">
                             <td><strong>Progress</strong></td>
-                            <td class="text-right">
-                                <?php
-                                $opProgress = $burndownData['openproject']['estimated'] > 0
-                                    ? round(($burndownData['openproject']['spent'] / $burndownData['openproject']['estimated']) * 100)
-                                    : 0;
-                                ?>
-                                <?= $opProgress ?>%
-                            </td>
-                            <td class="text-right">
-                                <?php
-                                $yoobiProgress = $burndownData['yoobi']['planned'] > 0
-                                    ? round(($burndownData['yoobi']['actual'] / $burndownData['yoobi']['planned']) * 100)
-                                    : 0;
-                                ?>
-                                <?= $yoobiProgress ?>%
-                            </td>
-                            <td></td>
+                            <td class="text-right"><strong><?= $progress ?>%</strong></td>
                         </tr>
                     </tbody>
                 </table>
@@ -302,7 +217,7 @@ define('OPENPROJECT_API_KEY', 'your-api-key-here');</pre>
         <!-- Burndown Chart Canvas -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Burndown Chart</h5>
+                <h5 class="mb-0">Hours Overview</h5>
             </div>
             <div class="card-body">
                 <canvas id="burndownChart" height="100"></canvas>
@@ -312,30 +227,26 @@ define('OPENPROJECT_API_KEY', 'your-api-key-here');</pre>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
         const ctx = document.getElementById('burndownChart').getContext('2d');
-        const estimated = <?= $burndownData['openproject']['estimated'] ?>;
-        const remaining = <?= $burndownData['openproject']['remaining'] ?>;
-        const spent = <?= $burndownData['openproject']['spent'] ?>;
-        const actual = <?= $burndownData['yoobi']['actual'] ?>;
+        const estimated = <?= $burndownData['estimated'] ?>;
+        const logged = <?= $burndownData['logged'] ?>;
+        const remaining = <?= $remaining ?>;
 
-        // Simple burndown visualization
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Estimated', 'Remaining', 'Spent (OP)', 'Actual (Yoobi)'],
+                labels: ['Estimated', 'Logged', 'Remaining'],
                 datasets: [{
                     label: 'Hours',
-                    data: [estimated, remaining, spent, actual],
+                    data: [estimated, logged, remaining],
                     backgroundColor: [
                         'rgba(0, 123, 255, 0.7)',
-                        'rgba(23, 162, 184, 0.7)',
                         'rgba(40, 167, 69, 0.7)',
-                        'rgba(255, 193, 7, 0.7)'
+                        'rgba(23, 162, 184, 0.7)'
                     ],
                     borderColor: [
                         'rgba(0, 123, 255, 1)',
-                        'rgba(23, 162, 184, 1)',
                         'rgba(40, 167, 69, 1)',
-                        'rgba(255, 193, 7, 1)'
+                        'rgba(23, 162, 184, 1)'
                     ],
                     borderWidth: 1
                 }]
@@ -360,42 +271,218 @@ define('OPENPROJECT_API_KEY', 'your-api-key-here');</pre>
         });
         </script>
 
-        <?php elseif ($selectedProject && !$selectedVersion && !empty($versions)): ?>
-        <!-- Show version overview when project selected but no version -->
+        <?php elseif ($selectedProject && !$selectedSprint && !empty($sprints)):
+            $totalRemaining = max(0, $totalEstimated - $totalLogged);
+            $overallProgress = $totalEstimated > 0 ? round(($totalLogged / $totalEstimated) * 100) : 0;
+            $estimationAccuracy = $totalEstimated > 0 ? round(($totalLogged / $totalEstimated) * 100) : 0;
+        ?>
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Estimated</h5>
+                        <h2><?= number_form($totalEstimated, 1) ?> hrs</h2>
+                        <small><?= count($sprints) ?> sprints</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Logged</h5>
+                        <h2><?= number_form($totalLogged, 1) ?> hrs</h2>
+                        <small>Progress: <?= $overallProgress ?>%</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Remaining</h5>
+                        <h2><?= number_form($totalRemaining, 1) ?> hrs</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card <?= $estimationAccuracy > 100 ? 'bg-danger' : ($estimationAccuracy > 90 ? 'bg-warning' : 'bg-secondary') ?> text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Estimation Accuracy</h5>
+                        <h2><?= $estimationAccuracy ?>%</h2>
+                        <small><?= $estimationAccuracy > 100 ? 'Over budget' : ($estimationAccuracy > 90 ? 'Near budget' : 'Under budget') ?></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Burndown Chart</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="burndownChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Estimation Accuracy per Sprint</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="accuracyChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+        // Burndown Chart - shows remaining hours decreasing over sprints
+        const burndownCtx = document.getElementById('burndownChart').getContext('2d');
+        const sprintLabels = ['Start', <?= implode(', ', array_map(fn($p) => "'" . addslashes($p['sprint']) . "'", $burndownPoints)) ?>];
+        const remainingData = [<?= $totalEstimated ?>, <?= implode(', ', array_column($burndownPoints, 'remaining')) ?>];
+
+        // Ideal burndown line (linear decrease)
+        const idealBurndown = [];
+        const sprintCount = <?= count($sprints) ?>;
+        for (let i = 0; i <= sprintCount; i++) {
+            idealBurndown.push(<?= $totalEstimated ?> - (<?= $totalEstimated ?> / sprintCount * i));
+        }
+
+        new Chart(burndownCtx, {
+            type: 'line',
+            data: {
+                labels: sprintLabels,
+                datasets: [{
+                    label: 'Actual Remaining',
+                    data: remainingData,
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    fill: true,
+                    tension: 0.1
+                }, {
+                    label: 'Ideal Burndown',
+                    data: idealBurndown,
+                    borderColor: 'rgba(108, 117, 125, 0.5)',
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Hours Remaining' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Estimation Accuracy Chart - compares estimated vs logged per sprint
+        const accuracyCtx = document.getElementById('accuracyChart').getContext('2d');
+        const estimatedData = [<?= implode(', ', array_column($burndownPoints, 'estimated')) ?>];
+        const loggedData = [<?= implode(', ', array_column($burndownPoints, 'logged')) ?>];
+        const sprintNames = [<?= implode(', ', array_map(fn($p) => "'" . addslashes($p['sprint']) . "'", $burndownPoints)) ?>];
+
+        new Chart(accuracyCtx, {
+            type: 'bar',
+            data: {
+                labels: sprintNames,
+                datasets: [{
+                    label: 'Estimated',
+                    data: estimatedData,
+                    backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Logged',
+                    data: loggedData,
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Hours' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+        </script>
+
+        <!-- Sprint Table -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Versions Overview for Project</h5>
+                <h5 class="mb-0">Sprints for <?= htmlspecialchars($selectedProjectData['Name'] ?? 'Project') ?></h5>
             </div>
-            <div class="card-body">
-                <table class="table table-hover">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>Version</th>
+                            <th>Sprint</th>
                             <th>Start</th>
                             <th>End</th>
-                            <th>Status</th>
+                            <th class="text-right">Estimated</th>
+                            <th class="text-right">Logged</th>
+                            <th class="text-right">Diff</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($versions as $v): ?>
+                        <?php foreach ($sprints as $s):
+                            $diff = $s['LoggedHours'] - $s['EstimatedHours'];
+                            $diffClass = $diff > 0 ? 'text-danger' : ($diff < 0 ? 'text-success' : '');
+                        ?>
                         <tr>
-                            <td><?= htmlspecialchars($v['name']) ?></td>
-                            <td><?= $v['startDate'] ?? '-' ?></td>
-                            <td><?= $v['endDate'] ?? '-' ?></td>
-                            <td><?= $v['status'] ?? '-' ?></td>
+                            <td><?= htmlspecialchars($s['SprintName']) ?></td>
+                            <td><?= $s['StartDate'] ?? '-' ?></td>
+                            <td><?= $s['EndDate'] ?? '-' ?></td>
+                            <td class="text-right"><?= number_form($s['EstimatedHours'], 1) ?></td>
+                            <td class="text-right"><?= number_form($s['LoggedHours'], 1) ?></td>
+                            <td class="text-right <?= $diffClass ?>">
+                                <?= $diff > 0 ? '+' : '' ?><?= number_form($diff, 1) ?>
+                            </td>
                             <td>
-                                <a href="?project=<?= $selectedProject ?>&version=<?= $v['id'] ?>" class="btn btn-sm btn-primary">
-                                    View Burndown
+                                <a href="?project=<?= $selectedProject ?>&sprint=<?= $s['OpenProjectVersionId'] ?>" class="btn btn-sm btn-primary">
+                                    View
                                 </a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
+                    <tfoot>
+                        <?php
+                            $totalDiff = $totalLogged - $totalEstimated;
+                            $totalDiffClass = $totalDiff > 0 ? 'text-danger' : ($totalDiff < 0 ? 'text-success' : '');
+                        ?>
+                        <tr class="table-secondary">
+                            <td colspan="3"><strong>Total</strong></td>
+                            <td class="text-right"><strong><?= number_form($totalEstimated, 1) ?></strong></td>
+                            <td class="text-right"><strong><?= number_form($totalLogged, 1) ?></strong></td>
+                            <td class="text-right <?= $totalDiffClass ?>"><strong><?= $totalDiff > 0 ? '+' : '' ?><?= number_form($totalDiff, 1) ?></strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
-        <?php else: ?>
+        <?php elseif (!$selectedProject): ?>
         <div class="alert alert-info">
             Select a project to view sprint burndown data.
         </div>

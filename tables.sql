@@ -169,7 +169,7 @@ CREATE TABLE `Projects` (
   `Status` tinyint DEFAULT '0',
   `Manager` smallint DEFAULT NULL,
   `OpenProjectId` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `ExcludeSync` tinyint(1) NOT NULL DEFAULT '0'
+  `Sync` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `snack_options` (
