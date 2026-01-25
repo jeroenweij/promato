@@ -141,7 +141,11 @@ INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VAL
 (76, 'Omeletto', 'omeletto.php', 2, 3, 0, 'egg-fried'),
 (77, 'Omeletto Admin', 'omeletto_admin.php', 5, 3, 0, 'egg'),
 (78, 'WBSO Overview', 'wbso_overview.php', 4, 2, 1, 'activity'),
-(79, 'Burndown', 'burndown.php', 3, 2, 0, 'trending-down');
+(79, 'Burndown', 'burndown.php', 3, 2, 0, 'trending-down'),
+(80, 'Sync Data', 'update_data.php', 2, 5, 0, 'refresh-cw'),
+(81, 'Import Backup', 'import.php', 7, 5, 0, 'upload'),
+(82, 'Sync Project', 'sync_project.php', 2, NULL, 0, NULL),
+(83, 'Sync Log', 'sync_log.php', 2, NULL, 0, NULL);
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,
@@ -164,7 +168,8 @@ CREATE TABLE `Projects` (
   `Name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
   `Status` tinyint DEFAULT '0',
   `Manager` smallint DEFAULT NULL,
-  `OpenProjectId` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL
+  `OpenProjectId` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `ExcludeSync` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `snack_options` (
@@ -245,6 +250,28 @@ CREATE TABLE `WbsoBudget` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
+CREATE TABLE `ProjectSprints` (
+  `OpenProjectVersionId` int NOT NULL,
+  `ProjectId` smallint NOT NULL,
+  `SprintName` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `StartDate` date DEFAULT NULL,
+  `EndDate` date DEFAULT NULL,
+  `EstimatedHours` int DEFAULT NULL COMMENT 'Stored as hours * 100',
+  `LoggedHours` int DEFAULT NULL COMMENT 'From Yoobi - stored as hours * 100'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `SyncLog` (
+  `Id` int NOT NULL,
+  `SyncTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UserId` smallint DEFAULT NULL,
+  `Success` tinyint(1) NOT NULL DEFAULT '1',
+  `ProjectsMatched` int DEFAULT '0',
+  `ProjectsFailed` int DEFAULT '0',
+  `SprintsSynced` int DEFAULT '0',
+  `Message` text COLLATE utf8mb4_general_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
 ALTER TABLE `Activities`
   ADD PRIMARY KEY (`Id`),
   ADD KEY `Project` (`Project`),
@@ -299,6 +326,10 @@ ALTER TABLE `Projects`
   ADD KEY `Status` (`Status`),
   ADD KEY `Manager` (`Manager`);
 
+ALTER TABLE `ProjectSprints`
+  ADD PRIMARY KEY (`OpenProjectVersionId`),
+  ADD KEY `fk_sprints_project` (`ProjectId`);
+
 ALTER TABLE `snack_options`
   ADD PRIMARY KEY (`id`);
 
@@ -311,6 +342,10 @@ ALTER TABLE `snack_orders`
 
 ALTER TABLE `Status`
   ADD PRIMARY KEY (`Id`);
+
+ALTER TABLE `SyncLog`
+  ADD PRIMARY KEY (`Id`),
+  ADD KEY `fk_synclog_user` (`UserId`);
 
 ALTER TABLE `TeamHours`
   ADD UNIQUE KEY `teamHoursIndex` (`Project`,`Activity`,`Team`,`Year`),
@@ -361,6 +396,9 @@ ALTER TABLE `snack_options`
 ALTER TABLE `snack_orders`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `SyncLog`
+  MODIFY `Id` int NOT NULL AUTO_INCREMENT;
+
 ALTER TABLE `Status`
   MODIFY `Id` tinyint NOT NULL AUTO_INCREMENT;
 
@@ -409,8 +447,14 @@ ALTER TABLE `Projects`
   ADD CONSTRAINT `Projects_ibfk_1` FOREIGN KEY (`Status`) REFERENCES `Status` (`Id`),
   ADD CONSTRAINT `Projects_ibfk_2` FOREIGN KEY (`Manager`) REFERENCES `Personel` (`Id`);
 
+ALTER TABLE `ProjectSprints`
+  ADD CONSTRAINT `fk_sprints_project` FOREIGN KEY (`ProjectId`) REFERENCES `Projects` (`Id`) ON DELETE CASCADE;
+
 ALTER TABLE `snack_orders`
   ADD CONSTRAINT `snack_orders_ibfk_1` FOREIGN KEY (`snack_id`) REFERENCES `snack_options` (`id`);
+
+ALTER TABLE `SyncLog`
+  ADD CONSTRAINT `fk_synclog_user` FOREIGN KEY (`UserId`) REFERENCES `Personel` (`Id`) ON DELETE SET NULL;
 
 ALTER TABLE `TeamHours`
   ADD CONSTRAINT `fk_team_hours_status` FOREIGN KEY (`Project`) REFERENCES `Projects` (`Id`),

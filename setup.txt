@@ -18,3 +18,71 @@ OpenProject Integration Setup
    -- Register the Burndown page
    INSERT INTO `Pages` (`Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES
    ('Burndown', 'burndown.php', 3, 2, 0, 'trending-down');
+
+3. Add Yoobi configuration to .env.php (optional, for future use):
+
+   define('YOOBI_URL', 'https://your-yoobi-instance.com');
+   define('YOOBI_API_KEY', 'your-yoobi-api-key-here');
+
+
+=====================================================
+Data Sync Setup (OpenProject & Yoobi)
+=====================================================
+
+Run these SQL statements to enable the data sync feature:
+
+   -- Create ProjectSprints table (stores synced sprint data from OpenProject)
+   CREATE TABLE `ProjectSprints` (
+     `OpenProjectVersionId` int NOT NULL,
+     `ProjectId` smallint NOT NULL,
+     `SprintName` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+     `StartDate` date DEFAULT NULL,
+     `EndDate` date DEFAULT NULL,
+     `EstimatedHours` int DEFAULT NULL COMMENT 'Stored as hours * 100',
+     `LoggedHours` int DEFAULT NULL COMMENT 'From Yoobi - stored as hours * 100',
+     PRIMARY KEY (`OpenProjectVersionId`),
+     KEY `fk_sprints_project` (`ProjectId`),
+     CONSTRAINT `fk_sprints_project` FOREIGN KEY (`ProjectId`) REFERENCES `Projects` (`Id`) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+   -- Create SyncLog table (logs every sync attempt)
+   CREATE TABLE `SyncLog` (
+     `Id` int NOT NULL AUTO_INCREMENT,
+     `SyncTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     `UserId` smallint DEFAULT NULL,
+     `Success` tinyint(1) NOT NULL DEFAULT '1',
+     `ProjectsMatched` int DEFAULT '0',
+     `ProjectsFailed` int DEFAULT '0',
+     `SprintsSynced` int DEFAULT '0',
+     `Message` text COLLATE utf8mb4_general_ci,
+     PRIMARY KEY (`Id`),
+     KEY `fk_synclog_user` (`UserId`),
+     CONSTRAINT `fk_synclog_user` FOREIGN KEY (`UserId`) REFERENCES `Personel` (`Id`) ON DELETE SET NULL
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+   -- Add ExcludeSync column to Projects table
+   ALTER TABLE `Projects`
+     ADD COLUMN `ExcludeSync` tinyint(1) NOT NULL DEFAULT '0';
+
+   -- Register the Sync Data pages
+   INSERT INTO `Pages` (`Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES
+   ('Sync Data', 'update_data.php', 2, 5, 0, 'refresh-cw'),
+   ('Sync Project', 'sync_project.php', 2, NULL, 0, NULL),
+   ('Sync Log', 'sync_log.php', 2, NULL, 0, NULL);
+
+
+=====================================================
+Import Backup Setup
+=====================================================
+
+Run this SQL statement to enable the import backup feature:
+
+   -- Register the Import Backup page (God level access only)
+   INSERT INTO `Pages` (`Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES
+   ('Import Backup', 'import.php', 7, 5, 0, 'upload');
+
+Note: The import feature requires Auth level 7 (God) to access.
+It will truncate and restore these tables from a backup.php export:
+Teams, Personel, Wbso, WbsoBudget, Projects, Activities, Hours,
+TeamHours, Availability, Budgets
+

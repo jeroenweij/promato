@@ -61,8 +61,8 @@ foreach ($rows as $row) {
                                 </div>
                                 <div class="card-body">
                                     <div class="date-range">
-                                        <span><?= date('j M Y', strtotime($item['StartDate'])) ?></span>
-                                        <span><?= date('j M Y', strtotime($item['EndDate'])) ?></span>
+                                        <span><?= date('j M Y', strtotime($item['StartDate'] ?? "")) ?></span>
+                                        <span><?= date('j M Y', strtotime($item['EndDate'] ?? "")) ?></span>
                                     </div>
                                 </div>
                             </div>
