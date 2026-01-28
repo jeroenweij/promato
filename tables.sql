@@ -142,10 +142,13 @@ INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VAL
 (77, 'Omeletto Admin', 'omeletto_admin.php', 5, 3, 0, 'egg'),
 (78, 'WBSO Overview', 'wbso_overview.php', 4, 2, 1, 'activity'),
 (79, 'Burndown', 'burndown.php', 3, 2, 0, 'trending-down'),
-(80, 'Sync Data', 'update_data.php', 2, 5, 0, 'refresh-cw'),
+(80, 'Sync Sprints', 'sync_sprints.php', 5, 5, 0, 'refresh-cw'),
 (81, 'Import Backup', 'import.php', 7, 5, 0, 'upload'),
 (82, 'Sync Project', 'sync_project.php', 2, NULL, 0, NULL),
-(83, 'Sync Log', 'sync_log.php', 2, NULL, 0, NULL);
+(83, 'Sync Log', 'sync_log.php', 2, NULL, 0, NULL),
+(84, 'Yoobi Test', 'yoobi_test.php', 5, NULL, 0, NULL),
+(85, 'Sync Hours', 'sync_hours.php', 5, 5, 0, 'clock'),
+(86, 'Sync Hours Handler', 'sync_hours_handler.php', 5, NULL, 0, NULL);
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,
@@ -265,10 +268,13 @@ CREATE TABLE `SyncLog` (
   `SyncTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `UserId` smallint DEFAULT NULL,
   `Success` tinyint(1) NOT NULL DEFAULT '1',
-  `ProjectsMatched` int DEFAULT '0',
-  `ProjectsFailed` int DEFAULT '0',
-  `SprintsSynced` int DEFAULT '0',
-  `Message` text COLLATE utf8mb4_general_ci
+  `SyncType` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'project' COMMENT 'Type: project or hours',
+  `ProjectsMatched` int DEFAULT '0' COMMENT 'For hours sync: stores Year',
+  `ProjectsFailed` int DEFAULT '0' COMMENT 'For hours sync: stores Persons count',
+  `SprintsSynced` int DEFAULT '0' COMMENT 'For hours sync: stores Activities count',
+  `HoursRecords` int DEFAULT '0' COMMENT 'Number of hour records inserted',
+  `Message` text COLLATE utf8mb4_general_ci,
+  `LogFile` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'Log filename for hours sync'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 

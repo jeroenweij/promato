@@ -5,7 +5,7 @@
  * Shows estimated hours from synced OpenProject sprints
  * compared with actual hours from Yoobi (imported via Hours table)
  *
- * Uses data from ProjectSprints table (synced via update_data.php)
+ * Uses data from ProjectSprints table (synced via sync_sprints.php)
  */
 
 $pageSpecificCSS = ['burndown.css'];
@@ -100,7 +100,7 @@ if ($selectedProject) {
                 <strong>No Projects Available</strong><br>
                 No projects have sync enabled. Enable sync for projects in
                 <a href="projects_edit.php">Project Edit</a> and run
-                <a href="update_data.php">Data Sync</a> first.
+                <a href="sync_sprints.php">Sync sprints</a> first.
             </div>
         <?php endif; ?>
 
@@ -137,7 +137,7 @@ if ($selectedProject) {
             <?php elseif ($selectedProject && empty($sprints)): ?>
             <div class="col-md-4">
                 <label class="form-label">Sprint</label>
-                <p class="text-muted">No sprints synced for this project. Run <a href="update_data.php">Data Sync</a>.</p>
+                <p class="text-muted">No sprints synced for this project. Run <a href="sync_sprints.php">Sync Sprints</a>.</p>
             </div>
             <?php endif; ?>
         </form>

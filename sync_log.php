@@ -24,8 +24,8 @@ if ($action === 'log') {
 
     try {
         $stmt = $pdo->prepare("
-            INSERT INTO SyncLog (UserId, Success, ProjectsMatched, ProjectsFailed, SprintsSynced, Message)
-            VALUES (:userId, :success, :matched, :failed, :sprints, :message)
+            INSERT INTO SyncLog (UserId, Success, SyncType, ProjectsMatched, ProjectsFailed, SprintsSynced, Message)
+            VALUES (:userId, :success, 'project', :matched, :failed, :sprints, :message)
         ");
         $stmt->execute([
             ':userId' => $_SESSION['user_id'],

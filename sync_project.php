@@ -8,6 +8,7 @@
 require_once 'includes/auth.php';
 require_once 'includes/db.php';
 require_once 'includes/openproject_api.php';
+require_once 'includes/yoobi_api.php';
 
 header('Content-Type: application/json');
 
@@ -114,19 +115,24 @@ try {
     $result['matched'] = true;
     $result['openProjectIdentifier'] = $openProjectIdentifier;
 
+    // Initialize Yoobi API for logged hours
+    $yoobiApi = new YoobiAPI();
+    $yoobiConfigured = $yoobiApi->isConfigured();
+
     // Get versions/sprints for this project
     $versions = $api->getVersions($openProjectIdentifier);
     $versionsInYear = array_filter($versions, fn($v) => sprintOverlapsYear($v, $year));
 
     // Prepare upsert statement
     $upsertStmt = $pdo->prepare("
-        INSERT INTO ProjectSprints (OpenProjectVersionId, ProjectId, SprintName, StartDate, EndDate, EstimatedHours)
-        VALUES (:versionId, :projectId, :sprintName, :startDate, :endDate, :estimatedHours)
+        INSERT INTO ProjectSprints (OpenProjectVersionId, ProjectId, SprintName, StartDate, EndDate, EstimatedHours, LoggedHours)
+        VALUES (:versionId, :projectId, :sprintName, :startDate, :endDate, :estimatedHours, :loggedHours)
         ON DUPLICATE KEY UPDATE
             SprintName = VALUES(SprintName),
             StartDate = VALUES(StartDate),
             EndDate = VALUES(EndDate),
-            EstimatedHours = VALUES(EstimatedHours)
+            EstimatedHours = VALUES(EstimatedHours),
+            LoggedHours = VALUES(LoggedHours)
     ");
 
     foreach ($versionsInYear as $version) {
@@ -135,9 +141,16 @@ try {
         $startDate = $version['startDate'] ?? null;
         $endDate = $version['endDate'] ?? null;
 
-        // Get estimated hours for this version
+        // Get estimated hours for this version from OpenProject
         $hoursSummary = $api->getVersionHoursSummary($versionId);
         $estimatedHours = (int)round($hoursSummary['estimated'] * 100);
+
+        // Get logged hours from Yoobi for this sprint's date range
+        $loggedHours = 0;
+        if ($yoobiConfigured && $startDate && $endDate) {
+            $loggedHoursFloat = $yoobiApi->getProjectLoggedHours($project['Name'], $startDate, $endDate);
+            $loggedHours = (int)round($loggedHoursFloat * 100);
+        }
 
         // Upsert the sprint data
         $upsertStmt->execute([
@@ -146,7 +159,8 @@ try {
             ':sprintName' => $versionName,
             ':startDate' => $startDate,
             ':endDate' => $endDate,
-            ':estimatedHours' => $estimatedHours
+            ':estimatedHours' => $estimatedHours,
+            ':loggedHours' => $loggedHours
         ]);
 
         $result['sprints'][] = [
@@ -154,6 +168,7 @@ try {
             'startDate' => $startDate,
             'endDate' => $endDate,
             'estimatedHours' => $estimatedHours / 100,
+            'loggedHours' => $loggedHours / 100,
             'workPackages' => $hoursSummary['workPackageCount']
         ];
     }

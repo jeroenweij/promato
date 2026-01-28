@@ -19,10 +19,13 @@ OpenProject Integration Setup
    INSERT INTO `Pages` (`Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES
    ('Burndown', 'burndown.php', 3, 2, 0, 'trending-down');
 
-3. Add Yoobi configuration to .env.php (optional, for future use):
+3. Add Yoobi configuration to .env.php (for hours sync):
 
-   define('YOOBI_URL', 'https://your-yoobi-instance.com');
-   define('YOOBI_API_KEY', 'your-yoobi-api-key-here');
+   define('YOOBI_CLIENT_ID', 'your-client-id');
+   define('YOOBI_CLIENT_SECRET', 'your-client-secret');
+   define('YOOBI_API_URL', 'https://your-company.yoobi.nl/api/v2');
+
+   (Get credentials from Yoobi: Settings -> API -> OAuth 2.0 Clients)
 
 
 =====================================================
@@ -45,16 +48,19 @@ Run these SQL statements to enable the data sync feature:
      CONSTRAINT `fk_sprints_project` FOREIGN KEY (`ProjectId`) REFERENCES `Projects` (`Id`) ON DELETE CASCADE
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-   -- Create SyncLog table (logs every sync attempt)
+   -- Create SyncLog table (logs every sync attempt - project and hours sync)
    CREATE TABLE `SyncLog` (
      `Id` int NOT NULL AUTO_INCREMENT,
      `SyncTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
      `UserId` smallint DEFAULT NULL,
      `Success` tinyint(1) NOT NULL DEFAULT '1',
-     `ProjectsMatched` int DEFAULT '0',
-     `ProjectsFailed` int DEFAULT '0',
-     `SprintsSynced` int DEFAULT '0',
+     `SyncType` varchar(20) NOT NULL DEFAULT 'project' COMMENT 'Type: project or hours',
+     `ProjectsMatched` int DEFAULT '0' COMMENT 'For hours sync: stores Year',
+     `ProjectsFailed` int DEFAULT '0' COMMENT 'For hours sync: stores Persons count',
+     `SprintsSynced` int DEFAULT '0' COMMENT 'For hours sync: stores Activities count',
+     `HoursRecords` int DEFAULT '0' COMMENT 'Number of hour records inserted',
      `Message` text COLLATE utf8mb4_general_ci,
+     `LogFile` varchar(100) DEFAULT NULL COMMENT 'Log filename for hours sync',
      PRIMARY KEY (`Id`),
      KEY `fk_synclog_user` (`UserId`),
      CONSTRAINT `fk_synclog_user` FOREIGN KEY (`UserId`) REFERENCES `Personel` (`Id`) ON DELETE SET NULL
@@ -64,9 +70,9 @@ Run these SQL statements to enable the data sync feature:
    ALTER TABLE `Projects`
      ADD COLUMN `Sync` tinyint(1) NOT NULL DEFAULT '0';
 
-   -- Register the Sync Data pages
+   -- Register the Sync Sprints pages
    INSERT INTO `Pages` (`Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES
-   ('Sync Data', 'update_data.php', 2, 5, 0, 'refresh-cw'),
+   ('Sync Sprints', 'sync_sprints.php, 5, 5, 0, 'refresh-cw'),
    ('Sync Project', 'sync_project.php', 2, NULL, 0, NULL),
    ('Sync Log', 'sync_log.php', 2, NULL, 0, NULL);
 
@@ -85,4 +91,39 @@ Note: The import feature requires Auth level 7 (God) to access.
 It will truncate and restore these tables from a backup.php export:
 Teams, Personel, Wbso, WbsoBudget, Projects, Activities, Hours,
 TeamHours, Availability, Budgets
+
+
+=====================================================
+Yoobi Hours Sync Setup
+=====================================================
+
+This feature syncs logged hours from Yoobi API into the Hours and
+TeamHours tables. Requires Yoobi OAuth 2.0 credentials.
+
+1. Add to .env.php:
+
+   define('YOOBI_CLIENT_ID', 'your-client-id');
+   define('YOOBI_CLIENT_SECRET', 'your-client-secret');
+   define('YOOBI_API_URL', 'https://your-company.yoobi.nl/api/v2');
+
+   // Optional: For auto-sync on production servers behind reverse proxy
+   // define('AUTO_SYNC_BASE_URL', 'http://localhost:8080');  // Local dev
+   // define('AUTO_SYNC_BASE_URL', 'https://your-domain.com'); // Production
+
+2. For NEW databases: tables.sql already includes all required columns.
+
+   -- Register the Sync Hours pages
+   INSERT INTO `Pages` (`Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES
+   ('Sync Hours', 'sync_hours.php', 5, 5, 0, 'clock'),
+   ('Sync Hours Handler', 'sync_hours_handler.php', 5, NULL, 0, NULL);
+
+Features:
+- Syncs hours from Yoobi using the Insight Reports API
+- Max 3 manual syncs per day limit
+- Real-time streaming log output
+- Log files stored for 7 days in logs/hours_sync/
+- View previous sync logs and history
+- Admin access required (Auth level 5+)
+
+The page appears in the File menu as "Sync Hours".
 

@@ -9,3 +9,8 @@ vendor
 includes/.env.php
 
 .claude/
+
+apidocs/
+
+# Sync log files
+logs/

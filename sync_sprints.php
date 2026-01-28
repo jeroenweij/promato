@@ -48,11 +48,12 @@ while ($row = $sprintCountStmt->fetch(PDO::FETCH_ASSOC)) {
     $sprintCounts[$row['ProjectId']] = $row['SprintCount'];
 }
 
-// Get recent sync history
+// Get recent sync history (project syncs only)
 $historyStmt = $pdo->prepare("
     SELECT sl.*, p.Name AS UserName
     FROM SyncLog sl
     LEFT JOIN Personel p ON sl.UserId = p.Id
+    WHERE sl.SyncType = 'project' OR sl.SyncType IS NULL
     ORDER BY sl.SyncTime DESC
     LIMIT 20
 ");

@@ -30,6 +30,9 @@ if ($selectedYear === 0) {
     $selectedYear = (int)date("Y");
 }
 
+// Auto-sync check (runs in background if scheduled)
+require_once __DIR__ . '/auto_sync.php';
+
 ?>
 
 <!doctype html>
