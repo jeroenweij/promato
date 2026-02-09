@@ -41,7 +41,7 @@ if ($selectedProject) {
 
     // Get sprints from ProjectSprints table (ordered by date for charts)
     $sprintStmt = $pdo->prepare("
-        SELECT OpenProjectVersionId, SprintName, StartDate, EndDate,
+        SELECT VersionId, SprintName, StartDate, EndDate,
                EstimatedHours / 100 AS EstimatedHours,
                COALESCE(LoggedHours, 0) / 100 AS LoggedHours
         FROM ProjectSprints
@@ -71,11 +71,11 @@ if ($selectedProject) {
     if ($selectedSprint) {
         // Get sprint data
         $sprintDataStmt = $pdo->prepare("
-            SELECT OpenProjectVersionId, SprintName, StartDate, EndDate,
+            SELECT VersionId, SprintName, StartDate, EndDate,
                    EstimatedHours / 100 AS EstimatedHours,
                    COALESCE(LoggedHours, 0) / 100 AS LoggedHours
             FROM ProjectSprints
-            WHERE OpenProjectVersionId = :sprintId AND ProjectId = :projectId
+            WHERE VersionId = :sprintId AND ProjectId = :projectId
         ");
         $sprintDataStmt->execute([':sprintId' => $selectedSprint, ':projectId' => $selectedProject]);
         $sprintData = $sprintDataStmt->fetch(PDO::FETCH_ASSOC);
@@ -125,7 +125,7 @@ if ($selectedProject) {
                 <select name="sprint" class="form-control" onchange="this.form.submit()">
                     <option value="">-- Select Sprint --</option>
                     <?php foreach ($sprints as $s): ?>
-                        <option value="<?= $s['OpenProjectVersionId'] ?>" <?= $selectedSprint == $s['OpenProjectVersionId'] ? 'selected' : '' ?>>
+                        <option value="<?= $s['VersionId'] ?>" <?= $selectedSprint == $s['VersionId'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($s['SprintName']) ?>
                             <?php if ($s['StartDate'] || $s['EndDate']): ?>
                                 (<?= $s['StartDate'] ?? '?' ?> - <?= $s['EndDate'] ?? '?' ?>)
@@ -459,7 +459,7 @@ if ($selectedProject) {
                                 <?= $diff > 0 ? '+' : '' ?><?= number_form($diff, 1) ?>
                             </td>
                             <td>
-                                <a href="?project=<?= $selectedProject ?>&sprint=<?= $s['OpenProjectVersionId'] ?>" class="btn btn-sm btn-primary">
+                                <a href="?project=<?= $selectedProject ?>&sprint=<?= $s['VersionId'] ?>" class="btn btn-sm btn-primary">
                                     View
                                 </a>
                             </td>

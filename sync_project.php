@@ -125,7 +125,7 @@ try {
 
     // Prepare upsert statement
     $upsertStmt = $pdo->prepare("
-        INSERT INTO ProjectSprints (OpenProjectVersionId, ProjectId, SprintName, StartDate, EndDate, EstimatedHours, LoggedHours)
+        INSERT INTO ProjectSprints (VersionId, ProjectId, SprintName, StartDate, EndDate, EstimatedHours, LoggedHours)
         VALUES (:versionId, :projectId, :sprintName, :startDate, :endDate, :estimatedHours, :loggedHours)
         ON DUPLICATE KEY UPDATE
             SprintName = VALUES(SprintName),

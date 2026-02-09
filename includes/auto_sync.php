@@ -151,8 +151,10 @@ if ($fp) {
     $request .= "Connection: close\r\n\r\n";
     $request .= $postData;
 
-    // Send request and immediately close - don't wait for response
+    // Send request and wait for first response line to confirm receipt
     fwrite($fp, $request);
+    stream_set_timeout($fp, 1); // 1 second timeout
+    fgets($fp); // Read first line to confirm server received request
     fclose($fp);
 }
 

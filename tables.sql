@@ -97,58 +97,56 @@ CREATE TABLE `Pages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `Pages` (`Id`, `Name`, `Path`, `Auth`, `Menu`, `InHead`, `Icon`) VALUES
-(35, 'Promato', 'index.php', 2, NULL, 0, NULL),
-(36, 'Login', 'login.php', 1, NULL, 0, NULL),
-(37, 'Edit Project', 'project_edit.php', 4, NULL, 0, NULL),
-(38, 'Project Details', 'project_details.php', 2, NULL, 0, NULL),
-(39, 'Edit Personnel', 'personel_edit.php', 5, NULL, 0, NULL),
-(40, 'Update Hours Plan', 'update_hours_plan.php', 3, NULL, 0, NULL),
-(41, 'Update Team Plan', 'update_team_plan.php', 3, NULL, 0, NULL),
-(42, 'Update Priority', 'update_priority.php', 3, NULL, 0, NULL),
-(43, 'Upload Handler', 'upload_handler.php', 4, NULL, 0, NULL),
-(44, 'Status updater', 'update_status.php', 2, NULL, 0, NULL),
-(45, 'User order updater', 'update_user_order.php', 5, NULL, 0, NULL),
-(46, 'Team task status', 'update_team_project_status.php', 3, NULL, 0, NULL),
-(47, 'Upload Handler', 'tmp_handler.php', 5, NULL, 0, NULL),
-(48, 'Export generator', 'export_generate.php', 5, NULL, 0, NULL),
-(49, 'Kroketto', 'kroketto.php', 2, 3, 0, 'croissant'),
-(50, 'Kroketto Admin', 'kroketto_admin.php', 5, 3, 0, 'utensils'),
-(51, 'Dashboard', 'dashboard.php', 2, 1, 0, 'home'),
-(52, 'Projects', 'projects.php', 2, 1, 1, 'briefcase'),
-(53, 'Kanban', 'kanban.php', 2, 1, 1, 'trello'),
-(54, 'Project dashboard', 'project_dashboard.php', 4, 1, 1, NULL),
-(55, 'Add Project', 'project_add.php', 4, 4, 0, 'file-plus'),
-(56, 'Edit Projects', 'projects_edit.php', 4, 4, 1, 'edit'),
-(57, 'Users', 'personel.php', 5, 4, 0, 'users'),
-(58, 'Wbso labels', 'wbso.php', 4, 4, 0, 'tag'),
-(59, 'Capacity Planning', 'capacity_planning.php', 2, 2, 1, 'bar-chart-2'),
-(60, 'Team Planning', 'team_planning.php', 2, 2, 1, 'bar-chart'),
-(61, 'Capacity Overview', 'capacity.php', 3, 2, 1, 'cpu'),
-(62, 'Priority Planning', 'priority_planning.php', 3, 2, 1, 'list'),
-(63, 'Personel order', 'personel_order.php', 5, 2, 0, 'user-check'),
-(64, 'Upload Hours', 'upload.php', 4, 5, 1, 'upload'),
-(65, 'Export to Yoobi', 'export.php', 5, 5, 0, 'download'),
-(66, 'Data backup', 'backup.php', 5, 5, 0, 'download-cloud'),
-(67, 'Financial dashboard', 'finance.php', 5, 1, 0, 'dollar-sign'),
-(68, 'Project finance', 'project_finance.php', 5, NULL, 0, NULL),
-(69, 'Update page access', 'update_page_access.php', 6, NULL, 0, NULL),
-(70, 'Page access', 'access_admin.php', 6, 4, 0, 'shield-user'),
-(71, 'Team Admin', 'team_admin.php', 6, 4, 0, 'group'),
-(72, 'Report', 'report.php', 5, 1, 0, 'file-text'),
-(73, 'Database Admin', 'db_admin.php', 7, 5, 0, 'database'),
-(74, 'Search', 'search.php', 2, NULL, 0, 'search'),
-(75, 'Change Personnel Team', 'personel_change_team.php', 5, NULL, 0, NULL),
-(76, 'Omeletto', 'omeletto.php', 2, 3, 0, 'egg-fried'),
-(77, 'Omeletto Admin', 'omeletto_admin.php', 5, 3, 0, 'egg'),
-(78, 'WBSO Overview', 'wbso_overview.php', 4, 2, 1, 'activity'),
-(79, 'Burndown', 'burndown.php', 3, 2, 0, 'trending-down'),
-(80, 'Sync Sprints', 'sync_sprints.php', 5, 5, 0, 'refresh-cw'),
-(81, 'Import Backup', 'import.php', 7, 5, 0, 'upload'),
-(82, 'Sync Project', 'sync_project.php', 2, NULL, 0, NULL),
-(83, 'Sync Log', 'sync_log.php', 2, NULL, 0, NULL),
-(84, 'Yoobi Test', 'yoobi_test.php', 5, NULL, 0, NULL),
-(85, 'Sync Hours', 'sync_hours.php', 5, 5, 0, 'clock'),
-(86, 'Sync Hours Handler', 'sync_hours_handler.php', 5, NULL, 0, NULL);
+(1, 'Promato', 'index.php', 2, NULL, 0, NULL),
+(2, 'Login', 'login.php', 1, NULL, 0, NULL),
+(3, 'Edit Project', 'project_edit.php', 4, NULL, 0, NULL),
+(4, 'Project Details', 'project_details.php', 2, NULL, 0, NULL),
+(5, 'Edit Personnel', 'personel_edit.php', 5, NULL, 0, NULL),
+(6, 'Update Hours Plan', 'update_hours_plan.php', 3, NULL, 0, NULL),
+(7, 'Update Team Plan', 'update_team_plan.php', 3, NULL, 0, NULL),
+(8, 'Update Priority', 'update_priority.php', 3, NULL, 0, NULL),
+(9, 'Upload Handler', 'upload_handler.php', 4, NULL, 0, NULL),
+(10, 'Status updater', 'update_status.php', 2, NULL, 0, NULL),
+(11, 'User order updater', 'update_user_order.php', 5, NULL, 0, NULL),
+(12, 'Team task status', 'update_team_project_status.php', 3, NULL, 0, NULL),
+(13, 'Export generator', 'export_generate.php', 5, NULL, 0, NULL),
+(14, 'Kroketto', 'kroketto.php', 2, 3, 0, 'croissant'),
+(15, 'Kroketto Admin', 'kroketto_admin.php', 5, 3, 0, 'utensils'),
+(16, 'Dashboard', 'dashboard.php', 2, 1, 0, 'home'),
+(17, 'Projects', 'projects.php', 2, 1, 1, 'briefcase'),
+(18, 'Kanban', 'kanban.php', 2, 1, 1, 'trello'),
+(19, 'Project dashboard', 'project_dashboard.php', 4, 1, 1, NULL),
+(20, 'Add Project', 'project_add.php', 4, 4, 0, 'file-plus'),
+(21, 'Edit Projects', 'projects_edit.php', 4, 4, 1, 'edit'),
+(22, 'Users', 'personel.php', 5, 4, 0, 'users'),
+(23, 'WBSO labels', 'wbso.php', 4, 4, 0, 'tag'),
+(24, 'Capacity Planning', 'capacity_planning.php', 2, 2, 1, 'bar-chart-2'),
+(25, 'Team Planning', 'team_planning.php', 2, 2, 1, 'bar-chart'),
+(26, 'Capacity Overview', 'capacity.php', 3, 2, 1, 'cpu'),
+(27, 'Priority Planning', 'priority_planning.php', 3, 2, 1, 'list'),
+(28, 'Personel order', 'personel_order.php', 5, 2, 0, 'user-check'),
+(29, 'Upload Hours', 'upload.php', 4, 5, 0, 'upload'),
+(30, 'Export to Yoobi', 'export.php', 5, 5, 0, 'download'),
+(31, 'Data backup', 'backup.php', 5, 5, 0, 'download-cloud'),
+(32, 'Financial dashboard', 'finance.php', 5, 1, 0, 'dollar-sign'),
+(33, 'Project finance', 'project_finance.php', 5, NULL, 0, NULL),
+(34, 'Update page access', 'update_page_access.php', 6, NULL, 0, NULL),
+(35, 'Page access', 'access_admin.php', 6, 4, 0, 'shield-user'),
+(36, 'Team Admin', 'team_admin.php', 6, 4, 0, 'group'),
+(37, 'Report', 'report.php', 5, 1, 0, 'file-text'),
+(38, 'Database Admin', 'db_admin.php', 7, 5, 0, 'database'),
+(39, 'Search', 'search.php', 2, NULL, 0, 'search'),
+(40, 'Change Personnel Team', 'personel_change_team.php', 5, NULL, 0, NULL),
+(41, 'Omeletto', 'omeletto.php', 2, 3, 0, 'egg-fried'),
+(42, 'Omeletto Admin', 'omeletto_admin.php', 5, 3, 0, 'egg'),
+(43, 'WBSO Overview', 'wbso_overview.php', 4, 2, 1, 'activity'),
+(44, 'WBSO Details', 'wbso_details.php', 4, 4, 0, 'file-text'),
+(45, 'Burndown', 'burndown.php', 3, 2, 0, 'trending-down'),
+(46, 'Sync Sprints', 'sync_sprints.php', 5, 5, 0, 'refresh-cw'),
+(47, 'Sync Project', 'sync_project.php', 2, NULL, 0, NULL),
+(48, 'Sync Log', 'sync_log.php', 2, NULL, 0, NULL),
+(49, 'Sync Hours', 'sync_hours.php', 5, 5, 0, 'clock'),
+(50, 'Sync Hours Handler', 'sync_hours_handler.php', 5, NULL, 0, NULL);
 
 CREATE TABLE `Personel` (
   `Id` smallint NOT NULL,
@@ -171,8 +169,18 @@ CREATE TABLE `Projects` (
   `Name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
   `Status` tinyint DEFAULT '0',
   `Manager` smallint DEFAULT NULL,
-  `OpenProjectId` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `OpenProjectId` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `Sync` tinyint(1) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `ProjectSprints` (
+  `VersionId` int NOT NULL,
+  `ProjectId` smallint NOT NULL,
+  `SprintName` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `StartDate` date DEFAULT NULL,
+  `EndDate` date DEFAULT NULL,
+  `EstimatedHours` int DEFAULT NULL COMMENT 'Stored as hours * 100',
+  `LoggedHours` int DEFAULT NULL COMMENT 'From Yoobi - stored as hours * 100'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `snack_options` (
@@ -203,6 +211,20 @@ INSERT INTO `Status` (`Id`, `Status`) VALUES
 (2, 'Quote'),
 (3, 'Active'),
 (4, 'Closed');
+
+CREATE TABLE `SyncLog` (
+  `Id` int NOT NULL,
+  `SyncTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UserId` smallint DEFAULT NULL,
+  `Success` tinyint(1) NOT NULL DEFAULT '1',
+  `SyncType` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'project' COMMENT 'Type: project or hours',
+  `ProjectsMatched` int DEFAULT '0' COMMENT 'For hours sync: stores Year',
+  `ProjectsFailed` int DEFAULT '0' COMMENT 'For hours sync: stores Persons count',
+  `SprintsSynced` int DEFAULT '0' COMMENT 'For hours sync: stores Activities count',
+  `HoursRecords` int DEFAULT '0' COMMENT 'Number of hour records inserted',
+  `Message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+  `LogFile` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'Log filename for hours sync'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `TeamHours` (
   `Project` smallint DEFAULT NULL,
@@ -240,7 +262,6 @@ CREATE TABLE `Wbso` (
   `Id` smallint NOT NULL,
   `Name` varchar(16) COLLATE utf8mb4_general_ci NOT NULL,
   `Description` varchar(64) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `Hours` smallint DEFAULT NULL,
   `StartDate` date NOT NULL,
   `EndDate` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -250,31 +271,6 @@ CREATE TABLE `WbsoBudget` (
   `WbsoId` smallint NOT NULL,
   `Year` smallint NOT NULL,
   `Hours` int DEFAULT NULL COMMENT 'Budget hours for this WBSO in this year'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-
-CREATE TABLE `ProjectSprints` (
-  `OpenProjectVersionId` int NOT NULL,
-  `ProjectId` smallint NOT NULL,
-  `SprintName` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `StartDate` date DEFAULT NULL,
-  `EndDate` date DEFAULT NULL,
-  `EstimatedHours` int DEFAULT NULL COMMENT 'Stored as hours * 100',
-  `LoggedHours` int DEFAULT NULL COMMENT 'From Yoobi - stored as hours * 100'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `SyncLog` (
-  `Id` int NOT NULL,
-  `SyncTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UserId` smallint DEFAULT NULL,
-  `Success` tinyint(1) NOT NULL DEFAULT '1',
-  `SyncType` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'project' COMMENT 'Type: project or hours',
-  `ProjectsMatched` int DEFAULT '0' COMMENT 'For hours sync: stores Year',
-  `ProjectsFailed` int DEFAULT '0' COMMENT 'For hours sync: stores Persons count',
-  `SprintsSynced` int DEFAULT '0' COMMENT 'For hours sync: stores Activities count',
-  `HoursRecords` int DEFAULT '0' COMMENT 'Number of hour records inserted',
-  `Message` text COLLATE utf8mb4_general_ci,
-  `LogFile` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'Log filename for hours sync'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
@@ -333,7 +329,7 @@ ALTER TABLE `Projects`
   ADD KEY `Manager` (`Manager`);
 
 ALTER TABLE `ProjectSprints`
-  ADD PRIMARY KEY (`OpenProjectVersionId`),
+  ADD PRIMARY KEY (`VersionId`),
   ADD KEY `fk_sprints_project` (`ProjectId`);
 
 ALTER TABLE `snack_options`
@@ -402,11 +398,11 @@ ALTER TABLE `snack_options`
 ALTER TABLE `snack_orders`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
-ALTER TABLE `SyncLog`
-  MODIFY `Id` int NOT NULL AUTO_INCREMENT;
-
 ALTER TABLE `Status`
   MODIFY `Id` tinyint NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `SyncLog`
+  MODIFY `Id` int NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `Teams`
   MODIFY `Id` tinyint NOT NULL AUTO_INCREMENT;
