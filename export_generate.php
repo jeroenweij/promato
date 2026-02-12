@@ -78,6 +78,7 @@ try {
         $sheet->setCellValue('R' . $rowNumber, formatDate($row["ASD"]));
         $sheet->setCellValue('S' . $rowNumber, formatDate($row["AED"]));
         $sheet->setCellValue('T' . $rowNumber, $row["AA"] ? 'active' : 'closed');
+        $sheet->setCellValue('X' . $rowNumber, $row["WL"] ?? '');
         $sheet->setCellValue('AB' . $rowNumber, 'Time');
         $sheet->setCellValue('AC' . $rowNumber, 'Time');
         $sheet->setCellValue('AD' . $rowNumber, 'activity');
